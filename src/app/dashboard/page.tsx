@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
@@ -42,26 +42,97 @@ export default function Dashboard() {
   const [profileLoading, setProfileLoading] = useState(true);
   const [activeWeek, setActiveWeek] = useState(1);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [hasLoadedData, setHasLoadedData] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
 
+
+
+
+
+
+
+  const loadUserData = useCallback(async () => {
+    if (hasLoadedData || profileLoading) return; // Prevent multiple loads
+
+    setProfileLoading(true);
+    setHasLoadedData(true);
+
+    try {
+      // Load profile
+      const { data: profileData, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('user_id', user?.id)
+        .single();
+
+      if (profileError) {
+        if (profileError.code === 'PGRST116') {
+          // No profile found - redirect to onboarding
+          router.push('/onboarding');
+          return;
+        }
+        throw profileError;
+      }
+
+      setProfile(profileData);
+
+      // Load weekly logs
+      const { data: logsData, error: logsError } = await supabase
+        .from('weekly_logs')
+        .select('*')
+        .eq('user_id', user?.id)
+        .order('week_number', { ascending: true });
+
+      if (logsError && logsError.code !== 'PGRST116') {
+        throw logsError;
+      }
+
+      setWeeklyLogs(logsData || []);
+
+      // Set active week to the first available week
+      if (logsData && logsData.length > 0) {
+        setActiveWeek(logsData[0].week_number);
+      }
+    } catch (error) {
+      console.error('Error loading user data:', error);
+      // Don't block the UI for data loading errors
+      setProfile({} as UserProfile); // Set empty object instead of null to prevent re-triggering
+      setWeeklyLogs([]);
+    } finally {
+      setProfileLoading(false);
+    }
+  }, [user?.id, router, hasLoadedData, profileLoading]);
+
   useEffect(() => {
+    // Don't do anything while auth is loading
+    if (isLoading) return;
+
     // Redirect to login if not authenticated
-    if (!isLoading && !isAuthenticated) {
+    if (!isAuthenticated) {
       router.push('/login');
       return;
     }
 
     // Redirect to onboarding if not completed
-    if (!isLoading && isAuthenticated && user && !user.hasCompletedOnboarding) {
+    if (user && !user.hasCompletedOnboarding) {
       router.push('/onboarding');
       return;
     }
 
-    // Load user data
-    if (isAuthenticated && user) {
+    // Load user data if authenticated and no profile loaded yet
+    if (user?.id && !hasLoadedData && !profile) {
       loadUserData();
     }
-  }, [isAuthenticated, isLoading, user, router]);
+  }, [isAuthenticated, isLoading, user?.id, user?.hasCompletedOnboarding, hasLoadedData, profile, loadUserData, router]);
+
+  // Reset loading state when user changes
+  useEffect(() => {
+    if (user?.id) {
+      setHasLoadedData(false);
+      setProfile(null);
+      setProfileLoading(true);
+    }
+  }, [user?.id]);
 
   // Close mobile menu when clicking outside
   useEffect(() => {
@@ -80,33 +151,18 @@ export default function Dashboard() {
     };
   }, [mobileMenuOpen]);
 
-  const loadUserData = async () => {
-    try {
-      // Load profile
-      const { data: profileData, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('user_id', user?.id)
-        .single();
+  // Reset loading state if stuck
+  useEffect(() => {
+    if (profileLoading) {
+      const timeout = setTimeout(() => {
+        setProfileLoading(false);
+      }, 10000);
 
-      if (profileError) throw profileError;
-      setProfile(profileData);
-
-      // Load weekly logs
-      const { data: logsData, error: logsError } = await supabase
-        .from('weekly_logs')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('week_number', { ascending: true });
-
-      if (logsError) throw logsError;
-      setWeeklyLogs(logsData || []);
-    } catch (error) {
-      console.error('Error loading user data:', error);
-    } finally {
-      setProfileLoading(false);
+      return () => {
+        clearTimeout(timeout);
+      };
     }
-  };
+  }, [profileLoading]);
 
   const handleLogout = async () => {
     try {
@@ -147,10 +203,9 @@ export default function Dashboard() {
   const handleEditProfile = () => {
     // TODO: Navigate to edit profile page
     setMobileMenuOpen(false);
-    console.log('Navigate to edit profile');
   };
 
-  if (isLoading || profileLoading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -159,6 +214,7 @@ export default function Dashboard() {
             alt="SwiftLog Logo"
             width={64}
             height={64}
+            priority
             className="w-16 h-16 mx-auto mb-4 animate-pulse"
           />
           <p className="text-gray-600">Loading...</p>
@@ -167,8 +223,52 @@ export default function Dashboard() {
     );
   }
 
-  if (!isAuthenticated || !user || !profile) {
+  if (!isAuthenticated || !user) {
     return null;
+  }
+
+  if (profileLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Image
+            src="/LOGOS/SwiftLog.svg"
+            alt="SwiftLog Logo"
+            width={64}
+            height={64}
+            priority
+            className="w-16 h-16 mx-auto mb-4 animate-pulse"
+          />
+          <p className="text-gray-600">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Image
+            src="/LOGOS/SwiftLog.svg"
+            alt="SwiftLog Logo"
+            width={64}
+            height={64}
+            priority
+            className="w-16 h-16 mx-auto mb-4"
+          />
+          <p className="text-gray-600 mb-4">Profile not found</p>
+          <Link
+            href="/onboarding"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Complete Profile Setup
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -422,64 +522,123 @@ export default function Dashboard() {
             {/* Week Tabs */}
             <div className="px-4 py-3 border-b border-gray-100">
               <div className="flex space-x-1 overflow-x-auto">
-                {[1, 2, 3].map((week) => (
-                  <button
-                    key={week}
-                    onClick={() => setActiveWeek(week)}
-                    className={`px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors ${
-                      activeWeek === week
-                        ? 'bg-gray-900 text-white'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                    }`}
-                  >
-                    Week {week}
-                  </button>
-                ))}
+                {weeklyLogs.length > 0 ? (
+                  weeklyLogs.map((log) => (
+                    <button
+                      key={log.week_number}
+                      onClick={() => setActiveWeek(log.week_number)}
+                      className={`px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors ${
+                        activeWeek === log.week_number
+                          ? 'bg-gray-900 text-white'
+                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                      }`}
+                    >
+                      Week {log.week_number}
+                    </button>
+                  ))
+                ) : (
+                  <div className="text-gray-500 text-sm py-2">
+                    No weeks created yet
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Week Content */}
             <div className="p-4">
               {weeklyLogs.length > 0 ? (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    Week {activeWeek}: {formatDate('2025-06-30')} — {formatDate('2025-07-04')}
-                  </h3>
-                  <p className="text-gray-600 text-sm leading-relaxed mb-4">
-                    Continued building and implementing the student portal, this time I focused on the course registration module, using mock data to test the retrieval of courses from the database, allowing students to register and then display a summary of the registered courses. I also implemented a feature that allows the ICT admin reset and generate passwords for the Faculty admins. I aided in the building and deployment of the admissions portal to allow candidates apply easily into the school I assisted a few students prepare for an online external exams by setting up their browsers and ensuring network was setup properly, set up their cameras for zoom and also supervised them incase of any assistance I went on an external supervision to observe and aid in the presentation of some nursing students sent on clinical postings
-                  </p>
+                (() => {
+                  const currentLog = weeklyLogs.find(log => log.week_number === activeWeek);
+                  if (!currentLog) {
+                    return (
+                      <div className="text-center py-8">
+                        <p className="text-gray-500">No log found for Week {activeWeek}</p>
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={handleAddWeek}
+                          className="mt-4 inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                          </svg>
+                          <span>Create Week {activeWeek}</span>
+                        </motion.button>
+                      </div>
+                    );
+                  }
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-gray-200">
-                          <th className="text-left py-2 text-gray-600 font-medium">Day & Date</th>
-                          <th className="text-left py-2 text-gray-600 font-medium">Description of Work Done</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        <tr>
-                          <td className="py-3 text-blue-600 font-medium">
-                            Monday<br />
-                            <span className="text-gray-500 text-xs">30/06/2025</span>
-                          </td>
-                          <td className="py-3 text-gray-700">
-                            I continued building the course registration module for the student portal, focusing on retrieving course data from the database using mock data.
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="py-3 text-blue-600 font-medium">
-                            Tuesday<br />
-                            <span className="text-gray-500 text-xs">01/07/2025</span>
-                          </td>
-                          <td className="py-3 text-gray-700">
-                            I worked on enabling student course registration within the portal and implemented a summary display of registered courses.
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                  const logContent = typeof currentLog.content === 'string'
+                    ? JSON.parse(currentLog.content)
+                    : currentLog.content;
+
+                  return (
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        Week {activeWeek}: {formatDate(currentLog.start_date)} — {formatDate(currentLog.end_date)}
+                      </h3>
+
+                      {/* Week Summary */}
+                      <p className="text-gray-600 text-sm leading-relaxed mb-4">
+                        {logContent.weekSummary}
+                      </p>
+
+                      {/* Daily Activities Table */}
+                      <div className="overflow-x-auto mb-6">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b border-gray-200">
+                              <th className="text-left py-2 text-gray-600 font-medium">Day & Date</th>
+                              <th className="text-left py-2 text-gray-600 font-medium">Description of Work Done</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100">
+                            {logContent.dailyActivities?.map((activity: any, index: number) => (
+                              <tr key={index}>
+                                <td className="py-3 text-blue-600 font-medium">
+                                  {activity.day}<br />
+                                  <span className="text-gray-500 text-xs">{activity.date}</span>
+                                </td>
+                                <td className="py-3 text-gray-700">
+                                  {activity.activities}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Skills and Learning Outcomes */}
+                      <div className="grid md:grid-cols-2 gap-4 mt-6">
+                        <div className="bg-blue-50 rounded-lg p-4">
+                          <h4 className="font-semibold text-blue-900 mb-2">Skills Developed</h4>
+                          <ul className="text-blue-800 text-sm space-y-1">
+                            {logContent.skillsDeveloped?.map((skill: string, index: number) => (
+                              <li key={index}>• {skill}</li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        <div className="bg-green-50 rounded-lg p-4">
+                          <h4 className="font-semibold text-green-900 mb-2">Learning Outcomes</h4>
+                          <p className="text-green-800 text-sm leading-relaxed">
+                            {logContent.learningOutcomes}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Challenges Faced */}
+                      {logContent.challengesFaced && (
+                        <div className="bg-orange-50 rounded-lg p-4 mt-4">
+                          <h4 className="font-semibold text-orange-900 mb-2">Challenges Faced</h4>
+                          <p className="text-orange-800 text-sm leading-relaxed">
+                            {logContent.challengesFaced}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()
               ) : (
                 <div className="text-center py-8">
                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">

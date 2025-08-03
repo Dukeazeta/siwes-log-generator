@@ -45,13 +45,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state change:', event, session?.user?.email);
         if (session?.user) {
           const transformedUser = await transformSupabaseUser(session.user);
-          console.log('Setting user:', transformedUser);
           setUser(transformedUser);
         } else {
-          console.log('Clearing user');
           setUser(null);
         }
         setIsLoading(false);
@@ -64,14 +61,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const getInitialSession = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      console.log('Initial session:', session?.user?.email);
+
       if (session?.user) {
         const transformedUser = await transformSupabaseUser(session.user);
-        console.log('Setting initial user:', transformedUser);
         setUser(transformedUser);
       }
     } catch (error) {
       console.error('Error getting initial session:', error);
+      // Don't block app initialization on session errors
     } finally {
       setIsLoading(false);
     }
@@ -81,11 +78,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const metadata = supabaseUser.user_metadata || {};
 
     // Check if user has completed onboarding
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('completed_onboarding')
-      .eq('user_id', supabaseUser.id)
-      .single();
+    let hasCompletedOnboarding = false;
+    try {
+      const { data: profile, error } = await supabase
+        .from('user_profiles')
+        .select('completed_onboarding')
+        .eq('user_id', supabaseUser.id)
+        .single();
+
+      if (!error && profile) {
+        hasCompletedOnboarding = profile.completed_onboarding === true;
+        console.log('Onboarding check:', {
+          userId: supabaseUser.id,
+          completed_onboarding: profile.completed_onboarding,
+          hasCompletedOnboarding
+        });
+      } else {
+        console.log('Profile query error or no profile:', { error, profile });
+      }
+    } catch (error) {
+      console.warn('Profile query failed, assuming onboarding not completed:', error);
+      hasCompletedOnboarding = false;
+    }
 
     return {
       id: supabaseUser.id,
@@ -94,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       lastName: metadata.last_name || metadata.family_name || '',
       fullName: metadata.full_name || metadata.name || '',
       avatarUrl: metadata.avatar_url || metadata.picture || '',
-      hasCompletedOnboarding: profile?.completed_onboarding || false
+      hasCompletedOnboarding
     };
   };
 

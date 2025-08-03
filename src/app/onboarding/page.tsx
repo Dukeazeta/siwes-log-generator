@@ -111,6 +111,9 @@ export default function Onboarding() {
       // Refresh user data to update onboarding status
       await refreshUser();
 
+      // Small delay to ensure auth state is updated
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       router.push('/dashboard');
     } catch (error: any) {
       console.error('Profile save error:', error);
