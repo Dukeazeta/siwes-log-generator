@@ -5,68 +5,52 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { useEffect } from "react";
 import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-
-if (typeof window !== "undefined") {
-  gsap.registerPlugin(ScrollTrigger);
-}
+import SmartCTAButton from "../components/SmartCTAButton";
+import PageTransition from "../components/PageTransition";
 
 export default function Home() {
 
   useEffect(() => {
-    // Hero animations
-    const tl = gsap.timeline();
+    // Set initial visibility to prevent flash
+    gsap.set([".hero-title", ".hero-subtitle", ".hero-buttons"], { opacity: 1 });
+
+    // Minimal animations to prevent grey flash
+    const tl = gsap.timeline({ delay: 0.1 });
     tl.from(".hero-title", {
-      duration: 1.2,
-      y: 100,
+      duration: 0.6,
+      y: 20,
       opacity: 0,
-      ease: "power3.out",
-      stagger: 0.2
+      ease: "power2.out"
     })
     .from(".hero-subtitle", {
-      duration: 1,
-      y: 50,
+      duration: 0.5,
+      y: 15,
       opacity: 0,
       ease: "power2.out"
-    }, "-=0.5")
+    }, "-=0.3")
     .from(".hero-buttons", {
-      duration: 0.8,
-      y: 30,
+      duration: 0.5,
+      y: 15,
       opacity: 0,
       ease: "power2.out"
-    }, "-=0.3");
+    }, "-=0.2");
 
-    // Scroll-triggered animations
-    gsap.fromTo(".feature-card",
-      { y: 100, opacity: 0 },
-      {
-        y: 0,
-        opacity: 1,
-        duration: 0.8,
-        ease: "power2.out",
-        stagger: 0.2,
-        scrollTrigger: {
-          trigger: ".features-section",
-          start: "top 80%",
-        }
-      }
-    );
-
-    // University logos infinite carousel
-    gsap.set(".university-carousel", { x: 0 });
-    gsap.to(".university-carousel", {
-      x: "-50%",
-      duration: 40,
-      ease: "none",
-      repeat: -1
-    });
-
-
-
+    // Only animate elements that exist - University logos carousel
+    const carousel = document.querySelector(".university-carousel");
+    if (carousel) {
+      gsap.set(".university-carousel", { x: 0 });
+      gsap.to(".university-carousel", {
+        x: "-50%",
+        duration: 40,
+        ease: "none",
+        repeat: -1
+      });
+    }
   }, []);
 
   return (
-    <div className="min-h-screen bg-white overflow-hidden">
+    <PageTransition>
+      <div className="min-h-screen bg-white overflow-hidden">
       {/* Floating Glassmorphism Navbar */}
       <motion.header
         initial={{ y: -100, opacity: 0 }}
@@ -96,17 +80,9 @@ export default function Home() {
                   {item}
                 </a>
               ))}
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Link
-                  href="/onboarding"
-                  className="bg-gray-900 text-white px-6 py-2 rounded-full font-medium hover:bg-gray-800 transition-colors"
-                >
-                  Get Started
-                </Link>
-              </motion.div>
+              <SmartCTAButton className="bg-gray-900 text-white px-6 py-2 rounded-full font-medium hover:bg-gray-800 transition-colors">
+                Get Started
+              </SmartCTAButton>
             </div>
           </div>
         </nav>
@@ -173,20 +149,12 @@ export default function Home() {
             </p>
 
             <div className="hero-buttons flex flex-col sm:flex-row gap-4 md:gap-6 justify-center items-center mb-12 md:mb-16">
-              <motion.div
-                whileHover={{ scale: 1.05, y: -2 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Link
-                  href="/onboarding"
-                  className="bg-gray-900 text-white px-6 md:px-8 py-3 md:py-4 rounded-full font-semibold text-base md:text-lg hover:bg-gray-800 transition-all duration-300 inline-flex items-center space-x-2"
-                >
-                  <span>Start Creating</span>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                  </svg>
-                </Link>
-              </motion.div>
+              <SmartCTAButton className="bg-gray-900 text-white px-6 md:px-8 py-3 md:py-4 rounded-full font-semibold text-base md:text-lg hover:bg-gray-800 transition-all duration-300 inline-flex items-center space-x-2">
+                <span>Start Creating</span>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </SmartCTAButton>
 
               <motion.div
                 whileHover={{ scale: 1.05, y: -2 }}
@@ -395,17 +363,12 @@ export default function Home() {
             viewport={{ once: true }}
             className="text-center mt-16"
           >
-            <motion.div
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <button className="bg-gray-900 text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-gray-800 transition-all duration-300 inline-flex items-center space-x-2">
-                <span>Try It Now</span>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              </button>
-            </motion.div>
+            <SmartCTAButton className="bg-gray-900 text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-gray-800 transition-all duration-300 inline-flex items-center space-x-2">
+              <span>Try It Now</span>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </SmartCTAButton>
           </motion.div>
         </div>
       </section>
@@ -427,20 +390,12 @@ export default function Home() {
             <p className="text-xl text-gray-300 mb-12 max-w-2xl mx-auto leading-relaxed">
               Join the smart students who are already creating professional logbooks effortlessly
             </p>
-            <motion.div
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Link
-                href="/onboarding"
-                className="bg-white text-gray-900 px-8 py-4 rounded-full font-semibold text-lg hover:bg-gray-100 transition-all duration-300 inline-flex items-center space-x-2"
-              >
-                <span>Get Started Free</span>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              </Link>
-            </motion.div>
+            <SmartCTAButton className="bg-white text-gray-900 px-8 py-4 rounded-full font-semibold text-lg hover:bg-gray-100 transition-all duration-300 inline-flex items-center space-x-2">
+              <span>Get Started Free</span>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </SmartCTAButton>
           </motion.div>
         </div>
       </section>
@@ -493,7 +448,7 @@ export default function Home() {
                 <p className="font-semibold text-gray-900 mb-3">DUKEDEV</p>
                 <div className="flex space-x-3">
                   <motion.a
-                    href="https://twitter.com/dukedev"
+                    href="https://twitter.com/duke_azeta_"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-8 h-8 bg-white rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors shadow-sm"
@@ -505,7 +460,7 @@ export default function Home() {
                     </svg>
                   </motion.a>
                   <motion.a
-                    href="https://github.com/dukedev"
+                    href="https://github.com/dukeazeta"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-8 h-8 bg-white rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors shadow-sm"
@@ -517,7 +472,7 @@ export default function Home() {
                     </svg>
                   </motion.a>
                   <motion.a
-                    href="https://linkedin.com/in/dukedev"
+                    href="https://www.linkedin.com/in/duke-azeta/"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-8 h-8 bg-white rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors shadow-sm"
@@ -545,5 +500,6 @@ export default function Home() {
         </div>
       </footer>
     </div>
+    </PageTransition>
   );
 }
