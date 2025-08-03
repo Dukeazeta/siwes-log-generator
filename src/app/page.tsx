@@ -72,20 +72,19 @@ export default function Home() {
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 w-[90%] max-w-4xl"
+        className="fixed top-4 md:top-6 left-1/2 transform -translate-x-1/2 z-50 w-[95%] md:w-[90%] max-w-4xl"
       >
-        <nav className="backdrop-blur-md bg-white/70 border border-gray-200/50 rounded-full px-8 py-4">
+        <nav className="backdrop-blur-md bg-white/70 border border-gray-200/50 rounded-full px-4 md:px-8 py-3 md:py-4">
           <div className="flex items-center justify-between">
-            <motion.div
-              className="flex items-center space-x-3"
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 400, damping: 10 }}
-            >
-              <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold text-sm">S</span>
-              </div>
-              <span className="text-lg font-semibold text-gray-900">SIWES LogGen</span>
-            </motion.div>
+            <div className="flex items-center justify-center">
+              <Image
+                src="/LOGOS/SwiftLog.svg"
+                alt="SwiftLog Logo"
+                width={48}
+                height={48}
+                className="w-10 h-10 md:w-12 md:h-12"
+              />
+            </div>
 
             <div className="hidden md:flex items-center space-x-8">
               {['Features', 'Process', 'About'].map((item) => (
@@ -114,7 +113,7 @@ export default function Home() {
       </motion.header>
 
       {/* Hero Section */}
-      <main className="pt-32 pb-20 px-6">
+      <main className="pt-24 md:pt-32 pb-16 md:pb-20 px-4 md:px-6">
         <div className="max-w-6xl mx-auto text-center">
           {/* Animated Background Elements */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -158,7 +157,7 @@ export default function Home() {
               </span>
             </motion.div>
 
-            <h1 className="hero-title text-6xl md:text-8xl font-bold text-gray-900 mb-6 leading-none">
+            <h1 className="hero-title text-4xl sm:text-5xl md:text-6xl lg:text-8xl font-bold text-gray-900 mb-6 leading-none">
               Transform
               <br />
               <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
@@ -168,19 +167,19 @@ export default function Home() {
               into Perfect Logs
             </h1>
 
-            <p className="hero-subtitle text-lg md:text-xl text-gray-600 mb-4 max-w-3xl mx-auto leading-relaxed">
+            <p className="hero-subtitle text-base sm:text-lg md:text-xl text-gray-600 mb-4 max-w-3xl mx-auto leading-relaxed">
               The smartest way for IT students to create professional SIWES logbook entries.
-              Just describe your week, and watch AI craft detailed daily logs.
+              Just describe your week, and watch SwiftLog's AI craft detailed daily logs.
             </p>
 
-            <div className="hero-buttons flex flex-col sm:flex-row gap-6 justify-center items-center mb-16">
+            <div className="hero-buttons flex flex-col sm:flex-row gap-4 md:gap-6 justify-center items-center mb-12 md:mb-16">
               <motion.div
                 whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95 }}
               >
                 <Link
                   href="/onboarding"
-                  className="bg-gray-900 text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-gray-800 transition-all duration-300 inline-flex items-center space-x-2"
+                  className="bg-gray-900 text-white px-6 md:px-8 py-3 md:py-4 rounded-full font-semibold text-base md:text-lg hover:bg-gray-800 transition-all duration-300 inline-flex items-center space-x-2"
                 >
                   <span>Start Creating</span>
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -193,7 +192,7 @@ export default function Home() {
                 whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <button className="text-gray-600 hover:text-gray-900 font-semibold text-lg transition-colors inline-flex items-center space-x-2">
+                <button className="text-gray-600 hover:text-gray-900 font-semibold text-base md:text-lg transition-colors inline-flex items-center space-x-2">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
@@ -242,7 +241,7 @@ export default function Home() {
       </main>
 
       {/* Trusted By Section */}
-      <section id="features" className="trusted-section py-16 overflow-hidden bg-white">
+      <section id="features" className="trusted-section py-12 md:py-16 overflow-hidden bg-white">
         <div className="max-w-4xl mx-auto px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -315,7 +314,7 @@ export default function Home() {
       </section>
 
       {/* Process Section */}
-      <section id="process" className="py-24 px-6 bg-white">
+      <section id="process" className="py-16 md:py-24 px-4 md:px-6 bg-white">
         <div className="max-w-5xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -412,7 +411,7 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-32 px-6 bg-gradient-to-r from-gray-900 to-black text-white">
+      <section className="py-20 md:py-32 px-4 md:px-6 bg-gradient-to-r from-gray-900 to-black text-white">
         <div className="max-w-4xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 50 }}
@@ -420,7 +419,7 @@ export default function Home() {
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-5xl md:text-6xl font-bold mb-6">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
               Ready to Transform
               <br />
               Your SIWES Experience?
@@ -447,25 +446,24 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="py-16 px-6 bg-gray-50">
+      <footer className="py-12 md:py-16 px-4 md:px-6 bg-gray-50">
         <div className="max-w-6xl mx-auto">
           {/* Main Footer Content */}
-          <div className="grid md:grid-cols-3 gap-12 mb-12">
+          <div className="grid md:grid-cols-3 gap-8 md:gap-12 mb-8 md:mb-12">
             {/* Brand & Description */}
             <div className="md:col-span-1">
-              <motion.div
-                className="flex items-center space-x-3 mb-6"
-                whileHover={{ scale: 1.02 }}
-                transition={{ type: "spring", stiffness: 400, damping: 10 }}
-              >
-                <div className="w-10 h-10 bg-gray-900 rounded-xl flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">S</span>
-                </div>
-                <span className="text-2xl font-bold text-gray-900">SIWES LogGen</span>
-              </motion.div>
+              <div className="flex items-center mb-6">
+                <Image
+                  src="/LOGOS/SwiftLog.svg"
+                  alt="SwiftLog Logo"
+                  width={40}
+                  height={40}
+                  className="w-10 h-10"
+                />
+              </div>
               <p className="text-gray-600 leading-relaxed">
                 The smartest way for IT students to create professional SIWES logbook entries.
-                Transform your weekly summaries into detailed daily logs with AI.
+                Transform your weekly summaries into detailed daily logs with SwiftLog's AI.
               </p>
             </div>
 
@@ -539,15 +537,9 @@ export default function Home() {
           <div className="pt-8 border-t border-gray-200">
             <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
               <div className="text-gray-500 text-sm">
-                © 2024 SIWES LogGen. All rights reserved.
+                © 2025 SwiftLog. All rights reserved.
               </div>
-              <div className="flex items-center space-x-6 text-sm">
-                <span className="text-gray-400">🇳🇬 Made in Nigeria</span>
-                <div className="flex items-center space-x-2 text-gray-400">
-                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                  <span>All systems operational</span>
-                </div>
-              </div>
+
             </div>
           </div>
         </div>
