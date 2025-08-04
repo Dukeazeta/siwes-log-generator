@@ -43,23 +43,26 @@ export default function AuthCallback() {
         console.log('Redirecting to onboarding');
         router.push('/onboarding');
       }
-    } else {
-      console.log('No authenticated user, redirecting to login');
+    } else if (!isLoading) {
+      // Only redirect to login if we're not loading and definitely not authenticated
+      console.log('No authenticated user after loading complete, redirecting to login');
       router.push('/login?error=no_session');
     }
   }, [isLoading, isAuthenticated, user, router]);
 
-  // Timeout fallback
+  // Timeout fallback - only if we're still loading after a reasonable time
   useEffect(() => {
     const timeoutTimer = setTimeout(() => {
-      console.log('Auth callback timeout, redirecting to login');
-      router.push('/login?error=timeout');
-    }, 10000);
+      if (isLoading) {
+        console.log('Auth callback timeout while still loading, redirecting to login');
+        router.push('/login?error=timeout');
+      }
+    }, 15000); // Increased to 15 seconds
 
     return () => {
       clearTimeout(timeoutTimer);
     };
-  }, [router]);
+  }, [isLoading, router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
