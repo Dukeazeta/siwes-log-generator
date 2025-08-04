@@ -115,6 +115,10 @@ export default function Dashboard() {
 
     // Redirect to onboarding if not completed
     if (user && !user.hasCompletedOnboarding) {
+      console.log('Dashboard: Redirecting to onboarding', {
+        userId: user.id,
+        hasCompletedOnboarding: user.hasCompletedOnboarding
+      });
       router.push('/onboarding');
       return;
     }
@@ -407,7 +411,13 @@ export default function Dashboard() {
           {/* Profile Header */}
           <div className="mb-6">
             <div className="mb-4">
-              <h1 className="text-2xl font-bold text-gray-900">SIWES Logbook</h1>
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-2xl font-bold text-gray-900">SIWES Logbook</h1>
+                <div className="inline-flex items-center px-2 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-medium">
+                  <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mr-1.5 animate-pulse"></span>
+                  Beta V1.1
+                </div>
+              </div>
               <p className="text-gray-600">{profile.full_name} • {profile.course}</p>
             </div>
           </div>

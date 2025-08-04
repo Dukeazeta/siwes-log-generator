@@ -124,6 +124,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!error && profile) {
         hasCompletedOnboarding = profile.completed_onboarding === true;
+        console.log('Profile check:', {
+          userId: supabaseUser.id,
+          completed_onboarding: profile.completed_onboarding,
+          hasCompletedOnboarding
+        });
+      } else {
+        console.log('Profile query error or no profile:', { error, profile });
       }
     } catch (error) {
       console.warn('Profile query failed, assuming onboarding not completed:', error);

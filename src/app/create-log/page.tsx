@@ -108,17 +108,7 @@ export default function CreateLog() {
     }
   };
 
-  const testAPI = async () => {
-    try {
-      const response = await fetch('/api/test-ai');
-      const result = await response.json();
-      console.log('API Test Result:', result);
-      alert(JSON.stringify(result, null, 2));
-    } catch (error) {
-      console.error('API Test Error:', error);
-      alert('API Test Failed: ' + error);
-    }
-  };
+
 
   return (
     <PageTransition>
@@ -270,24 +260,7 @@ export default function CreateLog() {
 
 
 
-          {/* AI Info */}
-          <div className="mt-6 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-4">
-            <h3 className="text-sm font-medium text-purple-900 mb-2">🚀 Groq AI Generation</h3>
-            <p className="text-sm text-purple-800 mb-2">
-              Powered by <strong>Groq</strong> - ultra-fast AI inference with generous free tier.
-            </p>
-            <div className="flex items-center justify-between">
-              <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs">
-                14,400 free requests/day
-              </span>
-              <button
-                onClick={testAPI}
-                className="bg-purple-600 text-white px-3 py-1 rounded text-xs hover:bg-purple-700 transition-colors"
-              >
-                Test Connection
-              </button>
-            </div>
-          </div>
+
 
           {/* Tips */}
           <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
