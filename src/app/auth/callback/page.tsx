@@ -2,104 +2,55 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '../../../lib/supabase';
+import { useAuth } from '../../../contexts/AuthContext';
 import Image from 'next/image';
 
 export default function AuthCallback() {
   const router = useRouter();
+  const { user, isLoading, isAuthenticated } = useAuth();
 
   useEffect(() => {
-    const handleAuthCallback = async () => {
-      try {
-        console.log('Auth callback page loaded');
-        console.log('Current URL:', window.location.href);
+    // Check for OAuth errors in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const error = urlParams.get('error');
 
-        // Check for error parameters first
-        const urlParams = new URLSearchParams(window.location.search);
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    if (error) {
+      console.error('OAuth error:', error);
+      router.push(`/login?error=${encodeURIComponent(error)}`);
+      return;
+    }
 
-        const error = urlParams.get('error') || hashParams.get('error');
-        const errorDescription = urlParams.get('error_description') || hashParams.get('error_description');
+    // Let Supabase handle the OAuth callback automatically
+    // The AuthContext will detect the auth state change and update the user
+    console.log('OAuth callback page loaded, letting Supabase handle authentication...');
+  }, [router]);
 
-        if (error) {
-          console.error('OAuth error:', error, errorDescription);
-          router.push(`/login?error=${encodeURIComponent(error)}`);
-          return;
-        }
+  // Wait for auth state to be determined
+  useEffect(() => {
+    if (isLoading) {
+      console.log('Auth loading...');
+      return;
+    }
 
-        // Wait for Supabase to process the OAuth callback
-        console.log('Waiting for Supabase to process OAuth callback...');
+    if (isAuthenticated && user) {
+      console.log('User authenticated:', user.email);
 
-        // Give Supabase time to process the callback
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
-        // Get the session
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-        console.log('Session check result:', {
-          session: session ? {
-            user: session.user.email,
-            expires_at: session.expires_at,
-            access_token: session.access_token ? 'present' : 'missing'
-          } : null,
-          error: sessionError
-        });
-
-        if (sessionError) {
-          console.error('Session error:', sessionError);
-          router.push('/login?error=session_error');
-          return;
-        }
-
-        if (session) {
-          console.log('Session found:', session.user.email);
-
-          // Check if user has completed onboarding
-          try {
-            console.log('Checking user profile for onboarding status...');
-            const { data: profileData, error: profileError } = await supabase
-              .from('user_profiles')
-              .select('completed_onboarding')
-              .eq('user_id', session.user.id)
-              .single();
-
-            console.log('Profile check result:', { profileData, profileError });
-
-            if (profileError) {
-              console.error('Profile query error:', profileError);
-              // Default to onboarding if we can't check profile
-              console.log('Defaulting to onboarding due to profile error');
-              router.push('/onboarding');
-              return;
-            }
-
-            if (profileData?.completed_onboarding) {
-              console.log('User has completed onboarding, redirecting to dashboard');
-              router.push('/dashboard');
-            } else {
-              console.log('User needs to complete onboarding');
-              router.push('/onboarding');
-            }
-          } catch (profileError) {
-            console.error('Error checking profile:', profileError);
-            // Default to onboarding if we can't check profile
-            console.log('Defaulting to onboarding due to profile exception');
-            router.push('/onboarding');
-          }
-        } else {
-          console.log('No session found, redirecting to login');
-          router.push('/login?error=no_session');
-        }
-      } catch (error) {
-        console.error('Auth callback error:', error);
-        router.push('/login?error=callback_failed');
+      // Redirect based on onboarding status
+      if (user.hasCompletedOnboarding) {
+        console.log('Redirecting to dashboard');
+        router.push('/dashboard');
+      } else {
+        console.log('Redirecting to onboarding');
+        router.push('/onboarding');
       }
-    };
+    } else {
+      console.log('No authenticated user, redirecting to login');
+      router.push('/login?error=no_session');
+    }
+  }, [isLoading, isAuthenticated, user, router]);
 
-    // Start the callback handling immediately
-    handleAuthCallback();
-
-    // Timeout fallback - 10 seconds should be enough
+  // Timeout fallback
+  useEffect(() => {
     const timeoutTimer = setTimeout(() => {
       console.log('Auth callback timeout, redirecting to login');
       router.push('/login?error=timeout');

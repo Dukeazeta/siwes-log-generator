@@ -211,44 +211,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGoogle = async () => {
     try {
-      // Detect mobile browsers more comprehensively
-      const isMobile = typeof window !== 'undefined' && (
-        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-        window.innerWidth <= 768 ||
-        'ontouchstart' in window
-      );
-
       // Use consistent redirect URL that matches Supabase configuration
       const redirectUrl = typeof window !== 'undefined' && window.location.hostname === 'localhost'
         ? 'http://localhost:3000/auth/callback'
         : 'https://swiftlog-beta.vercel.app/auth/callback';
 
-      console.log('OAuth Redirect Debug:', {
-        hostname: typeof window !== 'undefined' ? window.location.hostname : 'server',
-        isMobile,
-        userAgent: typeof window !== 'undefined' ? navigator.userAgent : 'server',
-        redirectUrl,
-        currentOrigin: typeof window !== 'undefined' ? window.location.origin : 'server',
-        windowWidth: typeof window !== 'undefined' ? window.innerWidth : 'server',
-        touchSupport: typeof window !== 'undefined' ? 'ontouchstart' in window : 'server'
-      });
+      console.log('Starting Google OAuth with redirect URL:', redirectUrl);
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: redirectUrl,
-          // Always use redirect flow, never popup (especially important for mobile)
-          skipBrowserRedirect: false,
-          // Enhanced mobile-specific parameters
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'select_account', // Always show account selector
-            ...(isMobile && {
-              // Additional mobile-specific parameters
-              display: 'touch',
-              approval_prompt: 'force'
-            })
-          }
+          redirectTo: redirectUrl
         }
       });
 
