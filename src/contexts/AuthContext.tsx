@@ -39,40 +39,76 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Get initial session function
+    const getInitialSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+
+        if (error) {
+          console.error('Session error:', error);
+          return;
+        }
+
+        if (session?.user) {
+          const transformedUser = await transformSupabaseUser(session.user);
+          setUser(transformedUser);
+        }
+      } catch (error) {
+        console.error('Error getting initial session:', error);
+        // Don't block app initialization on session errors
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     // Get initial session
     getInitialSession();
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (session?.user) {
-          const transformedUser = await transformSupabaseUser(session.user);
-          setUser(transformedUser);
-        } else {
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          if (session?.user) {
+            const transformedUser = await transformSupabaseUser(session.user);
+            setUser(transformedUser);
+          }
+        } else if (event === 'SIGNED_OUT') {
           setUser(null);
         }
-        setIsLoading(false);
+
+        // Only set loading to false after we've processed the auth change
+        if (event !== 'TOKEN_REFRESHED') {
+          setIsLoading(false);
+        }
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const getInitialSession = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (session?.user) {
-        const transformedUser = await transformSupabaseUser(session.user);
-        setUser(transformedUser);
+  // Separate effect for session validation on focus
+  useEffect(() => {
+    const handleFocus = () => {
+      if (document.visibilityState === 'visible') {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (!session && user) {
+            // Session expired, clear user
+            setUser(null);
+          }
+        });
       }
-    } catch (error) {
-      console.error('Error getting initial session:', error);
-      // Don't block app initialization on session errors
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    };
+
+    document.addEventListener('visibilitychange', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleFocus);
+    };
+  }, [user]);
+
+
 
   const transformSupabaseUser = async (supabaseUser: SupabaseUser): Promise<User> => {
     const metadata = supabaseUser.user_metadata || {};
@@ -88,13 +124,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!error && profile) {
         hasCompletedOnboarding = profile.completed_onboarding === true;
-        console.log('Onboarding check:', {
-          userId: supabaseUser.id,
-          completed_onboarding: profile.completed_onboarding,
-          hasCompletedOnboarding
-        });
-      } else {
-        console.log('Profile query error or no profile:', { error, profile });
       }
     } catch (error) {
       console.warn('Profile query failed, assuming onboarding not completed:', error);

@@ -65,9 +65,9 @@ export default function SignUp() {
       await signup(formData);
       console.log('Signup successful, waiting for auth state change...');
       // Router push will be handled by the auth state change in useEffect
-    } catch (error: any) {
+    } catch (error) {
       console.error('Signup error:', error);
-      setError(error.message || 'Failed to create account. Please try again.');
+      setError(error instanceof Error ? error.message : 'Failed to create account. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -77,11 +77,11 @@ export default function SignUp() {
     try {
       setError('');
       await signInWithGoogle();
-    } catch (error: any) {
-      if (error.message?.includes('missing OAuth client ID')) {
+    } catch (error) {
+      if (error instanceof Error && error.message?.includes('missing OAuth client ID')) {
         setError('Google OAuth is not configured yet. Please use email/password for now.');
       } else {
-        setError(error.message || 'Failed to sign in with Google');
+        setError(error instanceof Error ? error.message : 'Failed to sign in with Google');
       }
     }
   };

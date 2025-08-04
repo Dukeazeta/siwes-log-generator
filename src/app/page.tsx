@@ -1,6 +1,6 @@
 'use client';
 
-import Link from "next/link";
+
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { useEffect } from "react";
@@ -80,7 +80,11 @@ export default function Home() {
                   {item}
                 </a>
               ))}
-              <SmartCTAButton className="bg-gray-900 text-white px-6 py-2 rounded-full font-medium hover:bg-gray-800 transition-colors">
+              <SmartCTAButton
+                className="bg-gray-900 text-white px-6 py-2 rounded-full font-medium hover:bg-gray-800 transition-colors"
+                authenticatedText="Go to Dashboard"
+                unauthenticatedText="Get Started"
+              >
                 Get Started
               </SmartCTAButton>
             </div>
@@ -145,11 +149,15 @@ export default function Home() {
 
             <p className="hero-subtitle text-base sm:text-lg md:text-xl text-gray-600 mb-4 max-w-3xl mx-auto leading-relaxed">
               The smartest way for IT students to create professional SIWES logbook entries.
-              Just describe your week, and watch SwiftLog's AI craft detailed daily logs.
+              Just describe your week, and watch SwiftLog&apos;s AI craft detailed daily logs.
             </p>
 
             <div className="hero-buttons flex flex-col sm:flex-row gap-4 md:gap-6 justify-center items-center mb-12 md:mb-16">
-              <SmartCTAButton className="bg-gray-900 text-white px-6 md:px-8 py-3 md:py-4 rounded-full font-semibold text-base md:text-lg hover:bg-gray-800 transition-all duration-300 inline-flex items-center space-x-2">
+              <SmartCTAButton
+                className="bg-gray-900 text-white px-6 md:px-8 py-3 md:py-4 rounded-full font-semibold text-base md:text-lg hover:bg-gray-800 transition-all duration-300 inline-flex items-center space-x-2"
+                authenticatedText="Open Dashboard"
+                unauthenticatedText="Start Creating"
+              >
                 <span>Start Creating</span>
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
@@ -363,7 +371,11 @@ export default function Home() {
             viewport={{ once: true }}
             className="text-center mt-16"
           >
-            <SmartCTAButton className="bg-gray-900 text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-gray-800 transition-all duration-300 inline-flex items-center space-x-2">
+            <SmartCTAButton
+              className="bg-gray-900 text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-gray-800 transition-all duration-300 inline-flex items-center space-x-2"
+              authenticatedText="Go to Dashboard"
+              unauthenticatedText="Try It Now"
+            >
               <span>Try It Now</span>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
@@ -390,7 +402,11 @@ export default function Home() {
             <p className="text-xl text-gray-300 mb-12 max-w-2xl mx-auto leading-relaxed">
               Join the smart students who are already creating professional logbooks effortlessly
             </p>
-            <SmartCTAButton className="bg-white text-gray-900 px-8 py-4 rounded-full font-semibold text-lg hover:bg-gray-100 transition-all duration-300 inline-flex items-center space-x-2">
+            <SmartCTAButton
+              className="bg-white text-gray-900 px-8 py-4 rounded-full font-semibold text-lg hover:bg-gray-100 transition-all duration-300 inline-flex items-center space-x-2"
+              authenticatedText="Open Dashboard"
+              unauthenticatedText="Get Started Free"
+            >
               <span>Get Started Free</span>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
@@ -418,7 +434,7 @@ export default function Home() {
               </div>
               <p className="text-gray-600 leading-relaxed">
                 The smartest way for IT students to create professional SIWES logbook entries.
-                Transform your weekly summaries into detailed daily logs with SwiftLog's AI.
+                Transform your weekly summaries into detailed daily logs with SwiftLog&apos;s AI.
               </p>
             </div>
 

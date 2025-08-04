@@ -76,8 +76,8 @@ Make sure the content is realistic, educational, and demonstrates genuine learni
         },
       ],
       model: 'llama-3.1-8b-instant',
-      temperature: 0.7,
-      max_tokens: 1500,
+      temperature: 0.5,
+      max_tokens: 1200,
       response_format: { type: 'json_object' },
     });
 

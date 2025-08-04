@@ -37,9 +37,9 @@ export default function Login() {
       await login(email, password);
       console.log('Login successful, waiting for auth state change...');
       // Router push will be handled by the auth state change in useEffect
-    } catch (error: any) {
+    } catch (error) {
       console.error('Login error:', error);
-      setError(error.message || 'Invalid email or password');
+      setError(error instanceof Error ? error.message : 'Invalid email or password');
     } finally {
       setIsSubmitting(false);
     }
@@ -49,11 +49,11 @@ export default function Login() {
     try {
       setError('');
       await signInWithGoogle();
-    } catch (error: any) {
-      if (error.message?.includes('missing OAuth client ID')) {
+    } catch (error) {
+      if (error instanceof Error && error.message?.includes('missing OAuth client ID')) {
         setError('Google OAuth is not configured yet. Please use email/password for now.');
       } else {
-        setError(error.message || 'Failed to sign in with Google');
+        setError(error instanceof Error ? error.message : 'Failed to sign in with Google');
       }
     }
   };
@@ -196,7 +196,7 @@ export default function Login() {
           {/* Sign Up Link */}
           <div className="form-field text-center mt-6 sm:mt-8 pb-4">
             <p className="text-base text-gray-600">
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <Link
                 href="/signup"
                 className="text-gray-900 font-semibold hover:underline transition-all"

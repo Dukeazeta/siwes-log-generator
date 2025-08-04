@@ -156,7 +156,7 @@ export default function Dashboard() {
     if (profileLoading) {
       const timeout = setTimeout(() => {
         setProfileLoading(false);
-      }, 10000);
+      }, 5000);
 
       return () => {
         clearTimeout(timeout);
@@ -181,16 +181,7 @@ export default function Dashboard() {
     });
   };
 
-  const calculateDuration = () => {
-    if (profile?.start_date && profile?.end_date) {
-      const start = new Date(profile.start_date);
-      const end = new Date(profile.end_date);
-      const diffTime = Math.abs(end.getTime() - start.getTime());
-      const diffWeeks = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 7));
-      return `${diffWeeks} weeks`;
-    }
-    return '';
-  };
+
 
   const handleAddWeek = () => {
     router.push('/create-log');
@@ -316,9 +307,9 @@ export default function Dashboard() {
                   className="hidden md:block w-8 h-8 rounded-full overflow-hidden hover:scale-105 transition-transform border-2 border-white/50"
                   title="Logout"
                 >
-                  {user?.user_metadata?.avatar_url ? (
+                  {user?.avatarUrl ? (
                     <Image
-                      src={user.user_metadata.avatar_url}
+                      src={user.avatarUrl}
                       alt="Profile"
                       width={32}
                       height={32}
@@ -326,7 +317,7 @@ export default function Dashboard() {
                     />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-sm font-medium">
-                      {user?.user_metadata?.full_name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                      {user?.fullName?.charAt(0) || user?.email?.charAt(0) || 'U'}
                     </div>
                   )}
                 </button>
@@ -337,9 +328,9 @@ export default function Dashboard() {
                   className="md:hidden w-8 h-8 rounded-full overflow-hidden hover:scale-105 transition-transform border-2 border-white/50"
                   title="Menu"
                 >
-                  {user?.user_metadata?.avatar_url ? (
+                  {user?.avatarUrl ? (
                     <Image
-                      src={user.user_metadata.avatar_url}
+                      src={user.avatarUrl}
                       alt="Profile"
                       width={32}
                       height={32}
@@ -347,7 +338,7 @@ export default function Dashboard() {
                     />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-sm font-medium">
-                      {user?.user_metadata?.full_name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                      {user?.fullName?.charAt(0) || user?.email?.charAt(0) || 'U'}
                     </div>
                   )}
                 </button>
@@ -593,7 +584,7 @@ export default function Dashboard() {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-100">
-                            {logContent.dailyActivities?.map((activity: any, index: number) => (
+                            {logContent.dailyActivities?.map((activity: { day: string; date: string; activities: string }, index: number) => (
                               <tr key={index}>
                                 <td className="py-3 text-blue-600 font-medium">
                                   {activity.day}<br />

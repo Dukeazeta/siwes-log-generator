@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
@@ -8,6 +8,22 @@ import Link from 'next/link';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import PageTransition from '../../components/PageTransition';
+
+interface UserProfile {
+  full_name: string;
+  course: string;
+  institution: string;
+  level: string;
+  company_name: string;
+  department: string;
+  company_address: string;
+  industry_type: string;
+  company_description: string;
+  start_date: string;
+  end_date: string;
+  supervisor_name: string;
+  supervisor_title: string;
+}
 
 export default function CreateLog() {
   const router = useRouter();
@@ -17,11 +33,8 @@ export default function CreateLog() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [activities, setActivities] = useState('');
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [userProfile, setUserProfile] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [error, setError] = useState('');
-  const [isNavigating, setIsNavigating] = useState(false);
-  const mobileMenuRef = useRef<HTMLDivElement>(null);
 
   // Load user profile on component mount
   useEffect(() => {

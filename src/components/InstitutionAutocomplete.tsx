@@ -179,7 +179,7 @@ export default function InstitutionAutocomplete({
 
           {!loading && institutions.length === 0 && searchTerm.length >= 2 && (
             <div className="px-4 py-3 text-sm text-gray-500 text-center">
-              No institutions found matching "{searchTerm}"
+              No institutions found matching &quot;{searchTerm}&quot;
             </div>
           )}
 

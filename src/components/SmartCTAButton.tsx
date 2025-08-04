@@ -7,19 +7,46 @@ import { useAuth } from "../contexts/AuthContext";
 interface SmartCTAButtonProps {
   children: React.ReactNode;
   className?: string;
-  variant?: 'primary' | 'secondary';
+  authenticatedText?: string;
+  unauthenticatedText?: string;
 }
 
 export default function SmartCTAButton({
   children,
   className = "",
-  variant = 'primary'
+  authenticatedText,
+  unauthenticatedText
 }: SmartCTAButtonProps) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   // Determine destination based on auth status
-  // Default to signup if still loading to avoid greyed out buttons
-  const href = isAuthenticated ? '/dashboard' : '/signup';
+  const getDestination = () => {
+    if (isLoading) return '/signup'; // Default while loading
+    if (isAuthenticated && user) {
+      // If user hasn't completed onboarding, go to onboarding
+      if (!user.hasCompletedOnboarding) {
+        return '/onboarding';
+      }
+      // Otherwise go to dashboard
+      return '/dashboard';
+    }
+    return '/signup';
+  };
+
+  // Determine button text based on auth status
+  const getButtonText = () => {
+    if (isLoading) return children; // Show original text while loading
+    if (isAuthenticated && user) {
+      if (!user.hasCompletedOnboarding) {
+        return authenticatedText || children;
+      }
+      return authenticatedText || children;
+    }
+    return unauthenticatedText || children;
+  };
+
+  const href = getDestination();
+  const buttonText = getButtonText();
 
   return (
     <motion.div
@@ -27,7 +54,7 @@ export default function SmartCTAButton({
       whileTap={{ scale: 0.95 }}
     >
       <Link href={href} className={className}>
-        {children}
+        {buttonText}
       </Link>
     </motion.div>
   );
