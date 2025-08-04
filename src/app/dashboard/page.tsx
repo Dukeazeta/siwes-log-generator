@@ -127,7 +127,7 @@ export default function Dashboard() {
     if (user?.id && !hasLoadedData && !profile) {
       loadUserData();
     }
-  }, [isAuthenticated, isLoading, user?.id, user?.hasCompletedOnboarding, hasLoadedData, profile, loadUserData, router]);
+  }, [isAuthenticated, isLoading, user?.id, user?.hasCompletedOnboarding, hasLoadedData, profile, loadUserData, router, user]);
 
   // Reset loading state when user changes
   useEffect(() => {

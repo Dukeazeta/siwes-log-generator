@@ -12,8 +12,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     storageKey: 'supabase.auth.token',
     flowType: 'pkce',
     // Mobile-friendly settings
-    debug: process.env.NODE_ENV === 'development',
-    // Ensure proper session handling on mobile
-    lock: true
+    debug: process.env.NODE_ENV === 'development'
   }
 })
