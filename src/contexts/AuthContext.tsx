@@ -152,11 +152,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('user_id', supabaseUser.id)
         .single();
 
-      const timeoutPromise = new Promise((_, reject) =>
+      const timeoutPromise = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error('Profile query timeout')), 3000)
       );
 
-      const { data: profile, error } = await Promise.race([profilePromise, timeoutPromise]) as any;
+      const { data: profile, error } = await Promise.race([profilePromise, timeoutPromise]);
 
       if (!error && profile) {
         hasCompletedOnboarding = profile.completed_onboarding === true;
