@@ -414,7 +414,7 @@ export default function Dashboard() {
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">SIWES Logbook</h1>
               <div className="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-medium w-fit">
                 <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mr-1.5 animate-pulse"></span>
-                Beta V1.1
+                Beta V1.5
               </div>
             </div>
             <p className="text-base text-gray-600">{profile.full_name} • {profile.course}</p>

@@ -20,7 +20,7 @@ interface OnboardingData {
   department: string;
   companyAddress: string;
   industryType: string;
-  companyDescription: string;
+  jobDescription: string;
   
   // Training Period
   startDate: string;
@@ -45,7 +45,7 @@ export default function Onboarding() {
     department: '',
     companyAddress: '',
     industryType: '',
-    companyDescription: '',
+    jobDescription: '',
     startDate: '',
     endDate: '',
     supervisorName: '',
@@ -55,8 +55,11 @@ export default function Onboarding() {
   useEffect(() => {
     if (!isAuthenticated) {
       router.push('/login');
+    } else if (user?.hasCompletedOnboarding) {
+      // If user has already completed onboarding, redirect to dashboard
+      router.push('/dashboard');
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, user, router]);
 
   const handleInputChange = (field: keyof OnboardingData, value: string) => {
     setFormData(prev => ({
@@ -93,7 +96,7 @@ export default function Onboarding() {
         department: formData.department,
         company_address: formData.companyAddress,
         industry_type: formData.industryType,
-        company_description: formData.companyDescription,
+        company_description: formData.jobDescription,
         start_date: formData.startDate,
         end_date: formData.endDate,
         supervisor_name: formData.supervisorName,
@@ -143,7 +146,7 @@ export default function Onboarding() {
       {/* Header */}
       <header className="border-b border-gray-200 bg-white">
         <div className="max-w-4xl mx-auto px-6 py-4">
-          <Link href="/" className="flex items-center space-x-3">
+          <Link href="/" className="flex items-center justify-center">
             <Image
               src="/LOGOS/SwiftLog.svg"
               alt="SwiftLog Logo"
@@ -151,7 +154,6 @@ export default function Onboarding() {
               height={40}
               className="w-10 h-10"
             />
-            <span className="text-xl font-bold text-gray-900">SwiftLog</span>
           </Link>
         </div>
       </header>
@@ -262,13 +264,37 @@ export default function Onboarding() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Department/Unit
                 </label>
-                <input
-                  type="text"
+                <select
                   value={formData.department}
                   onChange={(e) => handleInputChange('department', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent text-gray-900 placeholder-gray-400"
-                  placeholder="e.g., IT Department, Software Development"
-                />
+                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent text-gray-900 bg-white"
+                >
+                  <option value="">Select department</option>
+                  <option value="Software Engineering">Software Engineering</option>
+                  <option value="Information Technology">Information Technology</option>
+                  <option value="Network Administration">Network Administration</option>
+                  <option value="Cybersecurity">Cybersecurity</option>
+                  <option value="Data Science">Data Science</option>
+                  <option value="Web Development">Web Development</option>
+                  <option value="Mobile Development">Mobile Development</option>
+                  <option value="DevOps">DevOps</option>
+                  <option value="Quality Assurance">Quality Assurance</option>
+                  <option value="Database Administration">Database Administration</option>
+                  <option value="System Administration">System Administration</option>
+                  <option value="Technical Support">Technical Support</option>
+                  <option value="UI/UX Design">UI/UX Design</option>
+                  <option value="Product Management">Product Management</option>
+                  <option value="Project Management">Project Management</option>
+                  <option value="Business Analysis">Business Analysis</option>
+                  <option value="Accounting">Accounting</option>
+                  <option value="Finance">Finance</option>
+                  <option value="Human Resources">Human Resources</option>
+                  <option value="Marketing">Marketing</option>
+                  <option value="Sales">Sales</option>
+                  <option value="Operations">Operations</option>
+                  <option value="Research & Development">Research & Development</option>
+                  <option value="Other">Other</option>
+                </select>
               </div>
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -305,14 +331,14 @@ export default function Onboarding() {
               </div>
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Company Description
+                  Job Description
                 </label>
                 <textarea
-                  value={formData.companyDescription}
-                  onChange={(e) => handleInputChange('companyDescription', e.target.value)}
+                  value={formData.jobDescription}
+                  onChange={(e) => handleInputChange('jobDescription', e.target.value)}
                   rows={4}
                   className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent text-gray-900 placeholder-gray-400"
-                  placeholder="Brief description of what the company does and your role there"
+                  placeholder="Describe your role, responsibilities, and what you'll be doing during your IT training"
                 />
               </div>
             </div>
