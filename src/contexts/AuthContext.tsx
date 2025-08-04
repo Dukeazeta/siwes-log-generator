@@ -207,6 +207,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
       const redirectUrl = `${baseUrl}/dashboard`;
 
+      console.log('OAuth Redirect Debug:', {
+        NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+        windowOrigin: window.location.origin,
+        baseUrl,
+        redirectUrl
+      });
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
