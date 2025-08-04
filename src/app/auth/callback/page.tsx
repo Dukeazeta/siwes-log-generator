@@ -27,20 +27,28 @@ export default function AuthCallback() {
 
   // Wait for auth state to be determined
   useEffect(() => {
+    console.log('Auth callback state check:', {
+      isLoading,
+      isAuthenticated,
+      hasUser: !!user,
+      userEmail: user?.email,
+      onboardingStatus: user?.hasCompletedOnboarding
+    });
+
     if (isLoading) {
-      console.log('Auth loading...');
+      console.log('Auth still loading, waiting...');
       return;
     }
 
     if (isAuthenticated && user) {
-      console.log('User authenticated:', user.email);
+      console.log('User authenticated successfully:', user.email);
 
       // Redirect based on onboarding status
       if (user.hasCompletedOnboarding) {
-        console.log('Redirecting to dashboard');
+        console.log('User completed onboarding, redirecting to dashboard');
         router.push('/dashboard');
       } else {
-        console.log('Redirecting to onboarding');
+        console.log('User needs onboarding, redirecting to onboarding');
         router.push('/onboarding');
       }
     } else if (!isLoading) {

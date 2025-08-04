@@ -72,20 +72,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           if (session?.user) {
             try {
+              console.log('Starting user transformation...');
               const transformedUser = await transformSupabaseUser(session.user);
               setUser(transformedUser);
-              console.log('User transformed and set:', transformedUser.email);
+              console.log('User transformed and set:', transformedUser.email, 'onboarding:', transformedUser.hasCompletedOnboarding);
+              // Only set loading to false AFTER user is set
+              setIsLoading(false);
             } catch (error) {
               console.error('Error transforming user:', error);
+              // Set a basic user object even if transformation fails
+              const basicUser = {
+                id: session.user.id,
+                email: session.user.email || '',
+                firstName: session.user.user_metadata?.first_name || session.user.user_metadata?.given_name || '',
+                lastName: session.user.user_metadata?.last_name || session.user.user_metadata?.family_name || '',
+                fullName: session.user.user_metadata?.full_name || session.user.user_metadata?.name || '',
+                avatarUrl: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || '',
+                hasCompletedOnboarding: false // Default to false if we can't check
+              };
+              setUser(basicUser);
+              console.log('Set basic user due to transformation error:', basicUser.email);
+              // Set loading to false even if transformation failed
+              setIsLoading(false);
             }
+          } else {
+            // No user in session, set loading to false
+            setIsLoading(false);
           }
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
           console.log('User signed out');
-        }
-
-        // Only set loading to false after we've processed the auth change
-        if (event !== 'TOKEN_REFRESHED') {
+          setIsLoading(false);
+        } else {
+          // For other events, just set loading to false
           setIsLoading(false);
         }
       }
@@ -121,31 +140,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const transformSupabaseUser = async (supabaseUser: SupabaseUser): Promise<User> => {
     const metadata = supabaseUser.user_metadata || {};
 
-    // Check if user has completed onboarding
+    // Check if user has completed onboarding with timeout
     let hasCompletedOnboarding = false;
     try {
-      const { data: profile, error } = await supabase
+      console.log('Checking profile for user:', supabaseUser.id);
+
+      // Add a timeout to the profile query to prevent hanging
+      const profilePromise = supabase
         .from('user_profiles')
         .select('completed_onboarding')
         .eq('user_id', supabaseUser.id)
         .single();
 
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Profile query timeout')), 3000)
+      );
+
+      const { data: profile, error } = await Promise.race([profilePromise, timeoutPromise]) as any;
+
       if (!error && profile) {
         hasCompletedOnboarding = profile.completed_onboarding === true;
-        console.log('Profile check:', {
+        console.log('Profile check successful:', {
           userId: supabaseUser.id,
           completed_onboarding: profile.completed_onboarding,
           hasCompletedOnboarding
         });
       } else {
         console.log('Profile query error or no profile:', { error, profile });
+        hasCompletedOnboarding = false;
       }
     } catch (error) {
       console.warn('Profile query failed, assuming onboarding not completed:', error);
       hasCompletedOnboarding = false;
     }
 
-    return {
+    const transformedUser = {
       id: supabaseUser.id,
       email: supabaseUser.email || '',
       firstName: metadata.first_name || metadata.given_name || '',
@@ -154,6 +183,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       avatarUrl: metadata.avatar_url || metadata.picture || '',
       hasCompletedOnboarding
     };
+
+    console.log('User transformation complete:', transformedUser);
+    return transformedUser;
   };
 
   const login = async (email: string, password: string) => {
