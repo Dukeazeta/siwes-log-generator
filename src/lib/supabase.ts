@@ -12,6 +12,10 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     storageKey: 'supabase.auth.token',
     flowType: 'pkce',
     // Mobile-friendly settings
-    debug: process.env.NODE_ENV === 'development'
+    debug: process.env.NODE_ENV === 'development',
+    // Improved OAuth handling
+    redirectTo: typeof window !== 'undefined' && window.location.hostname === 'localhost'
+      ? 'http://localhost:3000/auth/callback'
+      : 'https://swiftlog-beta.vercel.app/auth/callback'
   }
 })

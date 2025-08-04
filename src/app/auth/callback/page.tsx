@@ -14,16 +14,38 @@ export default function AuthCallback() {
         console.log('Auth callback page loaded');
         console.log('Current URL:', window.location.href);
 
-        // Wait a moment for the URL to be processed
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Check if we have auth fragments in the URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
 
-        // Get the session after Supabase has processed the callback
-        const { data: { session }, error } = await supabase.auth.getSession();
+        console.log('URL params:', Object.fromEntries(urlParams));
+        console.log('Hash params:', Object.fromEntries(hashParams));
 
-        if (error) {
-          console.error('Session error:', error);
-          router.push('/login?error=session_error');
-          return;
+        // Wait for Supabase to process the OAuth callback
+        // Use exponential backoff to check for session
+        let session = null;
+        let attempts = 0;
+        const maxAttempts = 10;
+
+        while (!session && attempts < maxAttempts) {
+          attempts++;
+          const waitTime = Math.min(1000 * Math.pow(1.5, attempts - 1), 5000); // Max 5 seconds
+
+          console.log(`Attempt ${attempts}: Checking for session (waiting ${waitTime}ms)`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+
+          const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+
+          if (error) {
+            console.error('Session error:', error);
+            if (attempts >= maxAttempts) {
+              router.push('/login?error=session_error');
+              return;
+            }
+            continue;
+          }
+
+          session = currentSession;
         }
 
         if (session) {
@@ -50,7 +72,7 @@ export default function AuthCallback() {
             router.push('/onboarding');
           }
         } else {
-          console.log('No session found, redirecting to login');
+          console.log('No session found after all attempts, redirecting to login');
           router.push('/login?error=no_session');
         }
       } catch (error) {
@@ -62,11 +84,11 @@ export default function AuthCallback() {
     // Start the callback handling
     handleAuthCallback();
 
-    // Timeout fallback
+    // Extended timeout fallback (30 seconds)
     const timeoutTimer = setTimeout(() => {
       console.log('Auth callback timeout, redirecting to login');
       router.push('/login?error=timeout');
-    }, 10000);
+    }, 30000);
 
     return () => {
       clearTimeout(timeoutTimer);

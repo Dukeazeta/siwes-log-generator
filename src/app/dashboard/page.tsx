@@ -421,8 +421,8 @@ export default function Dashboard() {
           </div>
 
           {/* Training Information */}
-          <div className="bg-white border border-gray-200 rounded-2xl p-6 mb-8">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+          <div className="bg-white border border-gray-200 rounded-2xl p-5 mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
               <h2 className="text-lg font-semibold text-gray-900">Training Information</h2>
               <span className="text-sm text-gray-500 font-medium">
                 {profile.start_date && profile.end_date &&
@@ -431,21 +431,21 @@ export default function Dashboard() {
               </span>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2">
               {/* Student Details */}
               <div>
-                <h3 className="text-base font-semibold text-gray-900 mb-4">Student Details</h3>
-                <div className="space-y-3">
+                <h3 className="text-base font-semibold text-gray-900 mb-3">Student Details</h3>
+                <div className="space-y-2">
                   <div>
-                    <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wide">Name</div>
+                    <div className="text-xs text-gray-500 mb-0.5 font-medium uppercase tracking-wide">Name</div>
                     <div className="text-sm font-medium text-gray-900">{profile.full_name}</div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wide">Course</div>
+                    <div className="text-xs text-gray-500 mb-0.5 font-medium uppercase tracking-wide">Course</div>
                     <div className="text-sm text-gray-900">{profile.course}</div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wide">Institution</div>
+                    <div className="text-xs text-gray-500 mb-0.5 font-medium uppercase tracking-wide">Institution</div>
                     <div className="text-sm text-gray-900">{profile.institution}</div>
                   </div>
                 </div>
@@ -453,14 +453,14 @@ export default function Dashboard() {
 
               {/* Company Details */}
               <div>
-                <h3 className="text-base font-semibold text-gray-900 mb-4">Company Details</h3>
-                <div className="space-y-3">
+                <h3 className="text-base font-semibold text-gray-900 mb-3">Company Details</h3>
+                <div className="space-y-2">
                   <div>
-                    <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wide">Company</div>
+                    <div className="text-xs text-gray-500 mb-0.5 font-medium uppercase tracking-wide">Company</div>
                     <div className="text-sm font-medium text-gray-900">{profile.company_name}</div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wide">Department</div>
+                    <div className="text-xs text-gray-500 mb-0.5 font-medium uppercase tracking-wide">Department</div>
                     <div className="text-sm text-gray-900">{profile.department}</div>
                   </div>
                 </div>
@@ -468,8 +468,8 @@ export default function Dashboard() {
             </div>
 
             {/* Company Description */}
-            <div className="mt-6 pt-4 border-t border-gray-100">
-              <h4 className="text-base font-semibold text-gray-900 mb-3">Company Description</h4>
+            <div className="mt-4 pt-3 border-t border-gray-100">
+              <h4 className="text-base font-semibold text-gray-900 mb-2">Job Description</h4>
               <p className="text-sm text-gray-600 leading-relaxed">
                 {profile.company_description}
               </p>
@@ -478,7 +478,7 @@ export default function Dashboard() {
 
           {/* Weekly Logs */}
           <div>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
               <h2 className="text-lg font-semibold text-gray-900">Weekly Logs</h2>
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                 <button className="flex items-center justify-center space-x-2 px-4 py-2 text-sm text-orange-600 bg-orange-50 rounded-full border border-orange-200 hover:bg-orange-100 transition-colors font-medium">
@@ -503,14 +503,14 @@ export default function Dashboard() {
             </div>
 
             {/* Week Tabs */}
-            <div className="mb-8">
+            <div className="mb-5">
               <div className="flex space-x-2 overflow-x-auto pb-2">
                 {weeklyLogs.length > 0 ? (
                   weeklyLogs.map((log) => (
                     <button
                       key={log.week_number}
                       onClick={() => setActiveWeek(log.week_number)}
-                      className={`px-6 py-3 text-sm font-semibold rounded-full whitespace-nowrap transition-colors min-w-fit ${
+                      className={`px-5 py-2.5 text-sm font-semibold rounded-full whitespace-nowrap transition-colors min-w-fit ${
                         activeWeek === log.week_number
                           ? 'bg-gray-900 text-white'
                           : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -520,7 +520,7 @@ export default function Dashboard() {
                     </button>
                   ))
                 ) : (
-                  <div className="text-gray-500 text-base py-3 px-2">
+                  <div className="text-gray-500 text-base py-2 px-2">
                     No weeks created yet
                   </div>
                 )}
@@ -557,21 +557,21 @@ export default function Dashboard() {
 
                   return (
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
                         Week {activeWeek}: {formatDate(currentLog.start_date)} — {formatDate(currentLog.end_date)}
                       </h3>
 
                       {/* Week Summary */}
-                      <p className="text-sm text-gray-600 leading-relaxed mb-6">
+                      <p className="text-sm text-gray-600 leading-relaxed mb-4">
                         {logContent.weekSummary}
                       </p>
 
                       {/* Daily Activities */}
-                      <div className="mb-8">
-                        <h4 className="text-base font-semibold text-gray-900 mb-4">Daily Activities</h4>
+                      <div className="mb-5">
+                        <h4 className="text-base font-semibold text-gray-900 mb-3">Daily Activities</h4>
 
                         {/* Mobile-friendly cards for small screens */}
-                        <div className="block sm:hidden space-y-4">
+                        <div className="block sm:hidden space-y-3">
                           {logContent.dailyActivities?.map((activity: { day: string; date: string; activities: string }, index: number) => (
                             <div key={index} className="border-l-4 border-gray-900 pl-4">
                               <div className="flex items-center justify-between mb-2">
@@ -587,10 +587,10 @@ export default function Dashboard() {
 
                         {/* Table for larger screens */}
                         <div className="hidden sm:block">
-                          <div className="space-y-4">
+                          <div className="space-y-3">
                             {logContent.dailyActivities?.map((activity: { day: string; date: string; activities: string }, index: number) => (
-                              <div key={index} className="border-l-4 border-gray-900 pl-6 py-1">
-                                <div className="flex items-center justify-between mb-2">
+                              <div key={index} className="border-l-4 border-gray-900 pl-5 py-1">
+                                <div className="flex items-center justify-between mb-1.5">
                                   <div className="text-gray-900 font-semibold text-sm">{activity.day}</div>
                                   <div className="text-gray-500 text-xs font-medium">{activity.date}</div>
                                 </div>
@@ -604,10 +604,10 @@ export default function Dashboard() {
                       </div>
 
                       {/* Skills and Learning Outcomes */}
-                      <div className="grid gap-6 md:grid-cols-2 mb-6">
+                      <div className="grid gap-4 md:grid-cols-2 mb-4">
                         <div>
-                          <h4 className="text-base font-semibold text-gray-900 mb-3">Skills Developed</h4>
-                          <ul className="text-gray-700 text-sm space-y-2">
+                          <h4 className="text-base font-semibold text-gray-900 mb-2">Skills Developed</h4>
+                          <ul className="text-gray-700 text-sm space-y-1.5">
                             {logContent.skillsDeveloped?.map((skill: string, index: number) => (
                               <li key={index} className="flex items-start">
                                 <span className="text-gray-900 mr-2 mt-0.5 font-bold">•</span>
@@ -618,7 +618,7 @@ export default function Dashboard() {
                         </div>
 
                         <div>
-                          <h4 className="text-base font-semibold text-gray-900 mb-3">Learning Outcomes</h4>
+                          <h4 className="text-base font-semibold text-gray-900 mb-2">Learning Outcomes</h4>
                           <p className="text-gray-700 text-sm leading-relaxed">
                             {logContent.learningOutcomes}
                           </p>
@@ -627,7 +627,7 @@ export default function Dashboard() {
 
                       {/* Challenges Faced */}
                       {logContent.challengesFaced && (
-                        <div className="pt-4 border-t border-gray-200">
+                        <div className="pt-3 border-t border-gray-200">
                           <h4 className="text-base font-semibold text-gray-900 mb-3">Challenges Faced</h4>
                           <p className="text-gray-700 text-sm leading-relaxed">
                             {logContent.challengesFaced}

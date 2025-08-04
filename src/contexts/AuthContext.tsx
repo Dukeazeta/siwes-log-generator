@@ -67,6 +67,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state change:', event, session?.user?.email);
+
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           if (session?.user) {
             const transformedUser = await transformSupabaseUser(session.user);
@@ -207,25 +209,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const isMobile = typeof window !== 'undefined' &&
         /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-      // Force production URL to avoid localhost redirects
-      const isProduction = typeof window !== 'undefined' &&
-        (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1');
-
-      const baseUrl = isProduction
-        ? 'https://swiftlog-beta.vercel.app'
-        : window.location.origin;
-      // Use callback page for better mobile OAuth handling
-      const redirectUrl = `${baseUrl}/auth/callback`;
+      // Use consistent redirect URL that matches Supabase configuration
+      const redirectUrl = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+        ? 'http://localhost:3000/auth/callback'
+        : 'https://swiftlog-beta.vercel.app/auth/callback';
 
       console.log('OAuth Redirect Debug:', {
         hostname: typeof window !== 'undefined' ? window.location.hostname : 'server',
         isMobile,
-        isProduction,
         userAgent: typeof window !== 'undefined' ? navigator.userAgent : 'server',
-        NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
-        windowOrigin: typeof window !== 'undefined' ? window.location.origin : 'server',
-        baseUrl,
-        redirectUrl
+        redirectUrl,
+        currentOrigin: typeof window !== 'undefined' ? window.location.origin : 'server'
       });
 
       const { error } = await supabase.auth.signInWithOAuth({
