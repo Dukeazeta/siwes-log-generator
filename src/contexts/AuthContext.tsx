@@ -203,6 +203,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGoogle = async () => {
     try {
+      // Detect mobile browsers
+      const isMobile = typeof window !== 'undefined' &&
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
       // Force production URL to avoid localhost redirects
       const isProduction = typeof window !== 'undefined' &&
         (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1');
@@ -210,11 +214,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const baseUrl = isProduction
         ? 'https://swiftlog-beta.vercel.app'
         : window.location.origin;
-      const redirectUrl = `${baseUrl}/dashboard`;
+      // Use callback page for better mobile OAuth handling
+      const redirectUrl = `${baseUrl}/auth/callback`;
 
       console.log('OAuth Redirect Debug:', {
         hostname: typeof window !== 'undefined' ? window.location.hostname : 'server',
+        isMobile,
         isProduction,
+        userAgent: typeof window !== 'undefined' ? navigator.userAgent : 'server',
         NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
         windowOrigin: typeof window !== 'undefined' ? window.location.origin : 'server',
         baseUrl,
@@ -224,7 +231,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: redirectUrl
+          redirectTo: redirectUrl,
+          // Force redirect flow for mobile browsers instead of popup
+          skipBrowserRedirect: false,
+          // Ensure we use the redirect flow on mobile
+          queryParams: isMobile ? {
+            access_type: 'offline',
+            prompt: 'consent'
+          } : undefined
         }
       });
 

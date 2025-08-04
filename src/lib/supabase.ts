@@ -10,6 +10,10 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: true,
     storage: typeof window !== 'undefined' ? window.localStorage : undefined,
     storageKey: 'supabase.auth.token',
-    flowType: 'pkce'
+    flowType: 'pkce',
+    // Mobile-friendly settings
+    debug: process.env.NODE_ENV === 'development',
+    // Ensure proper session handling on mobile
+    lock: true
   }
 })
