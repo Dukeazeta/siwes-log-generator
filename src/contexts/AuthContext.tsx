@@ -71,11 +71,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           if (session?.user) {
-            const transformedUser = await transformSupabaseUser(session.user);
-            setUser(transformedUser);
+            try {
+              const transformedUser = await transformSupabaseUser(session.user);
+              setUser(transformedUser);
+              console.log('User transformed and set:', transformedUser.email);
+            } catch (error) {
+              console.error('Error transforming user:', error);
+            }
           }
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
+          console.log('User signed out');
         }
 
         // Only set loading to false after we've processed the auth change
@@ -205,9 +211,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGoogle = async () => {
     try {
-      // Detect mobile browsers
-      const isMobile = typeof window !== 'undefined' &&
-        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      // Detect mobile browsers more comprehensively
+      const isMobile = typeof window !== 'undefined' && (
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+        window.innerWidth <= 768 ||
+        'ontouchstart' in window
+      );
 
       // Use consistent redirect URL that matches Supabase configuration
       const redirectUrl = typeof window !== 'undefined' && window.location.hostname === 'localhost'
@@ -219,20 +228,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isMobile,
         userAgent: typeof window !== 'undefined' ? navigator.userAgent : 'server',
         redirectUrl,
-        currentOrigin: typeof window !== 'undefined' ? window.location.origin : 'server'
+        currentOrigin: typeof window !== 'undefined' ? window.location.origin : 'server',
+        windowWidth: typeof window !== 'undefined' ? window.innerWidth : 'server',
+        touchSupport: typeof window !== 'undefined' ? 'ontouchstart' in window : 'server'
       });
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
-          // Force redirect flow for mobile browsers instead of popup
+          // Always use redirect flow, never popup (especially important for mobile)
           skipBrowserRedirect: false,
-          // Ensure we use the redirect flow on mobile
-          queryParams: isMobile ? {
+          // Enhanced mobile-specific parameters
+          queryParams: {
             access_type: 'offline',
-            prompt: 'consent'
-          } : undefined
+            prompt: 'select_account', // Always show account selector
+            ...(isMobile && {
+              // Additional mobile-specific parameters
+              display: 'touch',
+              approval_prompt: 'force'
+            })
+          }
         }
       });
 

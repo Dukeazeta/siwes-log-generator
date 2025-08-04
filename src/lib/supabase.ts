@@ -13,5 +13,11 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     flowType: 'pkce',
     // Mobile-friendly settings
     debug: process.env.NODE_ENV === 'development'
+  },
+  // Global configuration
+  global: {
+    headers: {
+      'X-Client-Info': 'swiftlog-web'
+    }
   }
 })
