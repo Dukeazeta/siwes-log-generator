@@ -409,128 +409,112 @@ export default function Dashboard() {
         {/* Main Content */}
         <main className="pt-24 md:pt-32 px-4 sm:px-6 py-6 pb-12 max-w-4xl mx-auto">
           {/* Profile Header */}
-          <div className="mb-8">
-            <div className="mb-6">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-3">
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">SIWES Logbook</h1>
-                <div className="inline-flex items-center px-3 py-1.5 rounded-full bg-blue-100 text-blue-800 text-xs font-medium w-fit">
-                  <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mr-1.5 animate-pulse"></span>
+          <div className="mb-12">
+            <div className="mb-8">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+                <h1 className="text-4xl sm:text-5xl font-bold text-gray-900">SIWES Logbook</h1>
+                <div className="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-sm font-medium w-fit">
+                  <span className="w-2 h-2 bg-blue-500 rounded-full mr-2 animate-pulse"></span>
                   Beta V1.1
                 </div>
               </div>
-              <p className="text-gray-600 text-base sm:text-lg">{profile.full_name} • {profile.course}</p>
+              <p className="text-lg sm:text-xl text-gray-600 leading-relaxed">{profile.full_name} • {profile.course}</p>
             </div>
           </div>
 
           {/* Training Information */}
-          <div className="bg-white rounded-xl border border-gray-200 mb-8 shadow-sm">
-            <div className="p-4 sm:p-6 border-b border-gray-100">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                <h2 className="text-xl font-semibold text-gray-900">Training Information</h2>
-                <span className="text-sm text-gray-500 font-medium">
-                  {profile.start_date && profile.end_date &&
-                    `${formatDate(profile.start_date)} — ${formatDate(profile.end_date)}`
-                  }
-                </span>
+          <div className="mb-16">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+              <h2 className="text-2xl font-bold text-gray-900">Training Information</h2>
+              <span className="text-base text-gray-600 font-medium">
+                {profile.start_date && profile.end_date &&
+                  `${formatDate(profile.start_date)} — ${formatDate(profile.end_date)}`
+                }
+              </span>
+            </div>
+
+            <div className="grid gap-12 md:grid-cols-2">
+              {/* Student Details */}
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 mb-6">Student Details</h3>
+                <div className="space-y-6">
+                  <div>
+                    <div className="text-sm text-gray-500 mb-2 font-medium uppercase tracking-wide">Name</div>
+                    <div className="text-lg font-semibold text-gray-900">{profile.full_name}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500 mb-2 font-medium uppercase tracking-wide">Course</div>
+                    <div className="text-lg text-gray-900">{profile.course}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500 mb-2 font-medium uppercase tracking-wide">Institution</div>
+                    <div className="text-lg text-gray-900">{profile.institution}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Company Details */}
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 mb-6">Company Details</h3>
+                <div className="space-y-6">
+                  <div>
+                    <div className="text-sm text-gray-500 mb-2 font-medium uppercase tracking-wide">Company</div>
+                    <div className="text-lg font-semibold text-gray-900">{profile.company_name}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500 mb-2 font-medium uppercase tracking-wide">Department</div>
+                    <div className="text-lg text-gray-900">{profile.department}</div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="p-4 sm:p-6">
-              <div className="grid gap-6 md:grid-cols-2">
-                {/* Student Details */}
-                <div className="bg-gray-50 rounded-xl p-4 sm:p-5">
-                  <div className="flex items-center space-x-3 mb-4">
-                    <div className="w-8 h-8 bg-blue-100 rounded-xl flex items-center justify-center">
-                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                    </div>
-                    <h3 className="font-semibold text-gray-900 text-lg">Student Details</h3>
-                  </div>
-                  <div className="space-y-4">
-                    <div>
-                      <div className="text-sm text-gray-600 mb-1 font-medium">Name</div>
-                      <div className="font-semibold text-gray-900 text-base">{profile.full_name}</div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-gray-600 mb-1 font-medium">Course</div>
-                      <div className="text-gray-900 text-base">{profile.course}</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Company Details */}
-                <div className="bg-gray-50 rounded-xl p-4 sm:p-5">
-                  <div className="flex items-center space-x-3 mb-4">
-                    <div className="w-8 h-8 bg-green-100 rounded-xl flex items-center justify-center">
-                      <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                      </svg>
-                    </div>
-                    <h3 className="font-semibold text-gray-900 text-lg">Company Details</h3>
-                  </div>
-                  <div className="space-y-4">
-                    <div>
-                      <div className="text-sm text-gray-600 mb-1 font-medium">Company</div>
-                      <div className="font-semibold text-gray-900 text-base">{profile.company_name}</div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-gray-600 mb-1 font-medium">Department</div>
-                      <div className="text-gray-900 text-base">{profile.department}</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Company Description */}
-              <div className="mt-8 pt-6 border-t border-gray-200">
-                <h4 className="font-semibold text-gray-900 mb-4 text-lg">Company Description</h4>
-                <p className="text-gray-600 leading-relaxed text-base">
-                  {profile.company_description}
-                </p>
-              </div>
+            {/* Company Description */}
+            <div className="mt-12 pt-8 border-t border-gray-200">
+              <h4 className="text-xl font-bold text-gray-900 mb-4">Company Description</h4>
+              <p className="text-lg text-gray-600 leading-relaxed max-w-4xl">
+                {profile.company_description}
+              </p>
             </div>
           </div>
 
           {/* Weekly Logs */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
-            <div className="p-4 sm:p-6 border-b border-gray-100">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <h2 className="text-xl font-semibold text-gray-900">Weekly Logs</h2>
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                  <button className="flex items-center justify-center space-x-2 px-4 py-3 sm:py-2 text-sm text-orange-600 bg-orange-50 rounded-xl border border-orange-200 hover:bg-orange-100 transition-colors font-medium">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <span>Download PDF</span>
-                    <span className="bg-orange-200 text-orange-800 text-xs px-2 py-0.5 rounded-full">NEW</span>
-                  </button>
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={handleAddWeek}
-                    className="flex items-center justify-center space-x-2 px-4 py-3 sm:py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors text-sm font-medium"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    <span>Add Week</span>
-                  </motion.button>
-                </div>
+          <div>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 mb-8">
+              <h2 className="text-2xl font-bold text-gray-900">Weekly Logs</h2>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+                <button className="flex items-center justify-center space-x-2 px-6 py-3 text-sm text-orange-600 bg-orange-50 rounded-full border border-orange-200 hover:bg-orange-100 transition-colors font-semibold">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span>Download PDF</span>
+                  <span className="bg-orange-200 text-orange-800 text-xs px-2 py-0.5 rounded-full font-medium">NEW</span>
+                </button>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handleAddWeek}
+                  className="flex items-center justify-center space-x-2 px-6 py-3 bg-gray-900 text-white rounded-full hover:bg-gray-800 transition-colors text-sm font-semibold"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  <span>Add Week</span>
+                </motion.button>
               </div>
             </div>
 
             {/* Week Tabs */}
-            <div className="px-4 sm:px-6 py-4 border-b border-gray-100">
-              <div className="flex space-x-2 overflow-x-auto pb-2 -mb-2">
+            <div className="mb-8">
+              <div className="flex space-x-2 overflow-x-auto pb-2">
                 {weeklyLogs.length > 0 ? (
                   weeklyLogs.map((log) => (
                     <button
                       key={log.week_number}
                       onClick={() => setActiveWeek(log.week_number)}
-                      className={`px-4 py-2.5 text-sm font-medium rounded-xl whitespace-nowrap transition-colors min-w-fit ${
+                      className={`px-6 py-3 text-sm font-semibold rounded-full whitespace-nowrap transition-colors min-w-fit ${
                         activeWeek === log.week_number
-                          ? 'bg-gray-900 text-white shadow-sm'
+                          ? 'bg-gray-900 text-white'
                           : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                       }`}
                     >
@@ -538,7 +522,7 @@ export default function Dashboard() {
                     </button>
                   ))
                 ) : (
-                  <div className="text-gray-500 text-sm py-2 px-2">
+                  <div className="text-gray-500 text-base py-3 px-2">
                     No weeks created yet
                   </div>
                 )}
@@ -546,19 +530,19 @@ export default function Dashboard() {
             </div>
 
             {/* Week Content */}
-            <div className="p-4 sm:p-6">
+            <div>
               {weeklyLogs.length > 0 ? (
                 (() => {
                   const currentLog = weeklyLogs.find(log => log.week_number === activeWeek);
                   if (!currentLog) {
                     return (
-                      <div className="text-center py-12">
-                        <p className="text-gray-500 mb-4 text-base">No log found for Week {activeWeek}</p>
+                      <div className="text-center py-16">
+                        <p className="text-gray-500 mb-6 text-lg">No log found for Week {activeWeek}</p>
                         <motion.button
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
                           onClick={handleAddWeek}
-                          className="inline-flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors text-sm font-medium"
+                          className="inline-flex items-center space-x-2 px-6 py-3 bg-gray-900 text-white rounded-full hover:bg-gray-800 transition-colors text-sm font-semibold"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -575,25 +559,25 @@ export default function Dashboard() {
 
                   return (
                     <div>
-                      <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                      <h3 className="text-2xl font-bold text-gray-900 mb-4">
                         Week {activeWeek}: {formatDate(currentLog.start_date)} — {formatDate(currentLog.end_date)}
                       </h3>
 
                       {/* Week Summary */}
-                      <p className="text-gray-600 text-base leading-relaxed mb-6">
+                      <p className="text-lg text-gray-600 leading-relaxed mb-12 max-w-4xl">
                         {logContent.weekSummary}
                       </p>
 
                       {/* Daily Activities */}
-                      <div className="mb-8">
-                        <h4 className="font-semibold text-gray-900 mb-4 text-lg">Daily Activities</h4>
+                      <div className="mb-16">
+                        <h4 className="text-xl font-bold text-gray-900 mb-8">Daily Activities</h4>
 
                         {/* Mobile-friendly cards for small screens */}
-                        <div className="block sm:hidden space-y-4">
+                        <div className="block sm:hidden space-y-6">
                           {logContent.dailyActivities?.map((activity: { day: string; date: string; activities: string }, index: number) => (
-                            <div key={index} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                            <div key={index} className="border-l-4 border-gray-900 pl-6">
                               <div className="flex items-center justify-between mb-3">
-                                <div className="text-blue-600 font-semibold text-base">{activity.day}</div>
+                                <div className="text-gray-900 font-bold text-lg">{activity.day}</div>
                                 <div className="text-gray-500 text-sm font-medium">{activity.date}</div>
                               </div>
                               <div className="text-gray-700 text-base leading-relaxed">
@@ -604,48 +588,40 @@ export default function Dashboard() {
                         </div>
 
                         {/* Table for larger screens */}
-                        <div className="hidden sm:block overflow-x-auto">
-                          <table className="w-full text-sm">
-                            <thead>
-                              <tr className="border-b border-gray-200">
-                                <th className="text-left py-3 text-gray-600 font-semibold">Day & Date</th>
-                                <th className="text-left py-3 text-gray-600 font-semibold">Description of Work Done</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                              {logContent.dailyActivities?.map((activity: { day: string; date: string; activities: string }, index: number) => (
-                                <tr key={index}>
-                                  <td className="py-4 text-blue-600 font-medium">
-                                    {activity.day}<br />
-                                    <span className="text-gray-500 text-xs">{activity.date}</span>
-                                  </td>
-                                  <td className="py-4 text-gray-700 leading-relaxed">
-                                    {activity.activities}
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                        <div className="hidden sm:block">
+                          <div className="space-y-6">
+                            {logContent.dailyActivities?.map((activity: { day: string; date: string; activities: string }, index: number) => (
+                              <div key={index} className="border-l-4 border-gray-900 pl-8 py-2">
+                                <div className="flex items-center justify-between mb-3">
+                                  <div className="text-gray-900 font-bold text-lg">{activity.day}</div>
+                                  <div className="text-gray-500 text-sm font-medium">{activity.date}</div>
+                                </div>
+                                <div className="text-gray-700 text-base leading-relaxed">
+                                  {activity.activities}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       </div>
 
                       {/* Skills and Learning Outcomes */}
-                      <div className="grid gap-6 md:grid-cols-2">
-                        <div className="bg-blue-50 rounded-xl p-5">
-                          <h4 className="font-semibold text-blue-900 mb-4 text-lg">Skills Developed</h4>
-                          <ul className="text-blue-800 text-base space-y-2">
+                      <div className="grid gap-12 md:grid-cols-2 mb-12">
+                        <div>
+                          <h4 className="text-xl font-bold text-gray-900 mb-6">Skills Developed</h4>
+                          <ul className="text-gray-700 text-base space-y-3">
                             {logContent.skillsDeveloped?.map((skill: string, index: number) => (
                               <li key={index} className="flex items-start">
-                                <span className="text-blue-600 mr-2 mt-1">•</span>
-                                <span>{skill}</span>
+                                <span className="text-gray-900 mr-3 mt-1 font-bold">•</span>
+                                <span className="leading-relaxed">{skill}</span>
                               </li>
                             ))}
                           </ul>
                         </div>
 
-                        <div className="bg-green-50 rounded-xl p-5">
-                          <h4 className="font-semibold text-green-900 mb-4 text-lg">Learning Outcomes</h4>
-                          <p className="text-green-800 text-base leading-relaxed">
+                        <div>
+                          <h4 className="text-xl font-bold text-gray-900 mb-6">Learning Outcomes</h4>
+                          <p className="text-gray-700 text-base leading-relaxed">
                             {logContent.learningOutcomes}
                           </p>
                         </div>
@@ -653,9 +629,9 @@ export default function Dashboard() {
 
                       {/* Challenges Faced */}
                       {logContent.challengesFaced && (
-                        <div className="bg-orange-50 rounded-xl p-5 mt-6">
-                          <h4 className="font-semibold text-orange-900 mb-4 text-lg">Challenges Faced</h4>
-                          <p className="text-orange-800 text-base leading-relaxed">
+                        <div className="pt-8 border-t border-gray-200">
+                          <h4 className="text-xl font-bold text-gray-900 mb-6">Challenges Faced</h4>
+                          <p className="text-gray-700 text-base leading-relaxed max-w-4xl">
                             {logContent.challengesFaced}
                           </p>
                         </div>
@@ -664,21 +640,16 @@ export default function Dashboard() {
                   );
                 })()
               ) : (
-                <div className="text-center py-16">
-                  <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">No logs yet</h3>
-                  <p className="text-gray-600 mb-6 text-base">Start by creating your first weekly log entry.</p>
+                <div className="text-center py-20">
+                  <h3 className="text-3xl font-bold text-gray-900 mb-4">No logs yet</h3>
+                  <p className="text-gray-600 mb-8 text-lg leading-relaxed max-w-2xl mx-auto">Start by creating your first weekly log entry. Transform your weekly activities into professional logbook entries.</p>
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={handleAddWeek}
-                    className="inline-flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors text-sm font-medium"
+                    className="inline-flex items-center space-x-2 px-8 py-4 bg-gray-900 text-white rounded-full hover:bg-gray-800 transition-colors text-lg font-semibold"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
                     <span>Create First Log</span>
