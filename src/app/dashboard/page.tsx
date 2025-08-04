@@ -409,70 +409,68 @@ export default function Dashboard() {
         {/* Main Content */}
         <main className="pt-24 md:pt-32 px-4 sm:px-6 py-6 pb-12 max-w-4xl mx-auto">
           {/* Profile Header */}
-          <div className="mb-12">
-            <div className="mb-8">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
-                <h1 className="text-4xl sm:text-5xl font-bold text-gray-900">SIWES Logbook</h1>
-                <div className="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-sm font-medium w-fit">
-                  <span className="w-2 h-2 bg-blue-500 rounded-full mr-2 animate-pulse"></span>
-                  Beta V1.1
-                </div>
+          <div className="mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-3">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">SIWES Logbook</h1>
+              <div className="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-medium w-fit">
+                <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mr-1.5 animate-pulse"></span>
+                Beta V1.1
               </div>
-              <p className="text-lg sm:text-xl text-gray-600 leading-relaxed">{profile.full_name} • {profile.course}</p>
             </div>
+            <p className="text-base text-gray-600">{profile.full_name} • {profile.course}</p>
           </div>
 
           {/* Training Information */}
-          <div className="mb-16">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-              <h2 className="text-2xl font-bold text-gray-900">Training Information</h2>
-              <span className="text-base text-gray-600 font-medium">
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+              <h2 className="text-lg font-semibold text-gray-900">Training Information</h2>
+              <span className="text-sm text-gray-500 font-medium">
                 {profile.start_date && profile.end_date &&
                   `${formatDate(profile.start_date)} — ${formatDate(profile.end_date)}`
                 }
               </span>
             </div>
 
-            <div className="grid gap-12 md:grid-cols-2">
+            <div className="grid gap-6 md:grid-cols-2">
               {/* Student Details */}
               <div>
-                <h3 className="text-xl font-bold text-gray-900 mb-6">Student Details</h3>
-                <div className="space-y-6">
+                <h3 className="text-base font-semibold text-gray-900 mb-4">Student Details</h3>
+                <div className="space-y-3">
                   <div>
-                    <div className="text-sm text-gray-500 mb-2 font-medium uppercase tracking-wide">Name</div>
-                    <div className="text-lg font-semibold text-gray-900">{profile.full_name}</div>
+                    <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wide">Name</div>
+                    <div className="text-sm font-medium text-gray-900">{profile.full_name}</div>
                   </div>
                   <div>
-                    <div className="text-sm text-gray-500 mb-2 font-medium uppercase tracking-wide">Course</div>
-                    <div className="text-lg text-gray-900">{profile.course}</div>
+                    <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wide">Course</div>
+                    <div className="text-sm text-gray-900">{profile.course}</div>
                   </div>
                   <div>
-                    <div className="text-sm text-gray-500 mb-2 font-medium uppercase tracking-wide">Institution</div>
-                    <div className="text-lg text-gray-900">{profile.institution}</div>
+                    <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wide">Institution</div>
+                    <div className="text-sm text-gray-900">{profile.institution}</div>
                   </div>
                 </div>
               </div>
 
               {/* Company Details */}
               <div>
-                <h3 className="text-xl font-bold text-gray-900 mb-6">Company Details</h3>
-                <div className="space-y-6">
+                <h3 className="text-base font-semibold text-gray-900 mb-4">Company Details</h3>
+                <div className="space-y-3">
                   <div>
-                    <div className="text-sm text-gray-500 mb-2 font-medium uppercase tracking-wide">Company</div>
-                    <div className="text-lg font-semibold text-gray-900">{profile.company_name}</div>
+                    <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wide">Company</div>
+                    <div className="text-sm font-medium text-gray-900">{profile.company_name}</div>
                   </div>
                   <div>
-                    <div className="text-sm text-gray-500 mb-2 font-medium uppercase tracking-wide">Department</div>
-                    <div className="text-lg text-gray-900">{profile.department}</div>
+                    <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wide">Department</div>
+                    <div className="text-sm text-gray-900">{profile.department}</div>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Company Description */}
-            <div className="mt-12 pt-8 border-t border-gray-200">
-              <h4 className="text-xl font-bold text-gray-900 mb-4">Company Description</h4>
-              <p className="text-lg text-gray-600 leading-relaxed max-w-4xl">
+            <div className="mt-6 pt-4 border-t border-gray-100">
+              <h4 className="text-base font-semibold text-gray-900 mb-3">Company Description</h4>
+              <p className="text-sm text-gray-600 leading-relaxed">
                 {profile.company_description}
               </p>
             </div>
@@ -480,10 +478,10 @@ export default function Dashboard() {
 
           {/* Weekly Logs */}
           <div>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 mb-8">
-              <h2 className="text-2xl font-bold text-gray-900">Weekly Logs</h2>
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-                <button className="flex items-center justify-center space-x-2 px-6 py-3 text-sm text-orange-600 bg-orange-50 rounded-full border border-orange-200 hover:bg-orange-100 transition-colors font-semibold">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+              <h2 className="text-lg font-semibold text-gray-900">Weekly Logs</h2>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                <button className="flex items-center justify-center space-x-2 px-4 py-2 text-sm text-orange-600 bg-orange-50 rounded-full border border-orange-200 hover:bg-orange-100 transition-colors font-medium">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
@@ -494,7 +492,7 @@ export default function Dashboard() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={handleAddWeek}
-                  className="flex items-center justify-center space-x-2 px-6 py-3 bg-gray-900 text-white rounded-full hover:bg-gray-800 transition-colors text-sm font-semibold"
+                  className="flex items-center justify-center space-x-2 px-4 py-2 bg-gray-900 text-white rounded-full hover:bg-gray-800 transition-colors text-sm font-medium"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -559,28 +557,28 @@ export default function Dashboard() {
 
                   return (
                     <div>
-                      <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3">
                         Week {activeWeek}: {formatDate(currentLog.start_date)} — {formatDate(currentLog.end_date)}
                       </h3>
 
                       {/* Week Summary */}
-                      <p className="text-lg text-gray-600 leading-relaxed mb-12 max-w-4xl">
+                      <p className="text-sm text-gray-600 leading-relaxed mb-6">
                         {logContent.weekSummary}
                       </p>
 
                       {/* Daily Activities */}
-                      <div className="mb-16">
-                        <h4 className="text-xl font-bold text-gray-900 mb-8">Daily Activities</h4>
+                      <div className="mb-8">
+                        <h4 className="text-base font-semibold text-gray-900 mb-4">Daily Activities</h4>
 
                         {/* Mobile-friendly cards for small screens */}
-                        <div className="block sm:hidden space-y-6">
+                        <div className="block sm:hidden space-y-4">
                           {logContent.dailyActivities?.map((activity: { day: string; date: string; activities: string }, index: number) => (
-                            <div key={index} className="border-l-4 border-gray-900 pl-6">
-                              <div className="flex items-center justify-between mb-3">
-                                <div className="text-gray-900 font-bold text-lg">{activity.day}</div>
-                                <div className="text-gray-500 text-sm font-medium">{activity.date}</div>
+                            <div key={index} className="border-l-4 border-gray-900 pl-4">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="text-gray-900 font-semibold text-sm">{activity.day}</div>
+                                <div className="text-gray-500 text-xs font-medium">{activity.date}</div>
                               </div>
-                              <div className="text-gray-700 text-base leading-relaxed">
+                              <div className="text-gray-700 text-sm leading-relaxed">
                                 {activity.activities}
                               </div>
                             </div>
@@ -589,14 +587,14 @@ export default function Dashboard() {
 
                         {/* Table for larger screens */}
                         <div className="hidden sm:block">
-                          <div className="space-y-6">
+                          <div className="space-y-4">
                             {logContent.dailyActivities?.map((activity: { day: string; date: string; activities: string }, index: number) => (
-                              <div key={index} className="border-l-4 border-gray-900 pl-8 py-2">
-                                <div className="flex items-center justify-between mb-3">
-                                  <div className="text-gray-900 font-bold text-lg">{activity.day}</div>
-                                  <div className="text-gray-500 text-sm font-medium">{activity.date}</div>
+                              <div key={index} className="border-l-4 border-gray-900 pl-6 py-1">
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="text-gray-900 font-semibold text-sm">{activity.day}</div>
+                                  <div className="text-gray-500 text-xs font-medium">{activity.date}</div>
                                 </div>
-                                <div className="text-gray-700 text-base leading-relaxed">
+                                <div className="text-gray-700 text-sm leading-relaxed">
                                   {activity.activities}
                                 </div>
                               </div>
@@ -606,13 +604,13 @@ export default function Dashboard() {
                       </div>
 
                       {/* Skills and Learning Outcomes */}
-                      <div className="grid gap-12 md:grid-cols-2 mb-12">
+                      <div className="grid gap-6 md:grid-cols-2 mb-6">
                         <div>
-                          <h4 className="text-xl font-bold text-gray-900 mb-6">Skills Developed</h4>
-                          <ul className="text-gray-700 text-base space-y-3">
+                          <h4 className="text-base font-semibold text-gray-900 mb-3">Skills Developed</h4>
+                          <ul className="text-gray-700 text-sm space-y-2">
                             {logContent.skillsDeveloped?.map((skill: string, index: number) => (
                               <li key={index} className="flex items-start">
-                                <span className="text-gray-900 mr-3 mt-1 font-bold">•</span>
+                                <span className="text-gray-900 mr-2 mt-0.5 font-bold">•</span>
                                 <span className="leading-relaxed">{skill}</span>
                               </li>
                             ))}
@@ -620,8 +618,8 @@ export default function Dashboard() {
                         </div>
 
                         <div>
-                          <h4 className="text-xl font-bold text-gray-900 mb-6">Learning Outcomes</h4>
-                          <p className="text-gray-700 text-base leading-relaxed">
+                          <h4 className="text-base font-semibold text-gray-900 mb-3">Learning Outcomes</h4>
+                          <p className="text-gray-700 text-sm leading-relaxed">
                             {logContent.learningOutcomes}
                           </p>
                         </div>
@@ -629,9 +627,9 @@ export default function Dashboard() {
 
                       {/* Challenges Faced */}
                       {logContent.challengesFaced && (
-                        <div className="pt-8 border-t border-gray-200">
-                          <h4 className="text-xl font-bold text-gray-900 mb-6">Challenges Faced</h4>
-                          <p className="text-gray-700 text-base leading-relaxed max-w-4xl">
+                        <div className="pt-4 border-t border-gray-200">
+                          <h4 className="text-base font-semibold text-gray-900 mb-3">Challenges Faced</h4>
+                          <p className="text-gray-700 text-sm leading-relaxed">
                             {logContent.challengesFaced}
                           </p>
                         </div>

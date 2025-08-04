@@ -150,127 +150,127 @@ export default function CreateLog() {
 
         {/* Main Content */}
         <main className="pt-24 md:pt-32 px-4 py-6 max-w-2xl mx-auto">
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="space-y-6">
-              {/* Week Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Week Number
-                </label>
-                <div className="relative">
-                  <select
-                    value={weekNumber}
-                    onChange={(e) => setWeekNumber(Number(e.target.value))}
-                    className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 appearance-none cursor-pointer transition-colors"
-                  >
-                    {[...Array(24)].map((_, i) => (
-                      <option key={i + 1} value={i + 1} className="text-gray-900">
-                        Week {i + 1}
-                      </option>
-                    ))}
-                  </select>
-                  {/* Custom dropdown arrow */}
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              {/* Date Range */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Start Date
-                  </label>
-                  <input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 transition-colors"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    End Date
-                  </label>
-                  <input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 transition-colors"
-                  />
-                </div>
-              </div>
-
-              {/* Activities */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Activities & Tasks
-                </label>
-                <textarea
-                  value={activities}
-                  onChange={(e) => setActivities(e.target.value)}
-                  placeholder="Describe the activities, tasks, and projects you worked on this week..."
-                  rows={6}
-                  className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500 resize-none transition-colors"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Be specific about your daily activities, learning outcomes, and contributions.
-                </p>
-              </div>
-
-              {/* Error Message */}
-              {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <div className="flex items-center space-x-2">
-                    <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <p className="text-red-700 text-sm">{error}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Generate Button */}
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleGenerate}
-                disabled={isGenerating || !startDate || !endDate || !activities.trim()}
-                className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
-              >
-                {isGenerating ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>Generating Log...</span>
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                    <span>Generate with AI</span>
-                  </>
-                )}
-              </motion.button>
+          <div className="space-y-6">
+            {/* Header */}
+            <div className="text-center mb-8">
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">Create Weekly Log</h1>
+              <p className="text-gray-600">Transform your activities into a professional logbook entry</p>
             </div>
-          </div>
 
+            {/* Week Selection */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-900 mb-3">
+                Week Number
+              </label>
+              <div className="relative">
+                <select
+                  value={weekNumber}
+                  onChange={(e) => setWeekNumber(Number(e.target.value))}
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-gray-900 text-gray-900 appearance-none cursor-pointer transition-colors"
+                >
+                  {[...Array(24)].map((_, i) => (
+                    <option key={i + 1} value={i + 1} className="text-gray-900">
+                      Week {i + 1}
+                    </option>
+                  ))}
+                </select>
+                {/* Custom dropdown arrow */}
+                <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
+            </div>
 
+            {/* Date Range */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-3">
+                  Start Date
+                </label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-gray-900 text-gray-900 transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-3">
+                  End Date
+                </label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-gray-900 text-gray-900 transition-colors"
+                />
+              </div>
+            </div>
 
+            {/* Activities */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-900 mb-3">
+                Activities & Tasks
+              </label>
+              <textarea
+                value={activities}
+                onChange={(e) => setActivities(e.target.value)}
+                placeholder="Describe the activities, tasks, and projects you worked on this week..."
+                rows={6}
+                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-gray-900 text-gray-900 placeholder-gray-500 resize-none transition-colors"
+              />
+              <p className="text-xs text-gray-500 mt-2">
+                Be specific about your daily activities, learning outcomes, and contributions.
+              </p>
+            </div>
 
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                <div className="flex items-center space-x-2">
+                  <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-red-700 text-sm">{error}</p>
+                </div>
+              </div>
+            )}
 
-          {/* Tips */}
-          <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h3 className="text-sm font-medium text-blue-900 mb-2">💡 Tips for better logs</h3>
-            <ul className="text-sm text-blue-800 space-y-1">
-              <li>• Include specific technical skills and tools used</li>
-              <li>• Mention learning outcomes and challenges faced</li>
-              <li>• Describe your contributions to team projects</li>
-              <li>• Note any feedback received from supervisors</li>
-            </ul>
+            {/* Generate Button */}
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleGenerate}
+              disabled={isGenerating || !startDate || !endDate || !activities.trim()}
+              className="w-full bg-gray-900 text-white py-4 rounded-full font-semibold hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2 text-base"
+            >
+              {isGenerating ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Generating Log...</span>
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  <span>Generate with AI</span>
+                </>
+              )}
+            </motion.button>
+
+            {/* Tips */}
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">💡 Tips for better logs</h3>
+              <ul className="text-sm text-gray-600 space-y-2">
+                <li>• Include specific technical skills and tools used</li>
+                <li>• Mention learning outcomes and challenges faced</li>
+                <li>• Describe your contributions to team projects</li>
+                <li>• Note any feedback received from supervisors</li>
+              </ul>
+            </div>
           </div>
         </main>
       </div>
