@@ -3,10 +3,10 @@ import { supabase } from './supabase';
 /**
  * Checks if an error is related to invalid refresh tokens
  */
-export function isRefreshTokenError(error: any): boolean {
+export function isRefreshTokenError(error: unknown): boolean {
   if (!error) return false;
-  
-  const errorMessage = error.message || error.toString();
+
+  const errorMessage = (error as Error)?.message || String(error);
   return (
     errorMessage.includes('refresh_token_not_found') ||
     errorMessage.includes('Invalid Refresh Token') ||
@@ -18,9 +18,9 @@ export function isRefreshTokenError(error: any): boolean {
 /**
  * Handles auth errors by clearing invalid sessions
  */
-export async function handleAuthError(error: any): Promise<void> {
+export async function handleAuthError(error: unknown): Promise<void> {
   if (isRefreshTokenError(error)) {
-    console.warn('Refresh token error detected, clearing session:', error.message);
+    console.warn('Refresh token error detected, clearing session:', (error as Error)?.message || String(error));
     
     try {
       // Sign out to clear invalid session
