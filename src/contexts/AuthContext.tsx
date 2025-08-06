@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { handleAuthError, isRefreshTokenError, getSafeSession } from '../lib/auth-utils';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface User {
@@ -42,10 +43,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Get initial session function
     const getInitialSession = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const { session, error } = await getSafeSession();
 
         if (error) {
           console.error('Session error:', error);
+          await handleAuthError(error);
           return;
         }
 
@@ -55,7 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         console.error('Error getting initial session:', error);
-        // Don't block app initialization on session errors
+        await handleAuthError(error);
       } finally {
         setIsLoading(false);
       }
@@ -117,14 +119,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Separate effect for session validation on focus
   useEffect(() => {
-    const handleFocus = () => {
+    const handleFocus = async () => {
       if (document.visibilityState === 'visible') {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-          if (!session && user) {
+        try {
+          const { session, error } = await getSafeSession();
+
+          if (error) {
+            console.error('Session validation error:', error);
+            await handleAuthError(error);
+            if (isRefreshTokenError(error)) {
+              setUser(null);
+            }
+          } else if (!session && user) {
             // Session expired, clear user
             setUser(null);
           }
-        });
+        } catch (error) {
+          console.error('Session check failed:', error);
+          await handleAuthError(error);
+          if (isRefreshTokenError(error)) {
+            setUser(null);
+          }
+        }
       }
     };
 
@@ -281,13 +297,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = async () => {
     try {
-      const { data: { user: supabaseUser } } = await supabase.auth.getUser();
-      if (supabaseUser) {
-        const transformedUser = await transformSupabaseUser(supabaseUser);
+      const { session, error } = await getSafeSession();
+      if (error) {
+        console.error('Refresh user error:', error);
+        await handleAuthError(error);
+        if (isRefreshTokenError(error)) {
+          setUser(null);
+        }
+        return;
+      }
+
+      if (session?.user) {
+        const transformedUser = await transformSupabaseUser(session.user);
         setUser(transformedUser);
       }
     } catch (error) {
       console.error('Refresh user error:', error);
+      await handleAuthError(error);
+      if (isRefreshTokenError(error)) {
+        setUser(null);
+      }
     }
   };
 

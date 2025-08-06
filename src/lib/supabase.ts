@@ -21,3 +21,13 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     }
   }
 })
+
+// Add global error handler for auth errors
+if (typeof window !== 'undefined') {
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_OUT' && !session) {
+      // Clear any remaining auth data from localStorage
+      localStorage.removeItem('supabase.auth.token');
+    }
+  });
+}

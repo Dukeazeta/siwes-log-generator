@@ -33,7 +33,8 @@ export default function RootLayout({
               margin: 0;
               padding: 0;
             }
-            .hero-title, .hero-subtitle, .hero-buttons {
+            .hero-title, .hero-subtitle, .hero-buttons,
+            .changelog-header, .changelog-entry {
               opacity: 1 !important;
             }
           `

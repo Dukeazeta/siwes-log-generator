@@ -71,7 +71,7 @@ export default function Home() {
             </div>
 
             <div className="hidden md:flex items-center space-x-8">
-              {['Features', 'Process', 'About'].map((item) => (
+              {['Features', 'Process'].map((item) => (
                 <a
                   key={item}
                   href={`#${item.toLowerCase()}`}
@@ -80,6 +80,12 @@ export default function Home() {
                   {item}
                 </a>
               ))}
+              <a
+                href="/changelogs"
+                className="text-gray-600 hover:text-gray-900 font-medium transition-colors relative"
+              >
+                Changelogs
+              </a>
               <SmartCTAButton
                 className="bg-gray-900 text-white px-6 py-2 rounded-full font-medium hover:bg-gray-800 transition-colors"
                 authenticatedText="Go to Dashboard"
@@ -448,7 +454,7 @@ export default function Home() {
               <ul className="space-y-4">
                 <li><a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">Features</a></li>
                 <li><a href="#process" className="text-gray-600 hover:text-gray-900 transition-colors">How it Works</a></li>
-                <li><a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">Examples</a></li>
+                <li><a href="/changelogs" className="text-gray-600 hover:text-gray-900 transition-colors">Changelogs</a></li>
                 <li><a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">FAQ</a></li>
               </ul>
             </div>
