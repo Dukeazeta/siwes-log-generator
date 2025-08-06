@@ -36,11 +36,11 @@ export const changelogs: ChangelogEntry[] = [
 ];
 
 export const categoryColors = {
-  added: "bg-green-100 text-green-800 border-green-200",
-  improved: "bg-blue-100 text-blue-800 border-blue-200",
-  fixed: "bg-orange-100 text-orange-800 border-orange-200",
-  removed: "bg-red-100 text-red-800 border-red-200",
-  security: "bg-purple-100 text-purple-800 border-purple-200"
+  added: "bg-success-muted text-success-muted-foreground border-success-muted",
+  improved: "bg-info-muted text-info-muted-foreground border-info-muted",
+  fixed: "bg-warning-muted text-warning-muted-foreground border-warning-muted",
+  removed: "bg-error-muted text-error-muted-foreground border-error-muted",
+  security: "bg-accent text-accent-foreground border-accent"
 };
 
 export const categoryIcons = {
@@ -52,8 +52,8 @@ export const categoryIcons = {
 };
 
 export const typeColors = {
-  major: "bg-red-500",
-  minor: "bg-blue-500",
-  patch: "bg-green-500",
-  hotfix: "bg-orange-500"
+  major: "bg-error",
+  minor: "bg-info",
+  patch: "bg-success",
+  hotfix: "bg-warning"
 };

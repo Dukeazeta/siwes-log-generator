@@ -52,7 +52,7 @@ export default function Login() {
         <div className="absolute top-6 left-6">
           <Link
             href="/"
-            className="flex items-center space-x-2 !text-black dark:!text-gray-300 hover:!text-gray-800 dark:hover:!text-white transition-colors"
+            className="flex items-center space-x-2 text-foreground hover:text-foreground/80 transition-colors"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -83,7 +83,7 @@ export default function Login() {
           {/* Error Message */}
           {error && (
             <div className="mb-6">
-              <p className="text-red-600 dark:text-red-400 text-sm text-center bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+              <p className="text-error-muted-foreground text-sm text-center bg-error-muted border border-error-muted rounded-lg p-3">
                 {error}
               </p>
             </div>
@@ -95,11 +95,11 @@ export default function Login() {
               type="button"
               onClick={handleGoogleSignIn}
               disabled={isSubmitting}
-              className="w-full flex items-center justify-center px-6 py-4 !bg-black dark:!bg-white !text-white dark:!text-black hover:!bg-gray-800 dark:hover:!bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-base rounded-full focus:outline-none"
+              className="w-full flex items-center justify-center px-6 py-4 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-base rounded-full focus:outline-none"
             >
               {isSubmitting ? (
                 <>
-                  <div className="w-5 h-5 mr-3 border-2 border-white/30 dark:border-black/30 border-t-white dark:border-t-black rounded-full animate-spin"></div>
+                  <div className="w-5 h-5 mr-3 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin"></div>
                   <span className="font-semibold">Signing in...</span>
                 </>
               ) : (

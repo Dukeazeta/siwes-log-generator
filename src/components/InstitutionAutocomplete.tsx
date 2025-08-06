@@ -164,27 +164,27 @@ export default function InstitutionAutocomplete({
         }}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
-        className={`w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent text-gray-900 placeholder-gray-400 ${className}`}
+        className={`w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent text-foreground placeholder-muted-foreground ${className}`}
         autoComplete="off"
       />
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+        <div className="absolute z-50 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
           {loading && (
-            <div className="px-4 py-3 text-sm text-gray-500 text-center">
+            <div className="px-4 py-3 text-sm text-muted-foreground text-center">
               Searching institutions...
             </div>
           )}
 
           {!loading && institutions.length === 0 && searchTerm.length >= 2 && (
-            <div className="px-4 py-3 text-sm text-gray-500 text-center">
+            <div className="px-4 py-3 text-sm text-muted-foreground text-center">
               No institutions found matching &quot;{searchTerm}&quot;
             </div>
           )}
 
           {!loading && searchTerm.length < 2 && (
-            <div className="px-4 py-3 text-sm text-gray-500 text-center">
+            <div className="px-4 py-3 text-sm text-muted-foreground text-center">
               Type at least 2 characters to search
             </div>
           )}
@@ -195,15 +195,15 @@ export default function InstitutionAutocomplete({
                 <li
                   key={institution.id}
                   onClick={() => handleSelect(institution)}
-                  className={`px-4 py-3 cursor-pointer hover:bg-gray-50 ${
-                    index === highlightedIndex ? 'bg-gray-100' : ''
+                  className={`px-4 py-3 cursor-pointer hover:bg-muted ${
+                    index === highlightedIndex ? 'bg-accent' : ''
                   }`}
                 >
                   <div className="flex flex-col">
-                    <span className="font-medium text-gray-900">
+                    <span className="font-medium text-card-foreground">
                       {institution.name}
                     </span>
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-muted-foreground">
                       {institution.type} • {institution.location}
                     </span>
                   </div>

@@ -34,14 +34,11 @@ export default function ThemeToggle({ className = '' }: ThemeToggleProps) {
       className={`
         fixed bottom-6 right-6 z-50 
         w-14 h-14 rounded-full 
-        backdrop-blur-md border border-white/20 
+        backdrop-blur-md border border-border/20
         flex items-center justify-center
         transition-all duration-300 ease-out
-        hover:border-white/30 active:scale-95
-        ${resolvedTheme === 'dark' 
-          ? 'bg-gray-900/70 hover:bg-gray-900/80' 
-          : 'bg-white/70 hover:bg-white/80'
-        }
+        hover:border-border/30 active:scale-95
+        bg-card/70 hover:bg-card/80
         ${className}
       `}
       variants={buttonVariants}
@@ -59,7 +56,7 @@ export default function ThemeToggle({ className = '' }: ThemeToggleProps) {
             animate="animate"
             exit="exit"
             transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="text-yellow-400"
+            className="text-warning"
           >
             <svg
               width="24"

@@ -38,13 +38,75 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       // Add new theme class
       root.classList.add(newResolvedTheme);
       
-      // Update CSS custom properties
+      // Update all CSS custom properties
       if (newResolvedTheme === 'dark') {
         root.style.setProperty('--background', '#0a0a0a');
         root.style.setProperty('--foreground', '#ededed');
+        root.style.setProperty('--card', '#171717');
+        root.style.setProperty('--card-foreground', '#ededed');
+        root.style.setProperty('--primary', '#ededed');
+        root.style.setProperty('--primary-foreground', '#0a0a0a');
+        root.style.setProperty('--secondary', '#262626');
+        root.style.setProperty('--secondary-foreground', '#ededed');
+        root.style.setProperty('--muted', '#262626');
+        root.style.setProperty('--muted-foreground', '#a3a3a3');
+        root.style.setProperty('--accent', '#262626');
+        root.style.setProperty('--accent-foreground', '#ededed');
+        root.style.setProperty('--border', '#404040');
+        root.style.setProperty('--input', '#404040');
+        root.style.setProperty('--ring', '#ededed');
+
+        // Semantic colors - dark mode
+        root.style.setProperty('--success', '#22c55e');
+        root.style.setProperty('--success-foreground', '#0a0a0a');
+        root.style.setProperty('--success-muted', '#052e16');
+        root.style.setProperty('--success-muted-foreground', '#bbf7d0');
+        root.style.setProperty('--error', '#ef4444');
+        root.style.setProperty('--error-foreground', '#0a0a0a');
+        root.style.setProperty('--error-muted', '#450a0a');
+        root.style.setProperty('--error-muted-foreground', '#fecaca');
+        root.style.setProperty('--warning', '#f97316');
+        root.style.setProperty('--warning-foreground', '#0a0a0a');
+        root.style.setProperty('--warning-muted', '#431407');
+        root.style.setProperty('--warning-muted-foreground', '#fed7aa');
+        root.style.setProperty('--info', '#3b82f6');
+        root.style.setProperty('--info-foreground', '#0a0a0a');
+        root.style.setProperty('--info-muted', '#1e3a8a');
+        root.style.setProperty('--info-muted-foreground', '#dbeafe');
       } else {
         root.style.setProperty('--background', '#ffffff');
         root.style.setProperty('--foreground', '#171717');
+        root.style.setProperty('--card', '#ffffff');
+        root.style.setProperty('--card-foreground', '#171717');
+        root.style.setProperty('--primary', '#171717');
+        root.style.setProperty('--primary-foreground', '#ffffff');
+        root.style.setProperty('--secondary', '#f5f5f5');
+        root.style.setProperty('--secondary-foreground', '#171717');
+        root.style.setProperty('--muted', '#f5f5f5');
+        root.style.setProperty('--muted-foreground', '#737373');
+        root.style.setProperty('--accent', '#f5f5f5');
+        root.style.setProperty('--accent-foreground', '#171717');
+        root.style.setProperty('--border', '#e5e5e5');
+        root.style.setProperty('--input', '#e5e5e5');
+        root.style.setProperty('--ring', '#171717');
+
+        // Semantic colors - light mode
+        root.style.setProperty('--success', '#16a34a');
+        root.style.setProperty('--success-foreground', '#ffffff');
+        root.style.setProperty('--success-muted', '#dcfce7');
+        root.style.setProperty('--success-muted-foreground', '#166534');
+        root.style.setProperty('--error', '#dc2626');
+        root.style.setProperty('--error-foreground', '#ffffff');
+        root.style.setProperty('--error-muted', '#fef2f2');
+        root.style.setProperty('--error-muted-foreground', '#991b1b');
+        root.style.setProperty('--warning', '#ea580c');
+        root.style.setProperty('--warning-foreground', '#ffffff');
+        root.style.setProperty('--warning-muted', '#fff7ed');
+        root.style.setProperty('--warning-muted-foreground', '#9a3412');
+        root.style.setProperty('--info', '#2563eb');
+        root.style.setProperty('--info-foreground', '#ffffff');
+        root.style.setProperty('--info-muted', '#eff6ff');
+        root.style.setProperty('--info-muted-foreground', '#1d4ed8');
       }
     }
   };
@@ -58,8 +120,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     
     setThemeState(initialTheme);
     updateResolvedTheme(initialTheme);
+  }, []);
 
-    // Listen for system theme changes
+  // Listen for system theme changes
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleSystemThemeChange = () => {
       if (theme === 'system') {
@@ -69,7 +135,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
     mediaQuery.addEventListener('change', handleSystemThemeChange);
     return () => mediaQuery.removeEventListener('change', handleSystemThemeChange);
-  }, []);
+  }, [theme]);
 
   // Update resolved theme when theme changes
   useEffect(() => {

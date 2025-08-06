@@ -91,8 +91,8 @@ export default function Changelogs() {
                 transition={{ duration: 0.6 }}
                 className="mb-3"
               >
-                <div className="inline-flex items-center px-4 py-2 rounded-full bg-blue-800 dark:bg-blue-900/50 text-white dark:text-blue-200 text-sm font-extrabold mb-6 shadow-xl border-2 border-blue-900 dark:border-blue-800">
-                  <span className="w-2 h-2 bg-white dark:bg-blue-400 rounded-full mr-2 animate-pulse"></span>
+                <div className="inline-flex items-center px-4 py-2 rounded-full bg-info text-info-foreground text-sm font-extrabold mb-6 shadow-xl border-2 border-info">
+                  <span className="w-2 h-2 bg-info-foreground rounded-full mr-2 animate-pulse"></span>
                   Product Updates
                 </div>
               </motion.div>
@@ -114,22 +114,22 @@ export default function Changelogs() {
                   className="changelog-entry"
                 >
                   {/* Entry Header */}
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 pb-4 border-b border-gray-100">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 pb-4 border-b border-border">
                     <div className="flex items-center space-x-4 mb-3 md:mb-0">
                       <div className={`w-3 h-3 rounded-full ${typeColors[entry.type]}`}></div>
-                      <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
+                      <h2 className="text-2xl md:text-3xl font-bold text-card-foreground">
                         v{entry.version}
                       </h2>
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        entry.type === 'major' ? 'bg-red-100 text-red-800' :
-                        entry.type === 'minor' ? 'bg-blue-100 text-blue-800' :
-                        entry.type === 'patch' ? 'bg-green-100 text-green-800' :
-                        'bg-orange-100 text-orange-800'
+                        entry.type === 'major' ? 'bg-error-muted text-error-muted-foreground' :
+                        entry.type === 'minor' ? 'bg-info-muted text-info-muted-foreground' :
+                        entry.type === 'patch' ? 'bg-success-muted text-success-muted-foreground' :
+                        'bg-warning-muted text-warning-muted-foreground'
                       }`}>
                         {entry.type.toUpperCase()}
                       </span>
                     </div>
-                    <div className="text-gray-500 font-medium">
+                    <div className="text-muted-foreground font-medium">
                       {new Date(entry.date).toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: 'long',
@@ -140,7 +140,7 @@ export default function Changelogs() {
 
                   {/* Entry Content */}
                   <div className="mb-6">
-                    <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                    <h3 className="text-xl font-semibold text-card-foreground mb-3">
                       {entry.title}
                     </h3>
                   </div>
@@ -151,15 +151,15 @@ export default function Changelogs() {
                       <div key={groupIndex}>
                         <div className="flex items-center mb-4">
                           <span className="text-xl mr-3">{categoryIcons[changeGroup.category]}</span>
-                          <h4 className="text-lg font-semibold text-gray-900">
+                          <h4 className="text-lg font-semibold text-card-foreground">
                             {changeGroup.category.charAt(0).toUpperCase() + changeGroup.category.slice(1)}
                           </h4>
                         </div>
                         <ul className="space-y-2 ml-7">
                           {changeGroup.items.map((item, itemIndex) => (
                             <li key={itemIndex} className="flex items-start">
-                              <span className="w-1.5 h-1.5 bg-gray-400 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                              <span className="text-gray-700 leading-relaxed">{item}</span>
+                              <span className="w-1.5 h-1.5 bg-muted-foreground rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                              <span className="text-muted-foreground leading-relaxed">{item}</span>
                             </li>
                           ))}
                         </ul>
@@ -170,7 +170,7 @@ export default function Changelogs() {
                   {/* Divider for next entry */}
                   {index < changelogs.length - 1 && (
                     <div className="mt-10 pt-6">
-                      <div className="w-full h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent"></div>
+                      <div className="w-full h-px bg-gradient-to-r from-transparent via-border to-transparent"></div>
                     </div>
                   )}
                 </motion.div>
@@ -182,7 +182,7 @@ export default function Changelogs() {
         </main>
 
         {/* Footer */}
-        <footer className="py-8 md:py-12 px-4 md:px-6 bg-gray-50">
+        <footer className="py-8 md:py-12 px-4 md:px-6 bg-secondary/50 dark:bg-background transition-colors duration-300">
           <div className="max-w-6xl mx-auto">
             {/* Main Footer Content */}
             <div className="grid md:grid-cols-3 gap-6 md:gap-8 mb-6 md:mb-8">
@@ -195,7 +195,7 @@ export default function Changelogs() {
                     className="w-10 h-10"
                   />
                 </div>
-                <p className="text-gray-600 leading-relaxed">
+                <p className="text-muted-foreground leading-relaxed">
                   The smartest way for IT students to create professional SIWES logbook entries.
                   Transform your weekly summaries into detailed daily logs with SwiftLog&apos;s AI.
                 </p>
@@ -203,28 +203,28 @@ export default function Changelogs() {
 
               {/* Product Links */}
               <div>
-                <h4 className="font-semibold text-gray-900 mb-6">Product</h4>
+                <h4 className="font-semibold text-foreground mb-6">Product</h4>
                 <ul className="space-y-4">
-                  <li><Link href="/#features" className="text-gray-600 hover:text-gray-900 transition-colors">Features</Link></li>
-                  <li><Link href="/#process" className="text-gray-600 hover:text-gray-900 transition-colors">How it Works</Link></li>
-                  <li><Link href="/changelogs" className="text-gray-600 hover:text-gray-900 transition-colors">Changelogs</Link></li>
-                  <li><a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">FAQ</a></li>
+                  <li><Link href="/#features" className="text-muted-foreground hover:text-foreground transition-colors">Features</Link></li>
+                  <li><Link href="/#process" className="text-muted-foreground hover:text-foreground transition-colors">How it Works</Link></li>
+                  <li><Link href="/changelogs" className="text-muted-foreground hover:text-foreground transition-colors">Changelogs</Link></li>
+                  <li><a href="#" className="text-muted-foreground hover:text-foreground transition-colors">FAQ</a></li>
                 </ul>
               </div>
 
               {/* Support & Developer */}
               <div>
-                <h4 className="font-semibold text-gray-900 mb-6">Support & Info</h4>
+                <h4 className="font-semibold text-foreground mb-6">Support & Info</h4>
                 <ul className="space-y-4 mb-8">
-                  <li><a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">Help Center</a></li>
-                  <li><a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">Contact Us</a></li>
-                  <li><a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">Privacy Policy</a></li>
-                  <li><a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">Terms of Service</a></li>
+                  <li><a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Help Center</a></li>
+                  <li><a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Contact Us</a></li>
+                  <li><a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</a></li>
+                  <li><a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Terms of Service</a></li>
                 </ul>
 
-                <div className="pt-6 border-t border-gray-200">
-                  <p className="text-sm text-gray-500 mb-2">Built by</p>
-                  <p className="font-semibold text-gray-900 mb-3">DUKEDEV</p>
+                <div className="pt-6 border-t border-border">
+                  <p className="text-sm text-muted-foreground mb-2">Built by</p>
+                  <p className="font-semibold text-foreground mb-3">DUKEDEV</p>
                   <div className="flex space-x-3">
                     <motion.a
                       href="https://twitter.com/duke_azeta_"

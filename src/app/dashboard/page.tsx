@@ -340,13 +340,13 @@ export default function Dashboard() {
             </div>
           </nav>
 
-          {/* Mobile Menu Dropdown */}
+              {/* Mobile Menu Dropdown */}
           {mobileMenuOpen && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="md:hidden absolute top-full left-0 right-0 mt-2 mx-4 bg-white/90 backdrop-blur-md border border-gray-200/50 rounded-2xl shadow-lg overflow-hidden"
+              className="md:hidden absolute top-full left-0 right-0 mt-2 mx-4 bg-card/90 backdrop-blur-md border border-border/50 rounded-2xl shadow-lg overflow-hidden"
             >
               <div className="p-4">
                 {/* Navigation Links */}
@@ -356,7 +356,7 @@ export default function Dashboard() {
                       key={item}
                       href={`/#${item.toLowerCase()}`}
                       onClick={() => setMobileMenuOpen(false)}
-                      className="block text-gray-600 hover:text-gray-900 font-medium transition-colors py-2"
+                      className="block text-muted-foreground hover:text-foreground font-medium transition-colors py-2"
                     >
                       {item}
                     </a>
@@ -364,13 +364,13 @@ export default function Dashboard() {
                 </div>
 
                 {/* Divider */}
-                <div className="border-t border-gray-200/50 my-4"></div>
+                <div className="border-t border-border/50 my-4"></div>
 
                 {/* Profile Actions */}
                 <div className="space-y-3">
                   <button
                     onClick={handleEditProfile}
-                    className="flex items-center space-x-3 w-full text-left text-gray-600 hover:text-gray-900 font-medium transition-colors py-2"
+                    className="flex items-center space-x-3 w-full text-left text-muted-foreground hover:text-foreground font-medium transition-colors py-2"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -402,8 +402,8 @@ export default function Dashboard() {
           <div className="mb-8">
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-3">
               <h1 className="text-2xl sm:text-3xl font-bold text-foreground">SIWES Logbook</h1>
-              <div className="inline-flex items-center px-3 py-1 rounded-full bg-slate-800 dark:bg-blue-900/50 text-white dark:text-blue-200 text-xs font-extrabold w-fit shadow-xl border-2 border-slate-800 dark:border-blue-800">
-                <span className="w-1.5 h-1.5 bg-blue-400 dark:bg-blue-400 rounded-full mr-1.5 animate-pulse"></span>
+              <div className="inline-flex items-center px-3 py-1 rounded-full bg-info text-info-foreground text-xs font-extrabold w-fit shadow-xl border-2 border-info">
+                <span className="w-1.5 h-1.5 bg-info-foreground rounded-full mr-1.5 animate-pulse"></span>
                 Beta V1.5
               </div>
             </div>
@@ -450,17 +450,17 @@ export default function Dashboard() {
                     <div className="text-sm font-medium text-card-foreground">{profile.company_name}</div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-500 mb-0.5 font-medium uppercase tracking-wide">Department</div>
-                    <div className="text-sm text-gray-900">{profile.department}</div>
+                    <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Department</div>
+                    <div className="text-sm text-card-foreground">{profile.department}</div>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Job Description */}
-            <div className="mt-4 pt-3 border-t border-gray-100">
-              <h4 className="text-base font-semibold text-gray-900 mb-2">Job Description</h4>
-              <p className="text-sm text-gray-600 leading-relaxed">
+            <div className="mt-4 pt-3 border-t border-border">
+              <h4 className="text-base font-semibold text-card-foreground mb-2">Job Description</h4>
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 {profile.company_description}
               </p>
             </div>
@@ -469,7 +469,7 @@ export default function Dashboard() {
           {/* Weekly Logs */}
           <div>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Weekly Logs</h2>
+              <h2 className="text-lg font-semibold text-card-foreground">Weekly Logs</h2>
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                 <button className="flex items-center justify-center space-x-2 px-4 py-2 text-sm text-orange-600 bg-orange-50 rounded-full border border-orange-200 hover:bg-orange-100 transition-colors font-medium">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -482,7 +482,7 @@ export default function Dashboard() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={handleAddWeek}
-                  className="flex items-center justify-center space-x-2 px-4 py-2 bg-gray-900 text-white rounded-full hover:bg-gray-800 transition-colors text-sm font-medium"
+                  className="flex items-center justify-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 transition-colors text-sm font-medium"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -502,15 +502,15 @@ export default function Dashboard() {
                       onClick={() => setActiveWeek(log.week_number)}
                       className={`px-5 py-2.5 text-sm font-semibold rounded-full whitespace-nowrap transition-colors min-w-fit ${
                         activeWeek === log.week_number
-                          ? 'bg-gray-900 text-white'
-                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                       }`}
                     >
                       Week {log.week_number}
                     </button>
                   ))
                 ) : (
-                  <div className="text-gray-500 text-base py-2 px-2">
+                  <div className="text-muted-foreground text-base py-2 px-2">
                     No weeks created yet
                   </div>
                 )}
@@ -525,12 +525,12 @@ export default function Dashboard() {
                   if (!currentLog) {
                     return (
                       <div className="text-center py-16">
-                        <p className="text-gray-500 mb-6 text-lg">No log found for Week {activeWeek}</p>
+                        <p className="text-muted-foreground mb-6 text-lg">No log found for Week {activeWeek}</p>
                         <motion.button
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
                           onClick={handleAddWeek}
-                          className="inline-flex items-center space-x-2 px-6 py-3 bg-gray-900 text-white rounded-full hover:bg-gray-800 transition-colors text-sm font-semibold"
+                          className="inline-flex items-center space-x-2 px-6 py-3 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 transition-colors text-sm font-semibold"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />

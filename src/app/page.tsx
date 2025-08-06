@@ -260,7 +260,7 @@ export default function Home() {
                     key={`first-${uni.name}`}
                     className="flex-shrink-0 flex items-center justify-center"
                   >
-                    <div className="dark:w-20 dark:h-20 dark:rounded-full dark:bg-white dark:backdrop-blur-sm dark:flex dark:items-center dark:justify-center">
+                    <div className="dark:w-20 dark:h-20 dark:rounded-full dark:bg-white dark:flex dark:items-center dark:justify-center">
                       <Image
                         src={uni.logo}
                         alt={`${uni.name} Logo`}
@@ -285,7 +285,7 @@ export default function Home() {
                     key={`second-${uni.name}`}
                     className="flex-shrink-0 flex items-center justify-center"
                   >
-                    <div className="dark:w-20 dark:h-20 dark:rounded-full dark:bg-white dark:backdrop-blur-sm dark:flex dark:items-center dark:justify-center">
+                    <div className="dark:w-20 dark:h-20 dark:rounded-full dark:bg-white dark:flex dark:items-center dark:justify-center">
                       <Image
                         src={uni.logo}
                         alt={`${uni.name} Logo`}

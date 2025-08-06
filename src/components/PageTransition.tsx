@@ -8,10 +8,7 @@ interface PageTransitionProps {
 
 export default function PageTransition({ children }: PageTransitionProps) {
   return (
-    <div
-      className="min-h-screen bg-white"
-      style={{ backgroundColor: 'white', minHeight: '100vh' }}
-    >
+    <div className="min-h-screen bg-background transition-colors duration-300">
       {children}
     </div>
   );

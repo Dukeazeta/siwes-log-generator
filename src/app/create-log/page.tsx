@@ -113,7 +113,7 @@ export default function CreateLog() {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-secondary/30 transition-colors duration-300">
         {/* Floating Glassmorphism Navbar */}
         <motion.header
           initial={{ y: -100, opacity: 0 }}
@@ -121,19 +121,19 @@ export default function CreateLog() {
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="fixed top-4 md:top-6 left-1/2 transform -translate-x-1/2 z-50 w-[95%] md:w-[90%] max-w-4xl"
         >
-          <nav className="backdrop-blur-md bg-white/70 border border-gray-200/50 rounded-full px-4 md:px-8 py-3 md:py-4">
+          <nav className="backdrop-blur-md bg-background/70 border border-border/50 rounded-full px-4 md:px-8 py-3 md:py-4 transition-colors duration-300">
             <div className="flex items-center justify-between">
               {/* Back Button and Title */}
               <Link
                 href="/dashboard"
                 className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
               >
-                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
                 <div>
-                  <span className="text-sm font-medium text-gray-900">Create New Log</span>
-                  <p className="text-xs text-gray-500">Week {weekNumber}</p>
+                  <span className="text-sm font-medium text-foreground">Create New Log</span>
+                  <p className="text-xs text-muted-foreground">Week {weekNumber}</p>
                 </div>
               </Link>
 
@@ -152,30 +152,30 @@ export default function CreateLog() {
           <div className="space-y-6">
             {/* Header */}
             <div className="text-center mb-8">
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">Create Weekly Log</h1>
-              <p className="text-gray-600">Transform your activities into a professional logbook entry</p>
+              <h1 className="text-2xl font-bold text-foreground mb-2">Create Weekly Log</h1>
+              <p className="text-muted-foreground">Transform your activities into a professional logbook entry</p>
             </div>
 
             {/* Week Selection */}
             <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-3">
+              <label className="block text-sm font-semibold text-foreground mb-3">
                 Week Number
               </label>
               <div className="relative">
                 <select
                   value={weekNumber}
                   onChange={(e) => setWeekNumber(Number(e.target.value))}
-                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-gray-900 text-gray-900 appearance-none cursor-pointer transition-colors"
+                  className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring focus:border-ring text-card-foreground appearance-none cursor-pointer transition-colors"
                 >
                   {[...Array(24)].map((_, i) => (
-                    <option key={i + 1} value={i + 1} className="text-gray-900">
+                    <option key={i + 1} value={i + 1} className="text-card-foreground">
                       Week {i + 1}
                     </option>
                   ))}
                 </select>
                 {/* Custom dropdown arrow */}
                 <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </div>
@@ -185,32 +185,32 @@ export default function CreateLog() {
             {/* Date Range */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-3">
+                <label className="block text-sm font-semibold text-foreground mb-3">
                   Start Date
                 </label>
                 <input
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-gray-900 text-gray-900 transition-colors"
+                  className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring focus:border-ring text-card-foreground transition-colors"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-3">
+                <label className="block text-sm font-semibold text-foreground mb-3">
                   End Date
                 </label>
                 <input
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-gray-900 text-gray-900 transition-colors"
+                  className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring focus:border-ring text-card-foreground transition-colors"
                 />
               </div>
             </div>
 
             {/* Activities */}
             <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-3">
+              <label className="block text-sm font-semibold text-foreground mb-3">
                 Activities & Tasks
               </label>
               <textarea
@@ -218,9 +218,9 @@ export default function CreateLog() {
                 onChange={(e) => setActivities(e.target.value)}
                 placeholder="Describe the activities, tasks, and projects you worked on this week..."
                 rows={6}
-                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-gray-900 text-gray-900 placeholder-gray-500 resize-none transition-colors"
+                className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring focus:border-ring text-card-foreground placeholder-muted-foreground resize-none transition-colors"
               />
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="text-xs text-muted-foreground mt-2">
                 Be specific about your daily activities, learning outcomes, and contributions.
               </p>
             </div>
@@ -243,11 +243,11 @@ export default function CreateLog() {
               whileTap={{ scale: 0.98 }}
               onClick={handleGenerate}
               disabled={isGenerating || !startDate || !endDate || !activities.trim()}
-              className="w-full bg-gray-900 text-white py-4 rounded-full font-semibold hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2 text-base"
+              className="w-full bg-primary text-primary-foreground py-4 rounded-full font-semibold hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2 text-base"
             >
               {isGenerating ? (
                 <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
                   <span>Generating Log...</span>
                 </>
               ) : (
@@ -261,9 +261,9 @@ export default function CreateLog() {
             </motion.button>
 
             {/* Tips */}
-            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">💡 Tips for better logs</h3>
-              <ul className="text-sm text-gray-600 space-y-2">
+            <div className="bg-muted border border-border rounded-xl p-4">
+              <h3 className="text-sm font-semibold text-foreground mb-3">💡 Tips for better logs</h3>
+              <ul className="text-sm text-muted-foreground space-y-2">
                 <li>• Include specific technical skills and tools used</li>
                 <li>• Mention learning outcomes and challenges faced</li>
                 <li>• Describe your contributions to team projects</li>

@@ -143,9 +143,9 @@ export default function Onboarding() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background transition-colors duration-300">
       {/* Header */}
-      <header className="border-b border-gray-200 bg-white">
+      <header className="border-b border-border bg-background transition-colors duration-300">
         <div className="max-w-4xl mx-auto px-6 py-4">
           <Link href="/" className="flex items-center justify-center">
             <Logo
@@ -161,49 +161,49 @@ export default function Onboarding() {
       <div className="max-w-4xl mx-auto px-6 py-8">
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold text-gray-900">Complete Your Profile</h1>
-            <span className="text-sm text-gray-500">Step {currentStep} of 3</span>
+            <h1 className="text-2xl font-bold text-foreground">Complete Your Profile</h1>
+            <span className="text-sm text-muted-foreground">Step {currentStep} of 3</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className="bg-gray-900 h-2 rounded-full transition-all duration-300"
+          <div className="w-full bg-muted rounded-full h-2">
+            <div
+              className="bg-primary h-2 rounded-full transition-all duration-300"
               style={{ width: `${(currentStep / 3) * 100}%` }}
             ></div>
           </div>
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-600 text-sm">{error}</p>
+          <div className="mb-6 p-4 bg-error-muted border border-error-muted rounded-lg">
+            <p className="text-error-muted-foreground text-sm">{error}</p>
           </div>
         )}
 
         {/* Step 1: Student Details */}
         {currentStep === 1 && (
-          <div className="bg-white border border-gray-200 rounded-xl p-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Student Information</h2>
+          <div className="bg-card border border-border rounded-xl p-8 transition-colors duration-300">
+            <h2 className="text-xl font-semibold text-card-foreground mb-6">Student Information</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-card-foreground mb-2">
                   Full Name
                 </label>
                 <input
                   type="text"
                   value={formData.fullName}
                   onChange={(e) => handleInputChange('fullName', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent text-gray-900 placeholder-gray-400"
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent text-card-foreground placeholder-muted-foreground bg-card transition-colors"
                   placeholder="Enter your full name"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-card-foreground mb-2">
                   Course/Program
                 </label>
                 <input
                   type="text"
                   value={formData.course}
                   onChange={(e) => handleInputChange('course', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent text-gray-900 placeholder-gray-400"
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent text-card-foreground placeholder-muted-foreground bg-card transition-colors"
                   placeholder="e.g., Computer Science"
                 />
               </div>
@@ -218,13 +218,13 @@ export default function Onboarding() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-card-foreground mb-2">
                   Level/Year
                 </label>
                 <select
                   value={formData.level}
                   onChange={(e) => handleInputChange('level', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent text-gray-900 bg-white"
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent text-card-foreground bg-card transition-colors"
                 >
                   <option value="">Select your level</option>
                   <option value="ND1">ND1</option>
@@ -244,29 +244,29 @@ export default function Onboarding() {
 
         {/* Step 2: Company Details */}
         {currentStep === 2 && (
-          <div className="bg-white border border-gray-200 rounded-xl p-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Company Information</h2>
+          <div className="bg-card border border-border rounded-xl p-8 transition-colors duration-300">
+            <h2 className="text-xl font-semibold text-card-foreground mb-6">Company Information</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-card-foreground mb-2">
                   Company Name
                 </label>
                 <input
                   type="text"
                   value={formData.companyName}
                   onChange={(e) => handleInputChange('companyName', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent text-gray-900 placeholder-gray-400"
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent text-card-foreground placeholder-muted-foreground bg-card transition-colors"
                   placeholder="Name of your IT placement company"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-card-foreground mb-2">
                   Department/Unit
                 </label>
                 <select
                   value={formData.department}
                   onChange={(e) => handleInputChange('department', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent text-gray-900 bg-white"
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent text-card-foreground bg-card transition-colors"
                 >
                   <option value="">Select department</option>
                   <option value="Software Engineering">Software Engineering</option>
@@ -296,25 +296,25 @@ export default function Onboarding() {
                 </select>
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-card-foreground mb-2">
                   Company Address
                 </label>
                 <textarea
                   value={formData.companyAddress}
                   onChange={(e) => handleInputChange('companyAddress', e.target.value)}
                   rows={3}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent text-gray-900 placeholder-gray-400"
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent text-card-foreground placeholder-muted-foreground bg-card transition-colors"
                   placeholder="Full address of the company"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-card-foreground mb-2">
                   Industry Type
                 </label>
                 <select
                   value={formData.industryType}
                   onChange={(e) => handleInputChange('industryType', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent text-gray-900 bg-white"
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent text-card-foreground bg-card transition-colors"
                 >
                   <option value="">Select industry type</option>
                   <option value="Technology">Technology</option>
@@ -329,14 +329,14 @@ export default function Onboarding() {
                 </select>
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-card-foreground mb-2">
                   Job Description
                 </label>
                 <textarea
                   value={formData.jobDescription}
                   onChange={(e) => handleInputChange('jobDescription', e.target.value)}
                   rows={4}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent text-gray-900 placeholder-gray-400"
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent text-card-foreground placeholder-muted-foreground bg-card transition-colors"
                   placeholder="Describe your role, responsibilities, and what you'll be doing during your IT training"
                 />
               </div>
@@ -346,61 +346,61 @@ export default function Onboarding() {
 
         {/* Step 3: Training Period */}
         {currentStep === 3 && (
-          <div className="bg-white border border-gray-200 rounded-xl p-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Training Period & Supervision</h2>
+          <div className="bg-card border border-border rounded-xl p-8 transition-colors duration-300">
+            <h2 className="text-xl font-semibold text-card-foreground mb-6">Training Period & Supervision</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-card-foreground mb-2">
                   Start Date
                 </label>
                 <input
                   type="date"
                   value={formData.startDate}
                   onChange={(e) => handleInputChange('startDate', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent text-gray-900"
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent text-card-foreground bg-card transition-colors"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-card-foreground mb-2">
                   End Date
                 </label>
                 <input
                   type="date"
                   value={formData.endDate}
                   onChange={(e) => handleInputChange('endDate', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent text-gray-900"
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent text-card-foreground bg-card transition-colors"
                 />
               </div>
               {calculateDuration() && (
                 <div className="md:col-span-2">
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                    <p className="text-sm text-gray-600">
+                  <div className="bg-muted border border-border rounded-lg p-4 transition-colors">
+                    <p className="text-sm text-muted-foreground">
                       <span className="font-medium">Training Duration:</span> {calculateDuration()}
                     </p>
                   </div>
                 </div>
               )}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-card-foreground mb-2">
                   Supervisor Name
                 </label>
                 <input
                   type="text"
                   value={formData.supervisorName}
                   onChange={(e) => handleInputChange('supervisorName', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent text-gray-900 placeholder-gray-400"
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent text-card-foreground placeholder-muted-foreground bg-card transition-colors"
                   placeholder="Name of your IT supervisor"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-card-foreground mb-2">
                   Supervisor Title
                 </label>
                 <input
                   type="text"
                   value={formData.supervisorTitle}
                   onChange={(e) => handleInputChange('supervisorTitle', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent text-gray-900 placeholder-gray-400"
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent text-card-foreground placeholder-muted-foreground bg-card transition-colors"
                   placeholder="e.g., IT Manager, Senior Developer"
                 />
               </div>
@@ -413,15 +413,15 @@ export default function Onboarding() {
           <button
             onClick={prevStep}
             disabled={currentStep === 1}
-            className="px-6 py-3 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-3 border border-border text-muted-foreground rounded-lg hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             Previous
           </button>
-          
+
           {currentStep < 3 ? (
             <button
               onClick={nextStep}
-              className="px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800"
+              className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
             >
               Next
             </button>
@@ -429,7 +429,7 @@ export default function Onboarding() {
             <button
               onClick={handleSubmit}
               disabled={isLoading}
-              className="px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50"
+              className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors"
             >
               {isLoading ? 'Saving...' : 'Complete Setup'}
             </button>
