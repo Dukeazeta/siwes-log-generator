@@ -139,7 +139,7 @@ export default function Home() {
             >
               <div className="inline-flex items-center px-3 py-1 rounded-full bg-slate-800 dark:bg-gradient-to-r dark:from-indigo-600 dark:via-purple-600 dark:to-pink-600 text-white dark:text-white text-sm font-extrabold">
                 <span className="w-2 h-2 bg-blue-400 dark:bg-white rounded-full mr-2 animate-pulse"></span>
-                Beta V1.5
+                Beta v2.1.1
               </div>
               <span className="inline-block px-4 py-2 rounded-full text-sm font-extrabold bg-black text-white dark:bg-white dark:text-gray-900">
                 ✨ AI-Powered SIWES Log Generation

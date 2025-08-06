@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -10,6 +10,12 @@ interface ThemeToggleProps {
 
 export default function ThemeToggle({ className = '' }: ThemeToggleProps) {
   const { resolvedTheme, toggleTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  // Ensure component is mounted before rendering theme-dependent content
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const iconVariants = {
     initial: { scale: 0, rotate: -180, opacity: 0 },
@@ -28,12 +34,27 @@ export default function ThemeToggle({ className = '' }: ThemeToggleProps) {
 
 
 
+  // Don't render anything until mounted to avoid hydration mismatch
+  if (!mounted) {
+    return (
+      <div className={`
+        fixed bottom-6 right-6 z-50
+        w-14 h-14 rounded-full
+        backdrop-blur-md border border-border/20
+        flex items-center justify-center
+        transition-all duration-300 ease-out
+        bg-card/70
+        ${className}
+      `} />
+    );
+  }
+
   return (
     <motion.button
       onClick={toggleTheme}
       className={`
-        fixed bottom-6 right-6 z-50 
-        w-14 h-14 rounded-full 
+        fixed bottom-6 right-6 z-50
+        w-14 h-14 rounded-full
         backdrop-blur-md border border-border/20
         flex items-center justify-center
         transition-all duration-300 ease-out
@@ -80,7 +101,7 @@ export default function ThemeToggle({ className = '' }: ThemeToggleProps) {
             animate="animate"
             exit="exit"
             transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="text-slate-700"
+            className="text-foreground"
           >
             <svg
               width="24"

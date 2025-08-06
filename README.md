@@ -1,6 +1,6 @@
 # SwiftLog - AI-Powered SIWES Log Generation
 
-[![Beta Version](https://img.shields.io/badge/version-Beta%20V1.5-blue.svg)](https://swiftlog-beta.vercel.app)
+[![Beta Version](https://img.shields.io/badge/version-Beta%20v2.1.1-blue.svg)](https://swiftlog-beta.vercel.app)
 [![Next.js](https://img.shields.io/badge/Next.js-15.4.5-black.svg)](https://nextjs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org)
 [![Supabase](https://img.shields.io/badge/Supabase-Backend-green.svg)](https://supabase.com)

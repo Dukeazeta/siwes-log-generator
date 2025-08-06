@@ -282,7 +282,7 @@ export default function Dashboard() {
 
               {/* Navigation Links */}
               <div className="hidden md:flex items-center space-x-8">
-                {['Features', 'Process', 'About'].map((item) => (
+                {['Features', 'Process'].map((item) => (
                   <a
                     key={item}
                     href={`/#${item.toLowerCase()}`}
@@ -291,6 +291,12 @@ export default function Dashboard() {
                     {item}
                   </a>
                 ))}
+                <Link
+                  href="/changelogs"
+                  className="text-muted-foreground hover:text-foreground font-medium transition-colors relative"
+                >
+                  Changelogs
+                </Link>
               </div>
 
               {/* User Menu */}
@@ -351,7 +357,7 @@ export default function Dashboard() {
               <div className="p-4">
                 {/* Navigation Links */}
                 <div className="space-y-3 mb-4">
-                  {['Features', 'Process', 'About'].map((item) => (
+                  {['Features', 'Process'].map((item) => (
                     <a
                       key={item}
                       href={`/#${item.toLowerCase()}`}
@@ -361,6 +367,13 @@ export default function Dashboard() {
                       {item}
                     </a>
                   ))}
+                  <Link
+                    href="/changelogs"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block text-muted-foreground hover:text-foreground font-medium transition-colors py-2"
+                  >
+                    Changelogs
+                  </Link>
                 </div>
 
                 {/* Divider */}
@@ -402,9 +415,9 @@ export default function Dashboard() {
           <div className="mb-8">
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-3">
               <h1 className="text-2xl sm:text-3xl font-bold text-foreground">SIWES Logbook</h1>
-              <div className="inline-flex items-center px-3 py-1 rounded-full bg-info text-info-foreground text-xs font-extrabold w-fit shadow-xl border-2 border-info">
-                <span className="w-1.5 h-1.5 bg-info-foreground rounded-full mr-1.5 animate-pulse"></span>
-                Beta V1.5
+              <div className="inline-flex items-center px-3 py-1 rounded-full bg-slate-800 dark:bg-gradient-to-r dark:from-indigo-600 dark:via-purple-600 dark:to-pink-600 text-white dark:text-white text-xs font-extrabold w-fit">
+                <span className="w-2 h-2 bg-blue-400 dark:bg-white rounded-full mr-2 animate-pulse"></span>
+                Beta v2.1.1
               </div>
             </div>
             <p className="text-base text-muted-foreground">{profile.full_name} • {profile.course}</p>
@@ -547,28 +560,28 @@ export default function Dashboard() {
 
                   return (
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      <h3 className="text-lg font-semibold text-foreground mb-2">
                         Week {activeWeek}: {formatDate(currentLog.start_date)} — {formatDate(currentLog.end_date)}
                       </h3>
 
                       {/* Week Summary */}
-                      <p className="text-sm text-gray-600 leading-relaxed mb-4">
+                      <p className="text-sm text-muted-foreground leading-relaxed mb-4">
                         {logContent.weekSummary}
                       </p>
 
                       {/* Daily Activities */}
                       <div className="mb-5">
-                        <h4 className="text-base font-semibold text-gray-900 mb-3">Daily Activities</h4>
+                        <h4 className="text-base font-semibold text-foreground mb-3">Daily Activities</h4>
 
                         {/* Mobile-friendly cards for small screens */}
                         <div className="block sm:hidden space-y-3">
                           {logContent.dailyActivities?.map((activity: { day: string; date: string; activities: string }, index: number) => (
-                            <div key={index} className="border-l-4 border-gray-900 pl-4">
+                            <div key={index} className="border-l-4 border-primary pl-4">
                               <div className="flex items-center justify-between mb-2">
-                                <div className="text-gray-900 font-semibold text-sm">{activity.day}</div>
-                                <div className="text-gray-500 text-xs font-medium">{activity.date}</div>
+                                <div className="text-foreground font-semibold text-sm">{activity.day}</div>
+                                <div className="text-muted-foreground text-xs font-medium">{activity.date}</div>
                               </div>
-                              <div className="text-gray-700 text-sm leading-relaxed">
+                              <div className="text-card-foreground text-sm leading-relaxed">
                                 {activity.activities}
                               </div>
                             </div>
@@ -579,12 +592,12 @@ export default function Dashboard() {
                         <div className="hidden sm:block">
                           <div className="space-y-3">
                             {logContent.dailyActivities?.map((activity: { day: string; date: string; activities: string }, index: number) => (
-                              <div key={index} className="border-l-4 border-gray-900 pl-5 py-1">
+                              <div key={index} className="border-l-4 border-primary pl-5 py-1">
                                 <div className="flex items-center justify-between mb-1.5">
-                                  <div className="text-gray-900 font-semibold text-sm">{activity.day}</div>
-                                  <div className="text-gray-500 text-xs font-medium">{activity.date}</div>
+                                  <div className="text-foreground font-semibold text-sm">{activity.day}</div>
+                                  <div className="text-muted-foreground text-xs font-medium">{activity.date}</div>
                                 </div>
-                                <div className="text-gray-700 text-sm leading-relaxed">
+                                <div className="text-card-foreground text-sm leading-relaxed">
                                   {activity.activities}
                                 </div>
                               </div>
@@ -596,11 +609,11 @@ export default function Dashboard() {
                       {/* Skills and Learning Outcomes */}
                       <div className="grid gap-4 md:grid-cols-2 mb-4">
                         <div>
-                          <h4 className="text-base font-semibold text-gray-900 mb-2">Skills Developed</h4>
-                          <ul className="text-gray-700 text-sm space-y-1.5">
+                          <h4 className="text-base font-semibold text-foreground mb-2">Skills Developed</h4>
+                          <ul className="text-card-foreground text-sm space-y-1.5">
                             {logContent.skillsDeveloped?.map((skill: string, index: number) => (
                               <li key={index} className="flex items-start">
-                                <span className="text-gray-900 mr-2 mt-0.5 font-bold">•</span>
+                                <span className="text-primary mr-2 mt-0.5 font-bold">•</span>
                                 <span className="leading-relaxed">{skill}</span>
                               </li>
                             ))}
@@ -608,8 +621,8 @@ export default function Dashboard() {
                         </div>
 
                         <div>
-                          <h4 className="text-base font-semibold text-gray-900 mb-2">Learning Outcomes</h4>
-                          <p className="text-gray-700 text-sm leading-relaxed">
+                          <h4 className="text-base font-semibold text-foreground mb-2">Learning Outcomes</h4>
+                          <p className="text-card-foreground text-sm leading-relaxed">
                             {logContent.learningOutcomes}
                           </p>
                         </div>

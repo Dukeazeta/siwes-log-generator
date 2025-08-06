@@ -12,6 +12,42 @@ export interface ChangelogEntry {
 
 export const changelogs: ChangelogEntry[] = [
   {
+    version: "2.1.1",
+    date: "2025-08-06",
+    type: "major",
+    title: "Dark Mode & Theme System",
+    description: "Introduced a comprehensive dark mode system with semantic color tokens and improved user experience across all components.",
+    changes: [
+      {
+        category: "added",
+        items: [
+          "Complete dark mode support with automatic system preference detection",
+          "Theme toggle button with smooth animations and glassmorphism effects",
+          "Semantic color system with success, error, warning, and info states",
+          "Automatic theme persistence across browser sessions",
+        ]
+      },
+      {
+        category: "improved",
+        items: [
+          "Enhanced color contrast and readability in both light and dark modes",
+          "Replaced all hardcoded colors with theme-aware semantic tokens",
+          "Improved accessibility with proper ARIA labels and focus states",
+          "Smooth transitions between theme changes across all components",
+          "Better visual hierarchy with consistent color usage",
+        ]
+      },
+      {
+        category: "fixed",
+        items: [
+          "Hydration errors in theme-dependent components",
+          "Text visibility issues in dark mode for log content",
+          "Inconsistent color usage across different pages and components",
+        ]
+      }
+    ]
+  },
+  {
     version: "1.5.5",
     date: "2025-08-06",
     type: "minor",
