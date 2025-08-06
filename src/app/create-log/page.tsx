@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import PageTransition from '../../components/PageTransition';
+import Logo from '../../components/Logo';
 
 interface UserProfile {
   full_name: string;
@@ -137,9 +138,7 @@ export default function CreateLog() {
               </Link>
 
               {/* Logo */}
-              <Image
-                src="/LOGOS/SwiftLog.svg"
-                alt="SwiftLog Logo"
+              <Logo
                 width={40}
                 height={40}
                 className="w-8 h-8 md:w-10 md:h-10"

@@ -7,6 +7,7 @@ import { supabase } from '../../lib/supabase';
 import Image from 'next/image';
 import Link from 'next/link';
 import InstitutionAutocomplete from '../../components/InstitutionAutocomplete';
+import Logo from '../../components/Logo';
 
 interface OnboardingData {
   // Student Details
@@ -147,9 +148,7 @@ export default function Onboarding() {
       <header className="border-b border-gray-200 bg-white">
         <div className="max-w-4xl mx-auto px-6 py-4">
           <Link href="/" className="flex items-center justify-center">
-            <Image
-              src="/LOGOS/SwiftLog.svg"
-              alt="SwiftLog Logo"
+            <Logo
               width={40}
               height={40}
               className="w-10 h-10"

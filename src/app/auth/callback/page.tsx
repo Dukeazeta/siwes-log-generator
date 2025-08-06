@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../contexts/AuthContext';
 import Image from 'next/image';
+import Logo from '../../../components/Logo';
 
 export default function AuthCallback() {
   const router = useRouter();
@@ -73,18 +74,15 @@ export default function AuthCallback() {
   }, [isLoading, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-background dark:bg-background transition-colors duration-300">
       <div className="text-center">
-        <Image
-          src="/LOGOS/SwiftLog.svg"
-          alt="SwiftLog Logo"
+        <Logo
           width={64}
           height={64}
-          priority
           className="w-16 h-16 mx-auto mb-4 animate-pulse"
         />
-        <p className="text-gray-600 mb-2">Completing sign in...</p>
-        <p className="text-gray-400 text-sm">This may take a few seconds</p>
+        <p className="text-foreground mb-2">Completing sign in...</p>
+        <p className="text-muted-foreground text-sm">This may take a few seconds</p>
       </div>
     </div>
   );

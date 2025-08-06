@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { gsap } from "gsap";
 import SmartCTAButton from "../../components/SmartCTAButton";
 import PageTransition from "../../components/PageTransition";
+import Logo from "../../components/Logo";
 import {
   changelogs,
   categoryIcons,
@@ -37,7 +38,7 @@ export default function Changelogs() {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
         {/* Floating Glassmorphism Navbar */}
         <motion.header
           initial={{ y: -100, opacity: 0 }}
@@ -45,13 +46,11 @@ export default function Changelogs() {
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="fixed top-4 md:top-6 left-1/2 transform -translate-x-1/2 z-50 w-[95%] md:w-[90%] max-w-4xl"
         >
-          <nav className="backdrop-blur-md bg-white/70 border border-gray-200/50 rounded-full px-4 md:px-8 py-3 md:py-4">
+          <nav className="backdrop-blur-md bg-background/70 dark:bg-background/80 border border-border/50 rounded-full px-4 md:px-8 py-3 md:py-4 transition-colors duration-300">
             <div className="flex items-center justify-between">
               <div className="flex items-center justify-center">
                 <Link href="/" className="flex items-center">
-                  <Image
-                    src="/LOGOS/SwiftLog.svg"
-                    alt="SwiftLog Logo"
+                  <Logo
                     width={48}
                     height={48}
                     className="w-10 h-10 md:w-12 md:h-12"
@@ -60,17 +59,17 @@ export default function Changelogs() {
               </div>
 
               <div className="hidden md:flex items-center space-x-8">
-                <Link href="/#features" className="text-gray-600 hover:text-gray-900 font-medium transition-colors">
+                <Link href="/#features" className="text-muted-foreground hover:text-foreground font-medium transition-colors">
                   Features
                 </Link>
-                <Link href="/#process" className="text-gray-600 hover:text-gray-900 font-medium transition-colors">
+                <Link href="/#process" className="text-muted-foreground hover:text-foreground font-medium transition-colors">
                   Process
                 </Link>
-                <Link href="/changelogs" className="text-gray-900 font-semibold">
+                <Link href="/changelogs" className="text-foreground font-semibold">
                   Changelogs
                 </Link>
                 <SmartCTAButton
-                  className="bg-gray-900 text-white px-6 py-2 rounded-full font-medium hover:bg-gray-800 transition-colors"
+                  className="bg-primary text-primary-foreground px-6 py-2 rounded-full font-medium hover:bg-primary/90 transition-colors"
                   authenticatedText="Go to Dashboard"
                   unauthenticatedText="Get Started"
                 >
@@ -92,13 +91,13 @@ export default function Changelogs() {
                 transition={{ duration: 0.6 }}
                 className="mb-3"
               >
-                <div className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 text-blue-800 text-sm font-medium mb-6">
-                  <span className="w-2 h-2 bg-blue-500 rounded-full mr-2 animate-pulse"></span>
+                <div className="inline-flex items-center px-4 py-2 rounded-full bg-blue-800 dark:bg-blue-900/50 text-white dark:text-blue-200 text-sm font-extrabold mb-6 shadow-xl border-2 border-blue-900 dark:border-blue-800">
+                  <span className="w-2 h-2 bg-white dark:bg-blue-400 rounded-full mr-2 animate-pulse"></span>
                   Product Updates
                 </div>
               </motion.div>
 
-              <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-4">
+              <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-4">
                 Changelogs
               </h1>
             </div>
@@ -190,9 +189,7 @@ export default function Changelogs() {
               {/* Brand & Description */}
               <div className="md:col-span-1">
                 <div className="flex items-center mb-6">
-                  <Image
-                    src="/LOGOS/SwiftLog.svg"
-                    alt="SwiftLog Logo"
+                  <Logo
                     width={40}
                     height={40}
                     className="w-10 h-10"

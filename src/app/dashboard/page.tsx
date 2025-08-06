@@ -8,6 +8,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import PageTransition from "../../components/PageTransition";
+import Logo from "../../components/Logo";
 
 interface UserProfile {
   full_name: string;
@@ -204,12 +205,9 @@ export default function Dashboard() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <Image
-            src="/LOGOS/SwiftLog.svg"
-            alt="SwiftLog Logo"
+          <Logo
             width={64}
             height={64}
-            priority
             className="w-16 h-16 mx-auto mb-4 animate-pulse"
           />
           <p className="text-gray-600">Loading...</p>
@@ -226,12 +224,9 @@ export default function Dashboard() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <Image
-            src="/LOGOS/SwiftLog.svg"
-            alt="SwiftLog Logo"
+          <Logo
             width={64}
             height={64}
-            priority
             className="w-16 h-16 mx-auto mb-4 animate-pulse"
           />
           <p className="text-gray-600">Loading profile...</p>
@@ -246,12 +241,9 @@ export default function Dashboard() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <Image
-            src="/LOGOS/SwiftLog.svg"
-            alt="SwiftLog Logo"
+          <Logo
             width={64}
             height={64}
-            priority
             className="w-16 h-16 mx-auto mb-4"
           />
           <p className="text-gray-600 mb-4">Profile not found</p>
@@ -268,7 +260,7 @@ export default function Dashboard() {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-secondary/30 dark:bg-background transition-colors duration-300">
         {/* Floating Glassmorphism Navbar */}
         <motion.header
           ref={mobileMenuRef}
@@ -277,13 +269,11 @@ export default function Dashboard() {
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="fixed top-4 md:top-6 left-1/2 transform -translate-x-1/2 z-50 w-[95%] md:w-[90%] max-w-4xl"
         >
-          <nav className="backdrop-blur-md bg-white/70 border border-gray-200/50 rounded-full px-4 md:px-8 py-3 md:py-4">
+          <nav className="backdrop-blur-md bg-background/70 dark:bg-background/80 border border-border/50 rounded-full px-4 md:px-8 py-3 md:py-4 transition-colors duration-300">
             <div className="flex items-center justify-between">
               {/* Logo */}
               <Link href="/" className="flex items-center justify-center">
-                <Image
-                  src="/LOGOS/SwiftLog.svg"
-                  alt="SwiftLog Logo"
+                <Logo
                   width={48}
                   height={48}
                   className="w-10 h-10 md:w-12 md:h-12"
@@ -296,7 +286,7 @@ export default function Dashboard() {
                   <a
                     key={item}
                     href={`/#${item.toLowerCase()}`}
-                    className="text-gray-600 hover:text-gray-900 font-medium transition-colors relative"
+                    className="text-muted-foreground hover:text-foreground font-medium transition-colors relative"
                   >
                     {item}
                   </a>
@@ -411,20 +401,20 @@ export default function Dashboard() {
           {/* Profile Header */}
           <div className="mb-8">
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-3">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">SIWES Logbook</h1>
-              <div className="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-medium w-fit">
-                <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mr-1.5 animate-pulse"></span>
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">SIWES Logbook</h1>
+              <div className="inline-flex items-center px-3 py-1 rounded-full bg-slate-800 dark:bg-blue-900/50 text-white dark:text-blue-200 text-xs font-extrabold w-fit shadow-xl border-2 border-slate-800 dark:border-blue-800">
+                <span className="w-1.5 h-1.5 bg-blue-400 dark:bg-blue-400 rounded-full mr-1.5 animate-pulse"></span>
                 Beta V1.5
               </div>
             </div>
-            <p className="text-base text-gray-600">{profile.full_name} • {profile.course}</p>
+            <p className="text-base text-muted-foreground">{profile.full_name} • {profile.course}</p>
           </div>
 
           {/* Training Information */}
-          <div className="bg-white border border-gray-200 rounded-2xl p-5 mb-6">
+          <div className="bg-card border border-border rounded-2xl p-5 mb-6 transition-colors duration-300">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Training Information</h2>
-              <span className="text-sm text-gray-500 font-medium">
+              <h2 className="text-lg font-semibold text-card-foreground">Training Information</h2>
+              <span className="text-sm text-muted-foreground font-medium">
                 {profile.start_date && profile.end_date &&
                   `${formatDate(profile.start_date)} — ${formatDate(profile.end_date)}`
                 }
@@ -434,30 +424,30 @@ export default function Dashboard() {
             <div className="grid gap-4 md:grid-cols-2">
               {/* Student Details */}
               <div>
-                <h3 className="text-base font-semibold text-gray-900 mb-3">Student Details</h3>
+                <h3 className="text-base font-semibold text-card-foreground mb-3">Student Details</h3>
                 <div className="space-y-2">
                   <div>
-                    <div className="text-xs text-gray-500 mb-0.5 font-medium uppercase tracking-wide">Name</div>
-                    <div className="text-sm font-medium text-gray-900">{profile.full_name}</div>
+                    <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Name</div>
+                    <div className="text-sm font-medium text-card-foreground">{profile.full_name}</div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-500 mb-0.5 font-medium uppercase tracking-wide">Course</div>
-                    <div className="text-sm text-gray-900">{profile.course}</div>
+                    <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Course</div>
+                    <div className="text-sm text-card-foreground">{profile.course}</div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-500 mb-0.5 font-medium uppercase tracking-wide">Institution</div>
-                    <div className="text-sm text-gray-900">{profile.institution}</div>
+                    <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Institution</div>
+                    <div className="text-sm text-card-foreground">{profile.institution}</div>
                   </div>
                 </div>
               </div>
 
               {/* Company Details */}
               <div>
-                <h3 className="text-base font-semibold text-gray-900 mb-3">Company Details</h3>
+                <h3 className="text-base font-semibold text-card-foreground mb-3">Company Details</h3>
                 <div className="space-y-2">
                   <div>
-                    <div className="text-xs text-gray-500 mb-0.5 font-medium uppercase tracking-wide">Company</div>
-                    <div className="text-sm font-medium text-gray-900">{profile.company_name}</div>
+                    <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Company</div>
+                    <div className="text-sm font-medium text-card-foreground">{profile.company_name}</div>
                   </div>
                   <div>
                     <div className="text-xs text-gray-500 mb-0.5 font-medium uppercase tracking-wide">Department</div>
