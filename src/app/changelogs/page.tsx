@@ -90,8 +90,8 @@ export default function Changelogs() {
                 transition={{ duration: 0.6 }}
                 className="mb-3"
               >
-                <div className="inline-flex items-center px-4 py-2 rounded-full bg-info text-info-foreground text-sm font-extrabold mb-6 shadow-xl border-2 border-info">
-                  <span className="w-2 h-2 bg-info-foreground rounded-full mr-2 animate-pulse"></span>
+                <div className="inline-flex items-center px-4 py-2 rounded-full bg-info text-white text-sm font-extrabold mb-6 shadow-xl border-2 border-info">
+                  <span className="w-2 h-2 bg-white rounded-full mr-2 animate-pulse"></span>
                   Product Updates
                 </div>
               </motion.div>

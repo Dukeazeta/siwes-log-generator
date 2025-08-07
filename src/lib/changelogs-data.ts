@@ -22,8 +22,7 @@ export const changelogs: ChangelogEntry[] = [
         category: "added",
         items: [
           "Complete dark mode support with automatic system preference detection",
-          "Theme toggle button with smooth animations and glassmorphism effects",
-          "Semantic color system with success, error, warning, and info states",
+          "Theme toggle button with smooth animations",
           "Automatic theme persistence across browser sessions",
         ]
       },
@@ -31,18 +30,7 @@ export const changelogs: ChangelogEntry[] = [
         category: "improved",
         items: [
           "Enhanced color contrast and readability in both light and dark modes",
-          "Replaced all hardcoded colors with theme-aware semantic tokens",
-          "Improved accessibility with proper ARIA labels and focus states",
           "Smooth transitions between theme changes across all components",
-          "Better visual hierarchy with consistent color usage",
-        ]
-      },
-      {
-        category: "fixed",
-        items: [
-          "Hydration errors in theme-dependent components",
-          "Text visibility issues in dark mode for log content",
-          "Inconsistent color usage across different pages and components",
         ]
       }
     ]
