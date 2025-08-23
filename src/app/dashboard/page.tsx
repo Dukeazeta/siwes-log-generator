@@ -761,7 +761,7 @@ export default function Dashboard() {
                   <h1 className="text-2xl sm:text-3xl font-bold text-foreground">SIWES Logbook</h1>
                   <div className="inline-flex items-center px-3 py-1 rounded-full bg-slate-800 dark:bg-gradient-to-r dark:from-indigo-600 dark:via-purple-600 dark:to-pink-600 text-white dark:text-white text-xs font-extrabold w-fit">
                     <span className="w-2 h-2 bg-blue-400 dark:bg-white rounded-full mr-2 animate-pulse"></span>
-                    Beta v2.1.1
+                    Beta v2.2.0
                   </div>
                 </div>
                 <p className="text-base text-muted-foreground">{profile.full_name} • {profile.course}</p>
