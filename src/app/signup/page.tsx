@@ -10,25 +10,52 @@ import Logo from "../../components/Logo";
 export default function SignUp() {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signInWithGoogle, isAuthenticated, isLoading, user } = useAuth();
+  const [redirectTimer, setRedirectTimer] = useState<NodeJS.Timeout | null>(null);
+  const { signInWithGoogle, isAuthenticated, isLoading, user, authenticationStage } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    // Redirect if already authenticated
-    if (!isLoading && isAuthenticated && user) {
-      console.log('Redirecting authenticated user');
-      if (user.hasCompletedOnboarding) {
-        router.push('/dashboard');
-      } else {
-        router.push('/onboarding');
+    // Clear any existing redirect timer when component mounts
+    return () => {
+      if (redirectTimer) {
+        clearTimeout(redirectTimer);
       }
+    };
+  }, [redirectTimer]);
+
+  useEffect(() => {
+    // Only redirect if we're not in the middle of OAuth flow and authentication is stable
+    if (!isLoading && isAuthenticated && user && authenticationStage === 'complete') {
+      console.log('Redirecting authenticated user from signup page');
+      
+      // Clear any existing timer
+      if (redirectTimer) {
+        clearTimeout(redirectTimer);
+      }
+      
+      // Add a small delay to ensure auth state is stable
+      const timer = setTimeout(() => {
+        if (user.hasCompletedOnboarding) {
+          router.push('/dashboard');
+        } else {
+          router.push('/onboarding');
+        }
+      }, 1000); // 1 second delay for auth state stability
+      
+      setRedirectTimer(timer);
     }
-  }, [isAuthenticated, isLoading, user, router]);
+  }, [isAuthenticated, isLoading, user, authenticationStage, router, redirectTimer]);
 
   const handleGoogleSignIn = async () => {
     try {
       setError('');
       setIsSubmitting(true);
+      
+      // Clear any existing redirect timer to prevent interference
+      if (redirectTimer) {
+        clearTimeout(redirectTimer);
+        setRedirectTimer(null);
+      }
 
       await signInWithGoogle();
 
@@ -92,13 +119,17 @@ export default function SignUp() {
             <button
               type="button"
               onClick={handleGoogleSignIn}
-              disabled={isSubmitting}
+              disabled={isSubmitting || (isLoading && authenticationStage !== 'idle')}
               className="w-full flex items-center justify-center px-6 py-4 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-base rounded-full focus:outline-none"
             >
-              {isSubmitting ? (
+              {isSubmitting || (isLoading && authenticationStage !== 'idle') ? (
                 <>
                   <div className="w-5 h-5 mr-3 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin"></div>
-                  <span className="font-semibold">Signing up...</span>
+                  <span className="font-semibold">
+                    {authenticationStage === 'oauth_callback' ? 'Processing...' : 
+                     authenticationStage === 'profile_check' ? 'Setting up profile...' : 
+                     'Signing up...'}
+                  </span>
                 </>
               ) : (
                 <>

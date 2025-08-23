@@ -20,6 +20,7 @@ interface AuthContextType {
   isLoading: boolean;
   isProfileLoading: boolean;
   profileError: string | null;
+  authenticationStage: 'idle' | 'oauth_callback' | 'profile_check' | 'complete';
   login: (email: string, password: string) => Promise<void>;
   signup: (userData: SignupData) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
@@ -43,6 +44,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isProfileLoading, setIsProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
+  const [authenticationStage, setAuthenticationStage] = useState<'idle' | 'oauth_callback' | 'profile_check' | 'complete'>('idle');
 
   useEffect(() => {
     // Get initial session function
@@ -80,6 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (session?.user) {
             try {
               console.log('Starting user transformation...');
+              setAuthenticationStage('oauth_callback');
               const transformedUser = await transformSupabaseUser(session.user);
               setUser(transformedUser);
               console.log('User transformed and set:', transformedUser.email, 'onboarding:', transformedUser.hasCompletedOnboarding);
@@ -87,6 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               setIsLoading(false);
             } catch (error) {
               console.error('Error transforming user:', error);
+              setAuthenticationStage('complete');
               // Set a basic user object even if transformation fails
               const basicUser = {
                 id: session.user.id,
@@ -104,10 +108,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           } else {
             // No user in session, set loading to false
+            setAuthenticationStage('idle');
             setIsLoading(false);
           }
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
+          setAuthenticationStage('idle');
           console.log('User signed out');
           setIsLoading(false);
         } else {
@@ -158,39 +164,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 
 
-  // Separate function to check profile status with proper state management
+  // Utility function for delays in retry logic
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+  // Enhanced profile status check with retry logic
+  const checkProfileStatusWithRetry = async (userId: string, maxRetries: number = 3): Promise<boolean> => {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`Profile check attempt ${attempt}/${maxRetries} for user:`, userId);
+        
+        const { data: profile, error } = await supabase
+          .from('user_profiles')
+          .select('completed_onboarding')
+          .eq('user_id', userId)
+          .single();
+
+        if (!error && profile) {
+          console.log('Profile check successful on attempt', attempt, 'result:', profile.completed_onboarding);
+          return profile.completed_onboarding === true;
+        } else if (error && error.code === 'PGRST116') {
+          console.log('No profile found on attempt', attempt, '- user needs onboarding');
+          return false;
+        } else {
+          console.warn(`Profile query error on attempt ${attempt}:`, error);
+          if (attempt === maxRetries) {
+            throw error;
+          }
+        }
+      } catch (error) {
+        console.warn(`Profile check failed on attempt ${attempt}:`, error);
+        if (attempt === maxRetries) {
+          throw error;
+        }
+      }
+      
+      // Exponential backoff: wait longer between retries
+      if (attempt < maxRetries) {
+        const delayMs = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // Cap at 5 seconds
+        console.log(`Waiting ${delayMs}ms before retry...`);
+        await delay(delayMs);
+      }
+    }
+    
+    // Fallback: assume onboarding needed if all retries failed
+    return false;
+  };
+  // Enhanced checkProfileStatus function with retry logic
   const checkProfileStatus = async (userId: string): Promise<boolean> => {
     setIsProfileLoading(true);
     setProfileError(null);
 
     try {
-      console.log('Checking profile for user:', userId);
-
-      const { data: profile, error } = await supabase
-        .from('user_profiles')
-        .select('completed_onboarding')
-        .eq('user_id', userId)
-        .single();
-
-      if (!error && profile) {
-        console.log('Profile check successful:', {
-          userId,
-          completed_onboarding: profile.completed_onboarding
-        });
-        return profile.completed_onboarding === true;
-      } else if (error && error.code === 'PGRST116') {
-        // No profile found - user needs onboarding
-        console.log('No profile found, user needs onboarding');
-        return false;
-      } else {
-        // Other errors
-        console.warn('Profile query error:', error);
-        setProfileError(error.message || 'Failed to check profile');
-        return false;
-      }
+      const result = await checkProfileStatusWithRetry(userId);
+      return result;
     } catch (error) {
-      console.warn('Profile query failed:', error);
-      setProfileError(error instanceof Error ? error.message : 'Unknown error');
+      console.warn('Profile status check failed after retries:', error);
+      setProfileError(error instanceof Error ? error.message : 'Failed to check profile');
       return false;
     } finally {
       setIsProfileLoading(false);
@@ -200,34 +229,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const transformSupabaseUser = async (supabaseUser: SupabaseUser): Promise<User> => {
     const metadata = supabaseUser.user_metadata || {};
     console.log('Transforming Supabase user:', supabaseUser.email, 'metadata:', metadata);
+    setAuthenticationStage('profile_check');
 
-    // For Google OAuth users, we should be more reliable about checking profile status
+    // Enhanced profile status check with retry logic
     let hasCompletedOnboarding = false;
     try {
-      console.log('Checking profile status for user:', supabaseUser.email, 'id:', supabaseUser.id);
-      
-      const { data: profile, error } = await supabase
-        .from('user_profiles')
-        .select('completed_onboarding')
-        .eq('user_id', supabaseUser.id)
-        .single();
-
-      console.log('Profile check result:', { profile, error, code: error?.code });
-
-      if (!error && profile) {
-        hasCompletedOnboarding = profile.completed_onboarding === true;
-        console.log('Profile found, onboarding status:', hasCompletedOnboarding);
-      } else if (error && error.code === 'PGRST116') {
-        // No profile found - user definitely needs onboarding
-        hasCompletedOnboarding = false;
-        console.log('No profile found - user needs onboarding');
-      } else {
-        // Database error - be conservative and assume onboarding needed
-        console.warn('Profile check error:', error);
-        hasCompletedOnboarding = false;
-      }
+      console.log('Checking profile status with retry for user:', supabaseUser.email, 'id:', supabaseUser.id);
+      hasCompletedOnboarding = await checkProfileStatusWithRetry(supabaseUser.id);
+      console.log('Final profile status result:', hasCompletedOnboarding);
     } catch (error) {
-      console.warn('Profile check failed, assuming onboarding needed:', error);
+      console.warn('Profile check with retry failed, assuming onboarding needed:', error);
       hasCompletedOnboarding = false;
     }
 
@@ -247,6 +258,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       fullName: transformedUser.fullName
     });
     
+    setAuthenticationStage('complete');
     return transformedUser;
   };
 
@@ -376,6 +388,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isLoading,
     isProfileLoading,
     profileError,
+    authenticationStage,
     login,
     signup,
     signInWithGoogle,
