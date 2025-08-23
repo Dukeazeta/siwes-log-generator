@@ -1,6 +1,7 @@
 'use client';
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useEffect } from "react";
 import { gsap } from "gsap";
@@ -14,6 +15,8 @@ import {
 } from "../../lib/changelogs-data";
 
 export default function Changelogs() {
+  const router = useRouter();
+
   useEffect(() => {
     // Set initial visibility to prevent flash
     gsap.set([".changelog-header", ".changelog-entry"], { opacity: 1 });
@@ -83,7 +86,24 @@ export default function Changelogs() {
         <main className="pt-28 pb-12 px-4 md:px-6">
           <div className="max-w-4xl mx-auto">
             {/* Header */}
-            <div className="changelog-header text-center mb-12">
+            <div className="changelog-header mb-12">
+              {/* Back Button */}
+              <div className="flex justify-start mb-8">
+                <motion.button
+                  onClick={() => router.back()}
+                  className="flex items-center space-x-2 text-muted-foreground hover:text-foreground transition-colors group"
+                  whileHover={{ x: -4 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <svg className="w-5 h-5 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                  <span className="font-medium">Back</span>
+                </motion.button>
+              </div>
+              
+              {/* Title Section */}
+              <div className="text-center">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -99,6 +119,7 @@ export default function Changelogs() {
               <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-4">
                 Changelogs
               </h1>
+              </div>
             </div>
 
             {/* Changelog Entries */}

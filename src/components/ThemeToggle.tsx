@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { usePathname } from 'next/navigation';
 import { useTheme } from '../contexts/ThemeContext';
 
 interface ThemeToggleProps {
@@ -11,6 +12,10 @@ interface ThemeToggleProps {
 export default function ThemeToggle({ className = '' }: ThemeToggleProps) {
   const { resolvedTheme, toggleTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const pathname = usePathname();
+
+  // Hide theme toggle on onboarding page to prevent button overlap
+  const shouldHide = pathname === '/onboarding';
 
   // Ensure component is mounted before rendering theme-dependent content
   useEffect(() => {
@@ -32,11 +37,9 @@ export default function ThemeToggle({ className = '' }: ThemeToggleProps) {
     }
   };
 
-
-
   // Don't render anything until mounted to avoid hydration mismatch
   if (!mounted) {
-    return (
+    return shouldHide ? null : (
       <div className={`
         fixed bottom-6 right-6 z-50
         w-14 h-14 rounded-full
@@ -47,6 +50,11 @@ export default function ThemeToggle({ className = '' }: ThemeToggleProps) {
         ${className}
       `} />
     );
+  }
+
+  // Don't render on onboarding page to prevent button overlap
+  if (shouldHide) {
+    return null;
   }
 
   return (

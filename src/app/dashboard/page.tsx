@@ -56,7 +56,36 @@ export default function Dashboard() {
   const [isSavingDay, setIsSavingDay] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
 
-  // Check for success notifications from URL params
+  // Auto-refresh function for weekly logs
+  const refreshWeeklyLogs = useCallback(async () => {
+    if (!user?.id) return;
+    
+    console.log('Refreshing weekly logs data...');
+    try {
+      const { data: logsData, error: logsError } = await supabase
+        .from('weekly_logs')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('week_number', { ascending: true });
+
+      if (logsError && logsError.code !== 'PGRST116') {
+        console.error('Weekly logs refresh error:', logsError);
+        return;
+      }
+
+      console.log('Weekly logs refreshed:', logsData?.length || 0, 'logs found');
+      setWeeklyLogs(logsData || []);
+
+      // Set active week to the first available week if none selected
+      if (logsData && logsData.length > 0 && !logsData.find(log => log.week_number === activeWeek)) {
+        setActiveWeek(logsData[0].week_number);
+      }
+    } catch (error) {
+      console.error('Error refreshing weekly logs:', error);
+    }
+  }, [user?.id, activeWeek]);
+
+  // Check for success notifications from URL params and refresh data
   useEffect(() => {
     const created = searchParams.get('created');
     const updated = searchParams.get('updated');
@@ -67,6 +96,8 @@ export default function Dashboard() {
         message: 'Weekly log created successfully!'
       });
       setTimeout(() => setNotification(null), 4000);
+      // Refresh weekly logs data to show new content
+      refreshWeeklyLogs();
       // Remove the parameter from URL
       router.replace('/dashboard', { scroll: false });
     } else if (updated === 'true') {
@@ -75,10 +106,12 @@ export default function Dashboard() {
         message: 'Weekly log updated successfully!'
       });
       setTimeout(() => setNotification(null), 4000);
+      // Refresh weekly logs data to show updated content
+      refreshWeeklyLogs();
       // Remove the parameter from URL
       router.replace('/dashboard', { scroll: false });
     }
-  }, [searchParams, router]);
+  }, [searchParams, router, refreshWeeklyLogs]);
 
   const loadUserData = useCallback(async () => {
     if (hasLoadedData || profileLoading || !user?.id) return; // Prevent multiple loads
@@ -180,30 +213,6 @@ export default function Dashboard() {
       setProfileLoading(false);
     }
   }, [user?.id, user?.email, user?.hasCompletedOnboarding, router, hasLoadedData, profileLoading, refreshUser, redirectAttempts]);
-
-  // Check for success notifications from URL params
-  useEffect(() => {
-    const created = searchParams.get('created');
-    const updated = searchParams.get('updated');
-    
-    if (created === 'true') {
-      setNotification({
-        type: 'success',
-        message: 'Weekly log created successfully!'
-      });
-      setTimeout(() => setNotification(null), 4000);
-      // Remove the parameter from URL
-      router.replace('/dashboard', { scroll: false });
-    } else if (updated === 'true') {
-      setNotification({
-        type: 'success',
-        message: 'Weekly log updated successfully!'
-      });
-      setTimeout(() => setNotification(null), 4000);
-      // Remove the parameter from URL
-      router.replace('/dashboard', { scroll: false });
-    }
-  }, [searchParams, router]);
 
   useEffect(() => {
     console.log('Dashboard useEffect triggered:', {
@@ -307,6 +316,22 @@ export default function Dashboard() {
       };
     }
   }, [profileLoading]);
+
+  // Page visibility listener for auto-refresh
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && user?.id) {
+        console.log('Page became visible, refreshing weekly logs...');
+        refreshWeeklyLogs();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [refreshWeeklyLogs, user?.id]);
 
   const handleLogout = async () => {
     try {
