@@ -124,11 +124,20 @@ html {
   transition: background-color 0.3s ease;
 }
 
-/* Ensure hero elements are visible initially */
+/* Ensure hero elements are visible initially and prevent hydration issues */
 .hero-title,
 .hero-subtitle,
 .hero-buttons {
-  opacity: 1;
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: none !important;
+}
+
+/* Prevent GSAP from hiding elements before animation */
+.hero-title[style*="opacity: 0"],
+.hero-subtitle[style*="opacity: 0"],
+.hero-buttons[style*="opacity: 0"] {
+  opacity: 1 !important;
 }
 
 /* Ensure changelog elements are visible initially */

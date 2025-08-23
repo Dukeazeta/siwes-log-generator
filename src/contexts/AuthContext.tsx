@@ -18,11 +18,14 @@ interface User {
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
+  isProfileLoading: boolean;
+  profileError: string | null;
   login: (email: string, password: string) => Promise<void>;
   signup: (userData: SignupData) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  checkProfileStatus: (userId: string) => Promise<boolean>;
   isAuthenticated: boolean;
 }
 
@@ -38,6 +41,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isProfileLoading, setIsProfileLoading] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
 
   useEffect(() => {
     // Get initial session function
@@ -153,40 +158,73 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 
 
+  // Separate function to check profile status with proper state management
+  const checkProfileStatus = async (userId: string): Promise<boolean> => {
+    setIsProfileLoading(true);
+    setProfileError(null);
+
+    try {
+      console.log('Checking profile for user:', userId);
+
+      const { data: profile, error } = await supabase
+        .from('user_profiles')
+        .select('completed_onboarding')
+        .eq('user_id', userId)
+        .single();
+
+      if (!error && profile) {
+        console.log('Profile check successful:', {
+          userId,
+          completed_onboarding: profile.completed_onboarding
+        });
+        return profile.completed_onboarding === true;
+      } else if (error && error.code === 'PGRST116') {
+        // No profile found - user needs onboarding
+        console.log('No profile found, user needs onboarding');
+        return false;
+      } else {
+        // Other errors
+        console.warn('Profile query error:', error);
+        setProfileError(error.message || 'Failed to check profile');
+        return false;
+      }
+    } catch (error) {
+      console.warn('Profile query failed:', error);
+      setProfileError(error instanceof Error ? error.message : 'Unknown error');
+      return false;
+    } finally {
+      setIsProfileLoading(false);
+    }
+  };
+
   const transformSupabaseUser = async (supabaseUser: SupabaseUser): Promise<User> => {
     const metadata = supabaseUser.user_metadata || {};
 
-    // Check if user has completed onboarding with timeout
+    // For Google OAuth users, we should be more reliable about checking profile status
     let hasCompletedOnboarding = false;
     try {
-      console.log('Checking profile for user:', supabaseUser.id);
-
-      // Add a timeout to the profile query to prevent hanging
-      const profilePromise = supabase
+      console.log('Checking profile status for user:', supabaseUser.email);
+      
+      const { data: profile, error } = await supabase
         .from('user_profiles')
         .select('completed_onboarding')
         .eq('user_id', supabaseUser.id)
         .single();
 
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Profile query timeout')), 3000)
-      );
-
-      const { data: profile, error } = await Promise.race([profilePromise, timeoutPromise]);
-
       if (!error && profile) {
         hasCompletedOnboarding = profile.completed_onboarding === true;
-        console.log('Profile check successful:', {
-          userId: supabaseUser.id,
-          completed_onboarding: profile.completed_onboarding,
-          hasCompletedOnboarding
-        });
+        console.log('Profile found, onboarding status:', hasCompletedOnboarding);
+      } else if (error && error.code === 'PGRST116') {
+        // No profile found - user definitely needs onboarding
+        hasCompletedOnboarding = false;
+        console.log('No profile found - user needs onboarding');
       } else {
-        console.log('Profile query error or no profile:', { error, profile });
+        // Database error - be conservative and assume onboarding needed
+        console.warn('Profile check error:', error);
         hasCompletedOnboarding = false;
       }
     } catch (error) {
-      console.warn('Profile query failed, assuming onboarding not completed:', error);
+      console.warn('Profile check failed, assuming onboarding needed:', error);
       hasCompletedOnboarding = false;
     }
 
@@ -200,7 +238,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       hasCompletedOnboarding
     };
 
-    console.log('User transformation complete:', transformedUser);
+    console.log('User transformation complete:', {
+      email: transformedUser.email,
+      hasCompletedOnboarding: transformedUser.hasCompletedOnboarding
+    });
+    
     return transformedUser;
   };
 
@@ -297,9 +339,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = async () => {
     try {
+      console.log('Refreshing user session and profile status...');
       const { session, error } = await getSafeSession();
       if (error) {
-        console.error('Refresh user error:', error);
+        console.error('Refresh user session error:', error);
         await handleAuthError(error);
         if (isRefreshTokenError(error)) {
           setUser(null);
@@ -310,6 +353,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session?.user) {
         const transformedUser = await transformSupabaseUser(session.user);
         setUser(transformedUser);
+        console.log('User refreshed successfully:', transformedUser.email, 'onboarding:', transformedUser.hasCompletedOnboarding);
+      } else {
+        console.log('No session found during refresh');
+        setUser(null);
       }
     } catch (error) {
       console.error('Refresh user error:', error);
@@ -323,11 +370,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const value: AuthContextType = {
     user,
     isLoading,
+    isProfileLoading,
+    profileError,
     login,
     signup,
     signInWithGoogle,
     logout,
     refreshUser,
+    checkProfileStatus,
     isAuthenticated: !!user
   };
 

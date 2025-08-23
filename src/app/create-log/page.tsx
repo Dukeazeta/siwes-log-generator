@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -26,8 +26,20 @@ interface UserProfile {
   supervisor_title: string;
 }
 
+interface WeeklyLogData {
+  id: string;
+  week_number: number;
+  start_date: string;
+  end_date: string;
+  content: string;
+  raw_activities: string;
+  created_at: string;
+  updated_at?: string;
+}
+
 export default function CreateLog() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
   const [isGenerating, setIsGenerating] = useState(false);
   const [weekNumber, setWeekNumber] = useState(1);
@@ -36,8 +48,11 @@ export default function CreateLog() {
   const [activities, setActivities] = useState('');
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [error, setError] = useState('');
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editLogId, setEditLogId] = useState<string | null>(null);
+  const [originalLogData, setOriginalLogData] = useState<WeeklyLogData | null>(null);
 
-  // Load user profile on component mount
+  // Load user profile and check for edit mode on component mount
   useEffect(() => {
     const loadUserProfile = async () => {
       if (user) {
@@ -56,8 +71,41 @@ export default function CreateLog() {
       }
     };
 
+    // Check if we're in edit mode
+    const editId = searchParams.get('edit');
+    const week = searchParams.get('week');
+    
+    if (editId && week) {
+      setIsEditMode(true);
+      setEditLogId(editId);
+      setWeekNumber(parseInt(week));
+      loadExistingLog(editId);
+    }
+
     loadUserProfile();
-  }, [user]);
+  }, [user, searchParams]);
+
+  const loadExistingLog = async (logId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('weekly_logs')
+        .select('*')
+        .eq('id', logId)
+        .eq('user_id', user?.id)
+        .single();
+
+      if (error) throw error;
+      
+      // Pre-fill the form with existing data
+      setStartDate(data.start_date);
+      setEndDate(data.end_date);
+      setActivities(data.raw_activities || '');
+      setOriginalLogData(data);
+    } catch (error) {
+      console.error('Error loading existing log:', error);
+      setError('Failed to load log for editing');
+    }
+  };
 
   const handleGenerate = async () => {
     setIsGenerating(true);
@@ -85,22 +133,43 @@ export default function CreateLog() {
         throw new Error(result.details || result.error || 'Failed to generate log');
       }
 
-      // Save the generated log to database
-      const { error: saveError } = await supabase
-        .from('weekly_logs')
-        .insert({
-          user_id: user?.id,
-          week_number: weekNumber,
-          start_date: startDate,
-          end_date: endDate,
-          content: JSON.stringify(result.data),
-          raw_activities: activities,
-        });
+      if (isEditMode && editLogId) {
+        // Update existing log
+        const { error: updateError } = await supabase
+          .from('weekly_logs')
+          .update({
+            start_date: startDate,
+            end_date: endDate,
+            content: JSON.stringify(result.data),
+            raw_activities: activities,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', editLogId)
+          .eq('user_id', user?.id);
 
-      if (saveError) throw saveError;
+        if (updateError) throw updateError;
+      } else {
+        // Save new log to database
+        const { error: saveError } = await supabase
+          .from('weekly_logs')
+          .insert({
+            user_id: user?.id,
+            week_number: weekNumber,
+            start_date: startDate,
+            end_date: endDate,
+            content: JSON.stringify(result.data),
+            raw_activities: activities,
+          });
 
-      // Redirect to dashboard
-      router.push('/dashboard');
+        if (saveError) throw saveError;
+      }
+
+      // Redirect to dashboard with success message
+      if (isEditMode) {
+        router.push('/dashboard?updated=true');
+      } else {
+        router.push('/dashboard?created=true');
+      }
     } catch (error) {
       console.error('Error generating log:', error);
       setError(error instanceof Error ? error.message : 'Failed to generate log');
@@ -132,7 +201,7 @@ export default function CreateLog() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
                 <div>
-                  <span className="text-sm font-medium text-foreground">Create New Log</span>
+                  <span className="text-sm font-medium text-foreground">{isEditMode ? 'Edit Log' : 'Create New Log'}</span>
                   <p className="text-xs text-muted-foreground">Week {weekNumber}</p>
                 </div>
               </Link>
@@ -152,8 +221,15 @@ export default function CreateLog() {
           <div className="space-y-6">
             {/* Header */}
             <div className="text-center mb-8">
-              <h1 className="text-2xl font-bold text-foreground mb-2">Create Weekly Log</h1>
-              <p className="text-muted-foreground">Transform your activities into a professional logbook entry</p>
+              <h1 className="text-2xl font-bold text-foreground mb-2">
+                {isEditMode ? 'Edit Weekly Log' : 'Create Weekly Log'}
+              </h1>
+              <p className="text-muted-foreground">
+                {isEditMode 
+                  ? 'Update your activities and regenerate your logbook entry' 
+                  : 'Transform your activities into a professional logbook entry'
+                }
+              </p>
             </div>
 
             {/* Week Selection */}
@@ -165,7 +241,8 @@ export default function CreateLog() {
                 <select
                   value={weekNumber}
                   onChange={(e) => setWeekNumber(Number(e.target.value))}
-                  className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring focus:border-ring text-card-foreground appearance-none cursor-pointer transition-colors"
+                  disabled={isEditMode}
+                  className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring focus:border-ring text-card-foreground appearance-none cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {[...Array(24)].map((_, i) => (
                     <option key={i + 1} value={i + 1} className="text-card-foreground">
@@ -248,14 +325,14 @@ export default function CreateLog() {
               {isGenerating ? (
                 <>
                   <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
-                  <span>Generating Log...</span>
+                  <span>{isEditMode ? 'Updating Log...' : 'Generating Log...'}</span>
                 </>
               ) : (
                 <>
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
-                  <span>Generate with AI</span>
+                  <span>{isEditMode ? 'Update with AI' : 'Generate with AI'}</span>
                 </>
               )}
             </motion.button>

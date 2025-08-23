@@ -12,41 +12,101 @@ import Logo from "../components/Logo";
 export default function Home() {
 
   useEffect(() => {
-    // Set initial visibility to prevent flash
-    gsap.set([".hero-title", ".hero-subtitle", ".hero-buttons"], { opacity: 1 });
-
-    // Minimal animations to prevent grey flash
-    const tl = gsap.timeline({ delay: 0.1 });
-    tl.from(".hero-title", {
-      duration: 0.6,
-      y: 20,
-      opacity: 0,
-      ease: "power2.out"
-    })
-    .from(".hero-subtitle", {
-      duration: 0.5,
-      y: 15,
-      opacity: 0,
-      ease: "power2.out"
-    }, "-=0.3")
-    .from(".hero-buttons", {
-      duration: 0.5,
-      y: 15,
-      opacity: 0,
-      ease: "power2.out"
-    }, "-=0.2");
-
-    // Only animate elements that exist - University logos carousel
-    const carousel = document.querySelector(".university-carousel");
-    if (carousel) {
-      gsap.set(".university-carousel", { x: 0 });
-      gsap.to(".university-carousel", {
-        x: "-50%",
-        duration: 40,
-        ease: "none",
-        repeat: -1
+    // Ensure elements are visible first, then animate
+    const heroElements = [".hero-title", ".hero-subtitle", ".hero-buttons"];
+    
+    // Failsafe: Ensure elements are visible even if GSAP fails
+    const ensureVisibility = () => {
+      heroElements.forEach(selector => {
+        const element = document.querySelector(selector) as HTMLElement;
+        if (element) {
+          element.style.opacity = '1';
+          element.style.visibility = 'visible';
+          element.style.transform = 'none';
+        }
       });
+    };
+
+    // Immediate visibility fallback
+    ensureVisibility();
+    
+    // Set initial state with GSAP if available
+    if (typeof gsap !== 'undefined') {
+      gsap.set(heroElements, { 
+        opacity: 1,
+        y: 0,
+        visibility: "visible"
+      });
+
+      // Small delay to ensure DOM is ready
+      const timer = setTimeout(() => {
+        try {
+          // Create animation timeline
+          const tl = gsap.timeline();
+          
+          // Reset to starting position for animation
+          gsap.set(heroElements, { opacity: 0, y: 20 });
+          
+          tl.to(".hero-title", {
+            duration: 0.6,
+            y: 0,
+            opacity: 1,
+            ease: "power2.out"
+          })
+          .to(".hero-subtitle", {
+            duration: 0.5,
+            y: 0,
+            opacity: 1,
+            ease: "power2.out"
+          }, "-=0.3")
+          .to(".hero-buttons", {
+            duration: 0.5,
+            y: 0,
+            opacity: 1,
+            ease: "power2.out"
+          }, "-=0.2");
+        } catch (error) {
+          console.warn('GSAP animation failed, using fallback:', error);
+          ensureVisibility();
+        }
+      }, 100);
+
+      // University logos carousel animation
+      const initCarousel = () => {
+        try {
+          const carousel = document.querySelector(".university-carousel");
+          if (carousel) {
+            gsap.set(".university-carousel", { x: 0 });
+            gsap.to(".university-carousel", {
+              x: "-50%",
+              duration: 40,
+              ease: "none",
+              repeat: -1
+            });
+          }
+        } catch (error) {
+          console.warn('Carousel animation failed:', error);
+        }
+      };
+      
+      // Initialize carousel after a small delay
+      setTimeout(initCarousel, 200);
+
+      return () => {
+        clearTimeout(timer);
+      };
+    } else {
+      // GSAP not available, ensure elements remain visible
+      console.warn('GSAP not available, using CSS fallback');
+      ensureVisibility();
     }
+
+    // Additional safeguard after a longer delay
+    const safeguardTimer = setTimeout(ensureVisibility, 1000);
+    
+    return () => {
+      clearTimeout(safeguardTimer);
+    };
   }, []);
 
   return (
@@ -146,7 +206,7 @@ export default function Home() {
               </span>
             </motion.div>
 
-            <h1 className="hero-title text-4xl sm:text-5xl md:text-6xl lg:text-8xl font-bold text-foreground mb-6 leading-none">
+            <h1 className="hero-title text-4xl sm:text-5xl md:text-6xl lg:text-8xl font-bold text-foreground mb-6 leading-none opacity-100 visible">
               Transform
               <br />
               <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
@@ -156,12 +216,12 @@ export default function Home() {
               into Perfect Logs
             </h1>
 
-            <p className="hero-subtitle text-base sm:text-lg md:text-xl text-muted-foreground mb-4 max-w-3xl mx-auto leading-relaxed">
+            <p className="hero-subtitle text-base sm:text-lg md:text-xl text-muted-foreground mb-4 max-w-3xl mx-auto leading-relaxed opacity-100 visible">
               The smartest way for IT students to create professional SIWES logbook entries.
               Just describe your week, and watch SwiftLog&apos;s AI craft detailed daily logs.
             </p>
 
-            <div className="hero-buttons flex flex-col sm:flex-row gap-4 md:gap-6 justify-center items-center mb-12 md:mb-16">
+            <div className="hero-buttons flex flex-col sm:flex-row gap-4 md:gap-6 justify-center items-center mb-12 md:mb-16 opacity-100 visible">
               <SmartCTAButton
                 className="bg-primary text-primary-foreground px-6 md:px-8 py-3 md:py-4 rounded-full font-semibold text-base md:text-lg hover:bg-primary/90 transition-all duration-300 inline-flex items-center space-x-2"
                 authenticatedText="Open Dashboard"

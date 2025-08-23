@@ -5,7 +5,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useAuth } from "../../contexts/AuthContext";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import PageTransition from "../../components/PageTransition";
 import Logo from "../../components/Logo";
@@ -36,24 +36,50 @@ interface WeeklyLog {
 }
 
 export default function Dashboard() {
-  const { user, logout, isAuthenticated, isLoading } = useAuth();
+  const { user, logout, isAuthenticated, isLoading, refreshUser } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [weeklyLogs, setWeeklyLogs] = useState<WeeklyLog[]>([]);
   const [profileLoading, setProfileLoading] = useState(true);
   const [activeWeek, setActiveWeek] = useState(1);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [hasLoadedData, setHasLoadedData] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [logToDelete, setLogToDelete] = useState<WeeklyLog | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [weekMenuOpen, setWeekMenuOpen] = useState<number | null>(null);
+  const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
+  const [redirectAttempts, setRedirectAttempts] = useState(0);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const weekMenuRef = useRef<HTMLDivElement>(null);
 
-
-
-
-
-
+  // Check for success notifications from URL params
+  useEffect(() => {
+    const created = searchParams.get('created');
+    const updated = searchParams.get('updated');
+    
+    if (created === 'true') {
+      setNotification({
+        type: 'success',
+        message: 'Weekly log created successfully!'
+      });
+      setTimeout(() => setNotification(null), 4000);
+      // Remove the parameter from URL
+      router.replace('/dashboard', { scroll: false });
+    } else if (updated === 'true') {
+      setNotification({
+        type: 'success',
+        message: 'Weekly log updated successfully!'
+      });
+      setTimeout(() => setNotification(null), 4000);
+      // Remove the parameter from URL
+      router.replace('/dashboard', { scroll: false });
+    }
+  }, [searchParams, router]);
 
   const loadUserData = useCallback(async () => {
-    if (hasLoadedData || profileLoading) return; // Prevent multiple loads
+    if (hasLoadedData || profileLoading || !user?.id) return; // Prevent multiple loads
 
     setProfileLoading(true);
     setHasLoadedData(true);
@@ -63,12 +89,33 @@ export default function Dashboard() {
       const { data: profileData, error: profileError } = await supabase
         .from('user_profiles')
         .select('*')
-        .eq('user_id', user?.id)
+        .eq('user_id', user.id)
         .single();
 
       if (profileError) {
         if (profileError.code === 'PGRST116') {
-          // No profile found - redirect to onboarding
+          // No profile found - this is a data inconsistency since user should have completed onboarding
+          console.warn('Profile not found for user who completed onboarding. User:', user.email);
+          
+          // Prevent infinite redirects
+          if (redirectAttempts >= 2) {
+            console.error('Too many redirect attempts, showing error state');
+            setNotification({
+              type: 'error',
+              message: 'Profile setup incomplete. Please contact support or try re-setting up your profile.'
+            });
+            return;
+          }
+          
+          setRedirectAttempts(prev => prev + 1);
+          
+          // Force refresh user to get the latest onboarding status
+          if (refreshUser) {
+            await refreshUser();
+            return; // Let the refreshed user data trigger this function again
+          }
+          
+          // Fallback: redirect to onboarding if refresh fails
           router.push('/onboarding');
           return;
         }
@@ -77,11 +124,17 @@ export default function Dashboard() {
 
       setProfile(profileData);
 
+      // Sync the profile's completed_onboarding status with user context if needed
+      if (profileData.completed_onboarding !== user.hasCompletedOnboarding && refreshUser) {
+        console.log('Profile onboarding status mismatch, refreshing user context');
+        refreshUser(); // Don't await to avoid blocking UI
+      }
+
       // Load weekly logs
       const { data: logsData, error: logsError } = await supabase
         .from('weekly_logs')
         .select('*')
-        .eq('user_id', user?.id)
+        .eq('user_id', user.id)
         .order('week_number', { ascending: true });
 
       if (logsError && logsError.code !== 'PGRST116') {
@@ -96,13 +149,41 @@ export default function Dashboard() {
       }
     } catch (error) {
       console.error('Error loading user data:', error);
-      // Don't block the UI for data loading errors
-      setProfile({} as UserProfile); // Set empty object instead of null to prevent re-triggering
-      setWeeklyLogs([]);
+      
+      // Show error notification instead of empty profile
+      setNotification({
+        type: 'error',
+        message: 'Failed to load profile data. Please refresh the page.'
+      });
+      setTimeout(() => setNotification(null), 5000);
     } finally {
       setProfileLoading(false);
     }
-  }, [user?.id, router, hasLoadedData, profileLoading]);
+  }, [user?.id, user?.email, user?.hasCompletedOnboarding, router, hasLoadedData, profileLoading, refreshUser]);
+
+  // Check for success notifications from URL params
+  useEffect(() => {
+    const created = searchParams.get('created');
+    const updated = searchParams.get('updated');
+    
+    if (created === 'true') {
+      setNotification({
+        type: 'success',
+        message: 'Weekly log created successfully!'
+      });
+      setTimeout(() => setNotification(null), 4000);
+      // Remove the parameter from URL
+      router.replace('/dashboard', { scroll: false });
+    } else if (updated === 'true') {
+      setNotification({
+        type: 'success',
+        message: 'Weekly log updated successfully!'
+      });
+      setTimeout(() => setNotification(null), 4000);
+      // Remove the parameter from URL
+      router.replace('/dashboard', { scroll: false });
+    }
+  }, [searchParams, router]);
 
   useEffect(() => {
     // Don't do anything while auth is loading
@@ -114,30 +195,44 @@ export default function Dashboard() {
       return;
     }
 
-    // Redirect to onboarding if not completed
-    if (user && !user.hasCompletedOnboarding) {
-      console.log('Dashboard: Redirecting to onboarding', {
+    // Only proceed if we have a valid user
+    if (!user?.id) return;
+
+    // Check onboarding status and redirect if needed
+    if (!user.hasCompletedOnboarding) {
+      console.log('User has not completed onboarding, redirecting:', {
         userId: user.id,
+        email: user.email,
         hasCompletedOnboarding: user.hasCompletedOnboarding
       });
       router.push('/onboarding');
       return;
     }
 
-    // Load user data if authenticated and no profile loaded yet
-    if (user?.id && !hasLoadedData && !profile) {
+    // Load user data if we haven't loaded it yet and not currently loading
+    if (!hasLoadedData && !profileLoading) {
+      console.log('Loading user data for authenticated user with completed onboarding');
       loadUserData();
     }
-  }, [isAuthenticated, isLoading, user?.id, user?.hasCompletedOnboarding, hasLoadedData, profile, loadUserData, router, user]);
+  }, [isAuthenticated, isLoading, user?.id, user?.hasCompletedOnboarding, hasLoadedData, profileLoading, loadUserData, router]);
 
-  // Reset loading state when user changes
+  // Reset loading state when user changes (but not on every render)
   useEffect(() => {
-    if (user?.id) {
-      setHasLoadedData(false);
-      setProfile(null);
-      setProfileLoading(true);
+    if (user?.id && hasLoadedData) {
+      // Only reset if this is actually a different user
+      const currentUserId = user.id;
+      const lastLoadedUserId = localStorage.getItem('lastLoadedUserId');
+      
+      if (currentUserId !== lastLoadedUserId) {
+        console.log('User changed, resetting dashboard state');
+        setHasLoadedData(false);
+        setProfile(null);
+        setWeeklyLogs([]);
+        setActiveWeek(1);
+        localStorage.setItem('lastLoadedUserId', currentUserId);
+      }
     }
-  }, [user?.id]);
+  }, [user?.id, hasLoadedData]);
 
   // Close mobile menu when clicking outside
   useEffect(() => {
@@ -145,16 +240,19 @@ export default function Dashboard() {
       if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node)) {
         setMobileMenuOpen(false);
       }
+      if (weekMenuRef.current && !weekMenuRef.current.contains(event.target as Node)) {
+        setWeekMenuOpen(null);
+      }
     };
 
-    if (mobileMenuOpen) {
+    if (mobileMenuOpen || weekMenuOpen !== null) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [mobileMenuOpen]);
+  }, [mobileMenuOpen, weekMenuOpen]);
 
   // Reset loading state if stuck
   useEffect(() => {
@@ -201,6 +299,68 @@ export default function Dashboard() {
     setMobileMenuOpen(false);
   };
 
+  const handleEditLog = (log: WeeklyLog) => {
+    // Navigate to edit page with the log data
+    router.push(`/create-log?edit=${log.id}&week=${log.week_number}`);
+  };
+
+  const handleDeleteLog = (log: WeeklyLog) => {
+    setLogToDelete(log);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteLog = async () => {
+    if (!logToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('weekly_logs')
+        .delete()
+        .eq('id', logToDelete.id)
+        .eq('user_id', user?.id);
+
+      if (error) throw error;
+
+      // Remove the log from local state
+      setWeeklyLogs(prev => prev.filter(log => log.id !== logToDelete.id));
+      
+      // If we deleted the active week, switch to the first available week
+      if (logToDelete.week_number === activeWeek) {
+        const remainingLogs = weeklyLogs.filter(log => log.id !== logToDelete.id);
+        if (remainingLogs.length > 0) {
+          setActiveWeek(remainingLogs[0].week_number);
+        }
+      }
+
+      setShowDeleteConfirm(false);
+      setLogToDelete(null);
+      
+      // Show success notification
+      setNotification({
+        type: 'success',
+        message: `Week ${logToDelete.week_number} deleted successfully`
+      });
+      
+      // Auto-hide notification after 3 seconds
+      setTimeout(() => setNotification(null), 3000);
+    } catch (error) {
+      console.error('Error deleting log:', error);
+      setNotification({
+        type: 'error',
+        message: 'Failed to delete log. Please try again.'
+      });
+      setTimeout(() => setNotification(null), 3000);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const cancelDeleteLog = () => {
+    setShowDeleteConfirm(false);
+    setLogToDelete(null);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -237,22 +397,35 @@ export default function Dashboard() {
 
 
 
-  if (!profile) {
+  if (!profile && !profileLoading && hasLoadedData) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center max-w-md mx-auto px-4">
           <Logo
             width={64}
             height={64}
             className="w-16 h-16 mx-auto mb-4"
           />
-          <p className="text-gray-600 mb-4">Profile not found</p>
-          <Link
-            href="/onboarding"
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Complete Profile Setup
-          </Link>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Profile Error</h3>
+          <p className="text-gray-600 mb-6">There was an issue loading your profile. This might be a temporary problem.</p>
+          <div className="space-y-3">
+            <button
+              onClick={() => {
+                setHasLoadedData(false);
+                setProfileLoading(false);
+                loadUserData();
+              }}
+              className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            >
+              Retry Loading
+            </button>
+            <Link
+              href="/onboarding"
+              className="block w-full bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors text-center font-medium"
+            >
+              Re-setup Profile
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -411,73 +584,77 @@ export default function Dashboard() {
 
         {/* Main Content */}
         <main className="pt-24 md:pt-32 px-4 sm:px-6 py-6 pb-12 max-w-4xl mx-auto">
-          {/* Profile Header */}
-          <div className="mb-8">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-3">
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">SIWES Logbook</h1>
-              <div className="inline-flex items-center px-3 py-1 rounded-full bg-slate-800 dark:bg-gradient-to-r dark:from-indigo-600 dark:via-purple-600 dark:to-pink-600 text-white dark:text-white text-xs font-extrabold w-fit">
-                <span className="w-2 h-2 bg-blue-400 dark:bg-white rounded-full mr-2 animate-pulse"></span>
-                Beta v2.1.1
-              </div>
-            </div>
-            <p className="text-base text-muted-foreground">{profile.full_name} • {profile.course}</p>
-          </div>
-
-          {/* Training Information */}
-          <div className="bg-card border border-border rounded-2xl p-5 mb-6 transition-colors duration-300">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-              <h2 className="text-lg font-semibold text-card-foreground">Training Information</h2>
-              <span className="text-sm text-muted-foreground font-medium">
-                {profile.start_date && profile.end_date &&
-                  `${formatDate(profile.start_date)} — ${formatDate(profile.end_date)}`
-                }
-              </span>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              {/* Student Details */}
-              <div>
-                <h3 className="text-base font-semibold text-card-foreground mb-3">Student Details</h3>
-                <div className="space-y-2">
-                  <div>
-                    <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Name</div>
-                    <div className="text-sm font-medium text-card-foreground">{profile.full_name}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Course</div>
-                    <div className="text-sm text-card-foreground">{profile.course}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Institution</div>
-                    <div className="text-sm text-card-foreground">{profile.institution}</div>
+          {profile && (
+            <>
+              {/* Profile Header */}
+              <div className="mb-8">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-3">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-foreground">SIWES Logbook</h1>
+                  <div className="inline-flex items-center px-3 py-1 rounded-full bg-slate-800 dark:bg-gradient-to-r dark:from-indigo-600 dark:via-purple-600 dark:to-pink-600 text-white dark:text-white text-xs font-extrabold w-fit">
+                    <span className="w-2 h-2 bg-blue-400 dark:bg-white rounded-full mr-2 animate-pulse"></span>
+                    Beta v2.1.1
                   </div>
                 </div>
+                <p className="text-base text-muted-foreground">{profile.full_name} • {profile.course}</p>
               </div>
 
-              {/* Company Details */}
-              <div>
-                <h3 className="text-base font-semibold text-card-foreground mb-3">Company Details</h3>
-                <div className="space-y-2">
+              {/* Training Information */}
+              <div className="bg-card border border-border rounded-2xl p-5 mb-6 transition-colors duration-300">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+                  <h2 className="text-lg font-semibold text-card-foreground">Training Information</h2>
+                  <span className="text-sm text-muted-foreground font-medium">
+                    {profile.start_date && profile.end_date &&
+                      `${formatDate(profile.start_date)} — ${formatDate(profile.end_date)}`
+                    }
+                  </span>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  {/* Student Details */}
                   <div>
-                    <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Company</div>
-                    <div className="text-sm font-medium text-card-foreground">{profile.company_name}</div>
+                    <h3 className="text-base font-semibold text-card-foreground mb-3">Student Details</h3>
+                    <div className="space-y-2">
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Name</div>
+                        <div className="text-sm font-medium text-card-foreground">{profile.full_name}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Course</div>
+                        <div className="text-sm text-card-foreground">{profile.course}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Institution</div>
+                        <div className="text-sm text-card-foreground">{profile.institution}</div>
+                      </div>
+                    </div>
                   </div>
+
+                  {/* Company Details */}
                   <div>
-                    <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Department</div>
-                    <div className="text-sm text-card-foreground">{profile.department}</div>
+                    <h3 className="text-base font-semibold text-card-foreground mb-3">Company Details</h3>
+                    <div className="space-y-2">
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Company</div>
+                        <div className="text-sm font-medium text-card-foreground">{profile.company_name}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Department</div>
+                        <div className="text-sm text-card-foreground">{profile.department}</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Job Description */}
-            <div className="mt-4 pt-3 border-t border-border">
-              <h4 className="text-base font-semibold text-card-foreground mb-2">Job Description</h4>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {profile.company_description}
-              </p>
-            </div>
-          </div>
+                {/* Job Description */}
+                <div className="mt-4 pt-3 border-t border-border">
+                  <h4 className="text-base font-semibold text-card-foreground mb-2">Job Description</h4>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {profile.company_description}
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Weekly Logs */}
           <div>
@@ -506,21 +683,72 @@ export default function Dashboard() {
             </div>
 
             {/* Week Tabs */}
-            <div className="mb-5">
+            <div className="mb-5" ref={weekMenuRef}>
               <div className="flex space-x-2 overflow-x-auto pb-2">
                 {weeklyLogs.length > 0 ? (
                   weeklyLogs.map((log) => (
-                    <button
-                      key={log.week_number}
-                      onClick={() => setActiveWeek(log.week_number)}
-                      className={`px-5 py-2.5 text-sm font-semibold rounded-full whitespace-nowrap transition-colors min-w-fit ${
-                        activeWeek === log.week_number
-                          ? 'bg-primary text-primary-foreground'
-                          : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                      }`}
-                    >
-                      Week {log.week_number}
-                    </button>
+                    <div key={log.week_number} className="relative">
+                      <div className="flex items-center">
+                        <button
+                          onClick={() => setActiveWeek(log.week_number)}
+                          className={`px-5 py-2.5 text-sm font-semibold rounded-l-full whitespace-nowrap transition-colors min-w-fit ${
+                            activeWeek === log.week_number
+                              ? 'bg-primary text-primary-foreground'
+                              : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                          }`}
+                        >
+                          Week {log.week_number}
+                        </button>
+                        <button
+                          onClick={() => setWeekMenuOpen(weekMenuOpen === log.week_number ? null : log.week_number)}
+                          className={`px-2 py-2.5 text-sm font-semibold rounded-r-full whitespace-nowrap transition-colors border-l border-border/30 ${
+                            activeWeek === log.week_number
+                              ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                              : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                          }`}
+                          title="Week options"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+                      </div>
+                      
+                      {/* Week Menu Dropdown */}
+                      {weekMenuOpen === log.week_number && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          className="absolute top-full left-0 mt-1 bg-card border border-border rounded-lg shadow-lg z-10 min-w-[140px]"
+                        >
+                          <button
+                            onClick={() => {
+                              handleEditLog(log);
+                              setWeekMenuOpen(null);
+                            }}
+                            className="w-full px-3 py-2 text-left text-sm text-card-foreground hover:bg-muted transition-colors flex items-center space-x-2"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            <span>Edit Week</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              handleDeleteLog(log);
+                              setWeekMenuOpen(null);
+                            }}
+                            className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center space-x-2"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            <span>Delete Week</span>
+                          </button>
+                        </motion.div>
+                      )}
+                    </div>
                   ))
                 ) : (
                   <div className="text-muted-foreground text-base py-2 px-2">
@@ -560,9 +788,35 @@ export default function Dashboard() {
 
                   return (
                     <div>
-                      <h3 className="text-lg font-semibold text-foreground mb-2">
-                        Week {activeWeek}: {formatDate(currentLog.start_date)} — {formatDate(currentLog.end_date)}
-                      </h3>
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold text-foreground">
+                          Week {activeWeek}: {formatDate(currentLog.start_date)} — {formatDate(currentLog.end_date)}
+                        </h3>
+                        <div className="flex items-center space-x-2">
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => handleEditLog(currentLog)}
+                            className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+                            title="Edit this week"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </motion.button>
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => handleDeleteLog(currentLog)}
+                            className="p-2 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                            title="Delete this week"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </motion.button>
+                        </div>
+                      </div>
 
                       {/* Week Summary */}
                       <p className="text-sm text-muted-foreground leading-relaxed mb-4">
@@ -660,6 +914,85 @@ export default function Dashboard() {
             </div>
           </div>
         </main>
+
+        {/* Notification Toast */}
+        {notification && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 50, scale: 0.95 }}
+            className={`fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40 px-6 py-4 rounded-full shadow-lg border max-w-md mx-4 ${
+              notification.type === 'success'
+                ? 'bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-200'
+                : 'bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-200'
+            }`}
+          >
+            <div className="flex items-center space-x-3">
+              {notification.type === 'success' ? (
+                <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              )}
+              <span className="text-sm font-medium">{notification.message}</span>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-card border border-border rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl"
+            >
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+                  <svg className="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.664-.833-2.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-card-foreground">Delete Week {logToDelete?.week_number}</h3>
+                  <p className="text-sm text-muted-foreground">This action cannot be undone</p>
+                </div>
+              </div>
+              
+              <p className="text-card-foreground mb-6">
+                Are you sure you want to delete Week {logToDelete?.week_number}? All your logged activities and data for this week will be permanently removed.
+              </p>
+              
+              <div className="flex space-x-3">
+                <button
+                  onClick={cancelDeleteLog}
+                  disabled={isDeleting}
+                  className="flex-1 px-4 py-2 border border-border rounded-lg text-card-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeleteLog}
+                  disabled={isDeleting}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center space-x-2"
+                >
+                  {isDeleting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Deleting...</span>
+                    </>
+                  ) : (
+                    <span>Delete Week</span>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
       </div>
     </PageTransition>
   );

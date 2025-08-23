@@ -44,14 +44,10 @@ export default function AuthCallback() {
     if (isAuthenticated && user) {
       console.log('User authenticated successfully:', user.email);
 
-      // Redirect based on onboarding status
-      if (user.hasCompletedOnboarding) {
-        console.log('User completed onboarding, redirecting to dashboard');
-        router.push('/dashboard');
-      } else {
-        console.log('User needs onboarding, redirecting to onboarding');
-        router.push('/onboarding');
-      }
+      // Always redirect to dashboard first - let dashboard handle onboarding check
+      // This prevents race conditions where profile check failed in AuthContext
+      console.log('Redirecting to dashboard, will check onboarding status there');
+      router.push('/dashboard');
     } else if (!isLoading) {
       // Only redirect to login if we're not loading and definitely not authenticated
       console.log('No authenticated user after loading complete, redirecting to login');
