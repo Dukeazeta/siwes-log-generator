@@ -48,11 +48,13 @@ export default function Dashboard() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [logToDelete, setLogToDelete] = useState<WeeklyLog | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [weekMenuOpen, setWeekMenuOpen] = useState<number | null>(null);
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
   const [redirectAttempts, setRedirectAttempts] = useState(0);
+  const [trainingInfoExpanded, setTrainingInfoExpanded] = useState(false);
+  const [editingDay, setEditingDay] = useState<{logId: string, dayIndex: number} | null>(null);
+  const [editingText, setEditingText] = useState('');
+  const [isSavingDay, setIsSavingDay] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
-  const weekMenuRef = useRef<HTMLDivElement>(null);
 
   // Check for success notifications from URL params
   useEffect(() => {
@@ -81,21 +83,29 @@ export default function Dashboard() {
   const loadUserData = useCallback(async () => {
     if (hasLoadedData || profileLoading || !user?.id) return; // Prevent multiple loads
 
+    console.log('Starting loadUserData for user:', user.email, 'hasCompletedOnboarding:', user.hasCompletedOnboarding);
     setProfileLoading(true);
     setHasLoadedData(true);
 
     try {
       // Load profile
+      console.log('Querying user_profiles for user_id:', user.id);
       const { data: profileData, error: profileError } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('user_id', user.id)
         .single();
 
+      console.log('Profile query result:', { profileData, profileError });
+
       if (profileError) {
         if (profileError.code === 'PGRST116') {
           // No profile found - this is a data inconsistency since user should have completed onboarding
           console.warn('Profile not found for user who completed onboarding. User:', user.email);
+          
+          // Check if the user actually has completed onboarding in the database
+          const { data: authUser, error: authError } = await supabase.auth.getUser();
+          console.log('Auth user check:', { authUser: authUser?.user?.email, authError });
           
           // Prevent infinite redirects
           if (redirectAttempts >= 2) {
@@ -111,17 +121,21 @@ export default function Dashboard() {
           
           // Force refresh user to get the latest onboarding status
           if (refreshUser) {
+            console.log('Refreshing user context...');
             await refreshUser();
             return; // Let the refreshed user data trigger this function again
           }
           
           // Fallback: redirect to onboarding if refresh fails
+          console.log('Redirecting to onboarding as fallback');
           router.push('/onboarding');
           return;
         }
+        console.error('Profile query error:', profileError);
         throw profileError;
       }
 
+      console.log('Profile loaded successfully:', profileData.full_name);
       setProfile(profileData);
 
       // Sync the profile's completed_onboarding status with user context if needed
@@ -131,6 +145,7 @@ export default function Dashboard() {
       }
 
       // Load weekly logs
+      console.log('Loading weekly logs...');
       const { data: logsData, error: logsError } = await supabase
         .from('weekly_logs')
         .select('*')
@@ -138,9 +153,11 @@ export default function Dashboard() {
         .order('week_number', { ascending: true });
 
       if (logsError && logsError.code !== 'PGRST116') {
+        console.error('Weekly logs query error:', logsError);
         throw logsError;
       }
 
+      console.log('Weekly logs loaded:', logsData?.length || 0, 'logs found');
       setWeeklyLogs(logsData || []);
 
       // Set active week to the first available week
@@ -150,16 +167,19 @@ export default function Dashboard() {
     } catch (error) {
       console.error('Error loading user data:', error);
       
-      // Show error notification instead of empty profile
+      // Show error notification instead of showing error state immediately
       setNotification({
         type: 'error',
-        message: 'Failed to load profile data. Please refresh the page.'
+        message: 'Failed to load profile data. Click "Retry Loading" to try again.'
       });
-      setTimeout(() => setNotification(null), 5000);
+      setTimeout(() => setNotification(null), 8000);
+      
+      // Don't set profile to null immediately - give user a chance to retry
+      // setProfile(null); // Removed this line
     } finally {
       setProfileLoading(false);
     }
-  }, [user?.id, user?.email, user?.hasCompletedOnboarding, router, hasLoadedData, profileLoading, refreshUser]);
+  }, [user?.id, user?.email, user?.hasCompletedOnboarding, router, hasLoadedData, profileLoading, refreshUser, redirectAttempts]);
 
   // Check for success notifications from URL params
   useEffect(() => {
@@ -186,17 +206,35 @@ export default function Dashboard() {
   }, [searchParams, router]);
 
   useEffect(() => {
+    console.log('Dashboard useEffect triggered:', {
+      isLoading,
+      isAuthenticated,
+      userId: user?.id,
+      userEmail: user?.email,
+      hasCompletedOnboarding: user?.hasCompletedOnboarding,
+      hasLoadedData,
+      profileLoading,
+      profileExists: !!profile
+    });
+    
     // Don't do anything while auth is loading
-    if (isLoading) return;
+    if (isLoading) {
+      console.log('Auth is loading, waiting...');
+      return;
+    }
 
     // Redirect to login if not authenticated
     if (!isAuthenticated) {
+      console.log('User not authenticated, redirecting to login');
       router.push('/login');
       return;
     }
 
     // Only proceed if we have a valid user
-    if (!user?.id) return;
+    if (!user?.id) {
+      console.log('No user ID found, waiting for user data...');
+      return;
+    }
 
     // Check onboarding status and redirect if needed
     if (!user.hasCompletedOnboarding) {
@@ -211,8 +249,14 @@ export default function Dashboard() {
 
     // Load user data if we haven't loaded it yet and not currently loading
     if (!hasLoadedData && !profileLoading) {
-      console.log('Loading user data for authenticated user with completed onboarding');
+      console.log('Conditions met for loading user data - starting loadUserData()');
       loadUserData();
+    } else {
+      console.log('Skipping loadUserData:', {
+        hasLoadedData,
+        profileLoading,
+        reason: hasLoadedData ? 'already loaded' : 'currently loading'
+      });
     }
   }, [isAuthenticated, isLoading, user?.id, user?.hasCompletedOnboarding, hasLoadedData, profileLoading, loadUserData, router]);
 
@@ -240,19 +284,16 @@ export default function Dashboard() {
       if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node)) {
         setMobileMenuOpen(false);
       }
-      if (weekMenuRef.current && !weekMenuRef.current.contains(event.target as Node)) {
-        setWeekMenuOpen(null);
-      }
     };
 
-    if (mobileMenuOpen || weekMenuOpen !== null) {
+    if (mobileMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [mobileMenuOpen, weekMenuOpen]);
+  }, [mobileMenuOpen]);
 
   // Reset loading state if stuck
   useEffect(() => {
@@ -297,11 +338,6 @@ export default function Dashboard() {
   const handleEditProfile = () => {
     // TODO: Navigate to edit profile page
     setMobileMenuOpen(false);
-  };
-
-  const handleEditLog = (log: WeeklyLog) => {
-    // Navigate to edit page with the log data
-    router.push(`/create-log?edit=${log.id}&week=${log.week_number}`);
   };
 
   const handleDeleteLog = (log: WeeklyLog) => {
@@ -361,6 +397,81 @@ export default function Dashboard() {
     setLogToDelete(null);
   };
 
+  const handleEditDay = (logId: string, dayIndex: number, currentText: string) => {
+    setEditingDay({ logId, dayIndex });
+    setEditingText(currentText);
+  };
+
+  const handleSaveDay = async () => {
+    if (!editingDay || !user?.id) return;
+
+    setIsSavingDay(true);
+    try {
+      // Find the current log
+      const currentLog = weeklyLogs.find(log => log.id === editingDay.logId);
+      if (!currentLog) throw new Error('Log not found');
+
+      // Parse the current content
+      const logContent = typeof currentLog.content === 'string'
+        ? JSON.parse(currentLog.content)
+        : currentLog.content;
+
+      // Update the specific day's activities
+      if (logContent.dailyActivities && logContent.dailyActivities[editingDay.dayIndex]) {
+        logContent.dailyActivities[editingDay.dayIndex].activities = editingText;
+      }
+
+      // Save to database
+      const { error } = await supabase
+        .from('weekly_logs')
+        .update({
+          content: JSON.stringify(logContent),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', editingDay.logId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setWeeklyLogs(prev => prev.map(log => {
+        if (log.id === editingDay.logId) {
+          return {
+            ...log,
+            content: JSON.stringify(logContent),
+            updated_at: new Date().toISOString()
+          };
+        }
+        return log;
+      }));
+
+      // Clear editing state
+      setEditingDay(null);
+      setEditingText('');
+
+      // Show success notification
+      setNotification({
+        type: 'success',
+        message: 'Day activity updated successfully'
+      });
+      setTimeout(() => setNotification(null), 3000);
+    } catch (error) {
+      console.error('Error saving day activity:', error);
+      setNotification({
+        type: 'error',
+        message: 'Failed to save changes. Please try again.'
+      });
+      setTimeout(() => setNotification(null), 3000);
+    } finally {
+      setIsSavingDay(false);
+    }
+  };
+
+  const handleCancelEditDay = () => {
+    setEditingDay(null);
+    setEditingText('');
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -397,7 +508,17 @@ export default function Dashboard() {
 
 
 
-  if (!profile && !profileLoading && hasLoadedData) {
+  // Show error state only if we've definitively failed to load profile after attempts
+  if (!profile && !profileLoading && hasLoadedData && redirectAttempts > 0) {
+    console.log('Showing profile error state:', {
+      profile: !!profile,
+      profileLoading,
+      hasLoadedData,
+      redirectAttempts,
+      userEmail: user?.email,
+      userHasCompletedOnboarding: user?.hasCompletedOnboarding
+    });
+    
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto px-4">
@@ -407,17 +528,40 @@ export default function Dashboard() {
             className="w-16 h-16 mx-auto mb-4"
           />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Profile Error</h3>
-          <p className="text-gray-600 mb-6">There was an issue loading your profile. This might be a temporary problem.</p>
+          <p className="text-gray-600 mb-6">
+            There was an issue loading your profile. This might be a temporary problem.
+            {user?.email && (
+              <><br /><span className="text-sm text-gray-500">User: {user.email}</span></>
+            )}
+          </p>
           <div className="space-y-3">
             <button
               onClick={() => {
+                console.log('Retry button clicked - resetting state');
                 setHasLoadedData(false);
                 setProfileLoading(false);
+                setRedirectAttempts(0);
+                setProfile(null);
+                // Clear localStorage to force fresh load
+                localStorage.removeItem('lastLoadedUserId');
                 loadUserData();
               }}
               className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
             >
               Retry Loading
+            </button>
+            <button
+              onClick={async () => {
+                console.log('Refresh user button clicked');
+                if (refreshUser) {
+                  await refreshUser();
+                }
+                setHasLoadedData(false);
+                setRedirectAttempts(0);
+              }}
+              className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium"
+            >
+              Refresh Session
             </button>
             <Link
               href="/onboarding"
@@ -433,14 +577,14 @@ export default function Dashboard() {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-secondary/30 dark:bg-background transition-colors duration-300">
+      <div className="min-h-screen bg-secondary/30 dark:bg-background transition-colors duration-300" style={{ opacity: 1, visibility: 'visible' }}>
         {/* Floating Glassmorphism Navbar */}
         <motion.header
           ref={mobileMenuRef}
-          initial={{ y: -100, opacity: 0 }}
+          initial={{ y: -20, opacity: 0.8 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="fixed top-4 md:top-6 left-1/2 transform -translate-x-1/2 z-50 w-[95%] md:w-[90%] max-w-4xl"
+          transition={{ duration: 0.3, ease: "easeOut" }}
+          className="dashboard-header fixed top-4 md:top-6 left-1/2 transform -translate-x-1/2 z-50 w-[95%] md:w-[90%] max-w-4xl"
         >
           <nav className="backdrop-blur-md bg-background/70 dark:bg-background/80 border border-border/50 rounded-full px-4 md:px-8 py-3 md:py-4 transition-colors duration-300">
             <div className="flex items-center justify-between">
@@ -583,7 +727,7 @@ export default function Dashboard() {
         </motion.header>
 
         {/* Main Content */}
-        <main className="pt-24 md:pt-32 px-4 sm:px-6 py-6 pb-12 max-w-4xl mx-auto">
+        <main className="dashboard-content pt-24 md:pt-32 px-4 sm:px-6 py-6 pb-12 max-w-4xl mx-auto">
           {profile && (
             <>
               {/* Profile Header */}
@@ -596,68 +740,155 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <p className="text-base text-muted-foreground">{profile.full_name} • {profile.course}</p>
+                
+                {/* Quick Info Summary */}
+                <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-muted/30 rounded-lg p-3">
+                    <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">Company</div>
+                    <div className="text-sm font-semibold text-foreground truncate">{profile.company_name}</div>
+                  </div>
+                  <div className="bg-muted/30 rounded-lg p-3">
+                    <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">Department</div>
+                    <div className="text-sm font-semibold text-foreground truncate">{profile.department}</div>
+                  </div>
+                  <div className="bg-muted/30 rounded-lg p-3">
+                    <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">Duration</div>
+                    <div className="text-sm font-semibold text-foreground">
+                      {profile.start_date && profile.end_date ? (
+                        Math.ceil(
+                          (new Date(profile.end_date).getTime() - new Date(profile.start_date).getTime()) / 
+                          (1000 * 3600 * 24 * 7)
+                        ) + ' weeks'
+                      ) : 'N/A'}
+                    </div>
+                  </div>
+                  <div className="bg-muted/30 rounded-lg p-3">
+                    <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">Logs Created</div>
+                    <div className="text-sm font-semibold text-primary">{weeklyLogs.length} weeks</div>
+                  </div>
+                </div>
               </div>
 
-              {/* Training Information */}
-              <div className="bg-card border border-border rounded-2xl p-5 mb-6 transition-colors duration-300">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-                  <h2 className="text-lg font-semibold text-card-foreground">Training Information</h2>
-                  <span className="text-sm text-muted-foreground font-medium">
-                    {profile.start_date && profile.end_date &&
-                      `${formatDate(profile.start_date)} — ${formatDate(profile.end_date)}`
-                    }
-                  </span>
-                </div>
+              {/* Training Information Dropdown */}
+              <div className="bg-card border border-border rounded-2xl transition-colors duration-300 mb-6">
+                <button
+                  onClick={() => setTrainingInfoExpanded(!trainingInfoExpanded)}
+                  className="w-full flex items-center justify-between p-5 text-left hover:bg-muted/50 transition-colors rounded-2xl"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                      <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-semibold text-card-foreground">Training Information</h2>
+                      <p className="text-sm text-muted-foreground">
+                        {profile.start_date && profile.end_date &&
+                          `${formatDate(profile.start_date)} — ${formatDate(profile.end_date)}`
+                        }
+                      </p>
+                    </div>
+                  </div>
+                  <motion.div
+                    animate={{ rotate: trainingInfoExpanded ? 180 : 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </motion.div>
+                </button>
 
-                <div className="grid gap-4 md:grid-cols-2">
-                  {/* Student Details */}
-                  <div>
-                    <h3 className="text-base font-semibold text-card-foreground mb-3">Student Details</h3>
-                    <div className="space-y-2">
+                <motion.div
+                  initial={false}
+                  animate={{
+                    height: trainingInfoExpanded ? "auto" : 0,
+                    opacity: trainingInfoExpanded ? 1 : 0
+                  }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  className="overflow-hidden"
+                >
+                  <div className="px-5 pb-5">
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {/* Student Details */}
                       <div>
-                        <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Name</div>
-                        <div className="text-sm font-medium text-card-foreground">{profile.full_name}</div>
+                        <h3 className="text-base font-semibold text-card-foreground mb-3">Student Details</h3>
+                        <div className="space-y-2">
+                          <div>
+                            <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Name</div>
+                            <div className="text-sm font-medium text-card-foreground">{profile.full_name}</div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Course</div>
+                            <div className="text-sm text-card-foreground">{profile.course}</div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Institution</div>
+                            <div className="text-sm text-card-foreground">{profile.institution}</div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Level</div>
+                            <div className="text-sm text-card-foreground">{profile.level}</div>
+                          </div>
+                        </div>
                       </div>
+
+                      {/* Company Details */}
                       <div>
-                        <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Course</div>
-                        <div className="text-sm text-card-foreground">{profile.course}</div>
+                        <h3 className="text-base font-semibold text-card-foreground mb-3">Company Details</h3>
+                        <div className="space-y-2">
+                          <div>
+                            <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Company</div>
+                            <div className="text-sm font-medium text-card-foreground">{profile.company_name}</div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Department</div>
+                            <div className="text-sm text-card-foreground">{profile.department}</div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Industry</div>
+                            <div className="text-sm text-card-foreground">{profile.industry_type}</div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Address</div>
+                            <div className="text-sm text-card-foreground">{profile.company_address}</div>
+                          </div>
+                        </div>
                       </div>
+                    </div>
+
+                    {/* Supervisor & Job Description */}
+                    <div className="grid gap-4 md:grid-cols-2 mt-4 pt-4 border-t border-border">
                       <div>
-                        <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Institution</div>
-                        <div className="text-sm text-card-foreground">{profile.institution}</div>
+                        <h4 className="text-base font-semibold text-card-foreground mb-3">Supervisor</h4>
+                        <div className="space-y-2">
+                          <div>
+                            <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Name</div>
+                            <div className="text-sm font-medium text-card-foreground">{profile.supervisor_name}</div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Title</div>
+                            <div className="text-sm text-card-foreground">{profile.supervisor_title}</div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h4 className="text-base font-semibold text-card-foreground mb-3">Job Description</h4>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          {profile.company_description}
+                        </p>
                       </div>
                     </div>
                   </div>
-
-                  {/* Company Details */}
-                  <div>
-                    <h3 className="text-base font-semibold text-card-foreground mb-3">Company Details</h3>
-                    <div className="space-y-2">
-                      <div>
-                        <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Company</div>
-                        <div className="text-sm font-medium text-card-foreground">{profile.company_name}</div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Department</div>
-                        <div className="text-sm text-card-foreground">{profile.department}</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Job Description */}
-                <div className="mt-4 pt-3 border-t border-border">
-                  <h4 className="text-base font-semibold text-card-foreground mb-2">Job Description</h4>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {profile.company_description}
-                  </p>
-                </div>
+                </motion.div>
               </div>
             </>
           )}
 
           {/* Weekly Logs */}
-          <div>
+          <div className="weekly-logs">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
               <h2 className="text-lg font-semibold text-card-foreground">Weekly Logs</h2>
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -683,72 +914,21 @@ export default function Dashboard() {
             </div>
 
             {/* Week Tabs */}
-            <div className="mb-5" ref={weekMenuRef}>
+            <div className="mb-5">
               <div className="flex space-x-2 overflow-x-auto pb-2">
                 {weeklyLogs.length > 0 ? (
                   weeklyLogs.map((log) => (
-                    <div key={log.week_number} className="relative">
-                      <div className="flex items-center">
-                        <button
-                          onClick={() => setActiveWeek(log.week_number)}
-                          className={`px-5 py-2.5 text-sm font-semibold rounded-l-full whitespace-nowrap transition-colors min-w-fit ${
-                            activeWeek === log.week_number
-                              ? 'bg-primary text-primary-foreground'
-                              : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                          }`}
-                        >
-                          Week {log.week_number}
-                        </button>
-                        <button
-                          onClick={() => setWeekMenuOpen(weekMenuOpen === log.week_number ? null : log.week_number)}
-                          className={`px-2 py-2.5 text-sm font-semibold rounded-r-full whitespace-nowrap transition-colors border-l border-border/30 ${
-                            activeWeek === log.week_number
-                              ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                              : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                          }`}
-                          title="Week options"
-                        >
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </button>
-                      </div>
-                      
-                      {/* Week Menu Dropdown */}
-                      {weekMenuOpen === log.week_number && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -10 }}
-                          className="absolute top-full left-0 mt-1 bg-card border border-border rounded-lg shadow-lg z-10 min-w-[140px]"
-                        >
-                          <button
-                            onClick={() => {
-                              handleEditLog(log);
-                              setWeekMenuOpen(null);
-                            }}
-                            className="w-full px-3 py-2 text-left text-sm text-card-foreground hover:bg-muted transition-colors flex items-center space-x-2"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                            <span>Edit Week</span>
-                          </button>
-                          <button
-                            onClick={() => {
-                              handleDeleteLog(log);
-                              setWeekMenuOpen(null);
-                            }}
-                            className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center space-x-2"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                            <span>Delete Week</span>
-                          </button>
-                        </motion.div>
-                      )}
-                    </div>
+                    <button
+                      key={log.week_number}
+                      onClick={() => setActiveWeek(log.week_number)}
+                      className={`px-5 py-2.5 text-sm font-semibold rounded-full whitespace-nowrap transition-colors min-w-fit ${
+                        activeWeek === log.week_number
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                      }`}
+                    >
+                      Week {log.week_number}
+                    </button>
                   ))
                 ) : (
                   <div className="text-muted-foreground text-base py-2 px-2">
@@ -796,17 +976,6 @@ export default function Dashboard() {
                           <motion.button
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
-                            onClick={() => handleEditLog(currentLog)}
-                            className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
-                            title="Edit this week"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                          </motion.button>
-                          <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
                             onClick={() => handleDeleteLog(currentLog)}
                             className="p-2 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                             title="Delete this week"
@@ -829,33 +998,137 @@ export default function Dashboard() {
 
                         {/* Mobile-friendly cards for small screens */}
                         <div className="block sm:hidden space-y-3">
-                          {logContent.dailyActivities?.map((activity: { day: string; date: string; activities: string }, index: number) => (
-                            <div key={index} className="border-l-4 border-primary pl-4">
-                              <div className="flex items-center justify-between mb-2">
-                                <div className="text-foreground font-semibold text-sm">{activity.day}</div>
-                                <div className="text-muted-foreground text-xs font-medium">{activity.date}</div>
+                          {logContent.dailyActivities?.map((activity: { day: string; date: string; activities: string }, index: number) => {
+                            const isEditing = editingDay?.logId === currentLog.id && editingDay?.dayIndex === index;
+                            
+                            return (
+                              <div key={index} className="border-l-4 border-primary pl-4">
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="text-foreground font-semibold text-sm">{activity.day}</div>
+                                  <div className="flex items-center space-x-2">
+                                    <div className="text-muted-foreground text-xs font-medium">{activity.date}</div>
+                                    {!isEditing && (
+                                      <button
+                                        onClick={() => handleEditDay(currentLog.id, index, activity.activities)}
+                                        className="p-1 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded transition-colors"
+                                        title="Edit this day"
+                                      >
+                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                                {isEditing ? (
+                                  <div className="space-y-2">
+                                    <textarea
+                                      value={editingText}
+                                      onChange={(e) => setEditingText(e.target.value)}
+                                      className="w-full p-2 text-sm border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-background text-foreground resize-none"
+                                      rows={3}
+                                      placeholder="Enter activities for this day..."
+                                    />
+                                    <div className="flex items-center space-x-2">
+                                      <button
+                                        onClick={handleSaveDay}
+                                        disabled={isSavingDay}
+                                        className="px-3 py-1 bg-primary text-primary-foreground rounded text-xs font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center space-x-1"
+                                      >
+                                        {isSavingDay ? (
+                                          <>
+                                            <div className="w-3 h-3 border border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
+                                            <span>Saving...</span>
+                                          </>
+                                        ) : (
+                                          <span>Save</span>
+                                        )}
+                                      </button>
+                                      <button
+                                        onClick={handleCancelEditDay}
+                                        disabled={isSavingDay}
+                                        className="px-3 py-1 bg-muted text-muted-foreground rounded text-xs font-medium hover:bg-muted/80 transition-colors disabled:opacity-50"
+                                      >
+                                        Cancel
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="text-card-foreground text-sm leading-relaxed">
+                                    {activity.activities}
+                                  </div>
+                                )}
                               </div>
-                              <div className="text-card-foreground text-sm leading-relaxed">
-                                {activity.activities}
-                              </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
 
                         {/* Table for larger screens */}
                         <div className="hidden sm:block">
                           <div className="space-y-3">
-                            {logContent.dailyActivities?.map((activity: { day: string; date: string; activities: string }, index: number) => (
-                              <div key={index} className="border-l-4 border-primary pl-5 py-1">
-                                <div className="flex items-center justify-between mb-1.5">
-                                  <div className="text-foreground font-semibold text-sm">{activity.day}</div>
-                                  <div className="text-muted-foreground text-xs font-medium">{activity.date}</div>
+                            {logContent.dailyActivities?.map((activity: { day: string; date: string; activities: string }, index: number) => {
+                              const isEditing = editingDay?.logId === currentLog.id && editingDay?.dayIndex === index;
+                              
+                              return (
+                                <div key={index} className="border-l-4 border-primary pl-5 py-1">
+                                  <div className="flex items-center justify-between mb-1.5">
+                                    <div className="text-foreground font-semibold text-sm">{activity.day}</div>
+                                    <div className="flex items-center space-x-3">
+                                      <div className="text-muted-foreground text-xs font-medium">{activity.date}</div>
+                                      {!isEditing && (
+                                        <button
+                                          onClick={() => handleEditDay(currentLog.id, index, activity.activities)}
+                                          className="p-1 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded transition-colors"
+                                          title="Edit this day"
+                                        >
+                                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                          </svg>
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                  {isEditing ? (
+                                    <div className="space-y-2">
+                                      <textarea
+                                        value={editingText}
+                                        onChange={(e) => setEditingText(e.target.value)}
+                                        className="w-full p-3 text-sm border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-background text-foreground resize-none"
+                                        rows={4}
+                                        placeholder="Enter activities for this day..."
+                                      />
+                                      <div className="flex items-center space-x-2">
+                                        <button
+                                          onClick={handleSaveDay}
+                                          disabled={isSavingDay}
+                                          className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center space-x-2"
+                                        >
+                                          {isSavingDay ? (
+                                            <>
+                                              <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
+                                              <span>Saving...</span>
+                                            </>
+                                          ) : (
+                                            <span>Save Changes</span>
+                                          )}
+                                        </button>
+                                        <button
+                                          onClick={handleCancelEditDay}
+                                          disabled={isSavingDay}
+                                          className="px-4 py-2 bg-muted text-muted-foreground rounded-lg text-sm font-medium hover:bg-muted/80 transition-colors disabled:opacity-50"
+                                        >
+                                          Cancel
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="text-card-foreground text-sm leading-relaxed">
+                                      {activity.activities}
+                                    </div>
+                                  )}
                                 </div>
-                                <div className="text-card-foreground text-sm leading-relaxed">
-                                  {activity.activities}
-                                </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       </div>
@@ -884,9 +1157,9 @@ export default function Dashboard() {
 
                       {/* Challenges Faced */}
                       {logContent.challengesFaced && (
-                        <div className="pt-3 border-t border-gray-200">
-                          <h4 className="text-base font-semibold text-gray-900 mb-3">Challenges Faced</h4>
-                          <p className="text-gray-700 text-sm leading-relaxed">
+                        <div className="pt-3 border-t border-border">
+                          <h4 className="text-base font-semibold text-foreground mb-3">Challenges Faced</h4>
+                          <p className="text-card-foreground text-sm leading-relaxed">
                             {logContent.challengesFaced}
                           </p>
                         </div>

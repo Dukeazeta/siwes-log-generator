@@ -199,17 +199,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const transformSupabaseUser = async (supabaseUser: SupabaseUser): Promise<User> => {
     const metadata = supabaseUser.user_metadata || {};
+    console.log('Transforming Supabase user:', supabaseUser.email, 'metadata:', metadata);
 
     // For Google OAuth users, we should be more reliable about checking profile status
     let hasCompletedOnboarding = false;
     try {
-      console.log('Checking profile status for user:', supabaseUser.email);
+      console.log('Checking profile status for user:', supabaseUser.email, 'id:', supabaseUser.id);
       
       const { data: profile, error } = await supabase
         .from('user_profiles')
         .select('completed_onboarding')
         .eq('user_id', supabaseUser.id)
         .single();
+
+      console.log('Profile check result:', { profile, error, code: error?.code });
 
       if (!error && profile) {
         hasCompletedOnboarding = profile.completed_onboarding === true;
@@ -240,7 +243,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     console.log('User transformation complete:', {
       email: transformedUser.email,
-      hasCompletedOnboarding: transformedUser.hasCompletedOnboarding
+      hasCompletedOnboarding: transformedUser.hasCompletedOnboarding,
+      fullName: transformedUser.fullName
     });
     
     return transformedUser;

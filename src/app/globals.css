@@ -146,6 +146,38 @@ html {
   opacity: 1;
 }
 
+/* Ensure dashboard elements are visible initially and prevent hydration issues */
+.dashboard-header,
+.dashboard-content,
+.weekly-logs {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: none !important;
+}
+
+/* Prevent Framer Motion from hiding dashboard elements before animation */
+.dashboard-header[style*="opacity: 0"],
+.dashboard-content[style*="opacity: 0"],
+.weekly-logs[style*="opacity: 0"] {
+  opacity: 1 !important;
+}
+
+/* Prevent hydration issues with dashboard elements */
+[data-nextjs-scroll-focus-boundary] .dashboard-header,
+[data-nextjs-scroll-focus-boundary] .dashboard-content,
+[data-nextjs-scroll-focus-boundary] .weekly-logs {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Fallback for dashboard elements during loading */
+.dashboard-header,
+.dashboard-content,
+.weekly-logs {
+  min-height: 0;
+  will-change: auto;
+}
+
 /* Smooth transitions for theme changes */
 * {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;

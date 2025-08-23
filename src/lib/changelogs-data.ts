@@ -12,6 +12,41 @@ export interface ChangelogEntry {
 
 export const changelogs: ChangelogEntry[] = [
   {
+    version: "2.2.0",
+    date: "2025-08-23",
+    type: "major",
+    title: "Enhanced Log Management & Inline Editing",
+    description: "Revolutionized log management with granular control - edit individual days inline and manage entire weeks with improved delete functionality.",
+    changes: [
+      {
+        category: "added",
+        items: [
+          "Inline editing for individual daily activities with real-time updates",
+          "Delete week functionality with confirmation dialogs",
+          "Edit and cancel buttons for day-level modifications",
+          "Auto-save functionality for daily activity changes",
+          "Success notifications for all CRUD operations"
+        ]
+      },
+      {
+        category: "improved",
+        items: [
+          "Streamlined user interface by removing redundant week-level editing",
+          "Enhanced user experience with granular day-by-day control",
+          "Better workflow with in-place editing instead of page navigation",
+          "Responsive design for both mobile and desktop editing experiences"
+        ]
+      },
+      {
+        category: "removed",
+        items: [
+          "Week-level edit button in favor of more precise daily editing",
+          "Unnecessary page redirects for simple content modifications"
+        ]
+      }
+    ]
+  },
+  {
     version: "2.1.1",
     date: "2025-08-06",
     type: "major",
