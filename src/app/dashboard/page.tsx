@@ -54,7 +54,9 @@ export default function Dashboard() {
   const [editingDay, setEditingDay] = useState<{logId: string, dayIndex: number} | null>(null);
   const [editingText, setEditingText] = useState('');
   const [isSavingDay, setIsSavingDay] = useState(false);
+  const [desktopMenuOpen, setDesktopMenuOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const desktopMenuRef = useRef<HTMLDivElement>(null);
 
   // Auto-refresh function for weekly logs
   const refreshWeeklyLogs = useCallback(async (forceRefresh = false) => {
@@ -325,16 +327,19 @@ export default function Dashboard() {
       if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node)) {
         setMobileMenuOpen(false);
       }
+      if (desktopMenuRef.current && !desktopMenuRef.current.contains(event.target as Node)) {
+        setDesktopMenuOpen(false);
+      }
     };
 
-    if (mobileMenuOpen) {
+    if (mobileMenuOpen || desktopMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [mobileMenuOpen]);
+  }, [mobileMenuOpen, desktopMenuOpen]);
 
   // Reset loading state if stuck
   useEffect(() => {
@@ -379,9 +384,13 @@ export default function Dashboard() {
   const handleLogout = async () => {
     try {
       await logout();
+      // Always redirect to home page after logout attempt
       router.push('/');
     } catch (error) {
-      console.error('Logout error:', error);
+      console.warn('Logout error handled:', error);
+      // Even if logout fails, redirect to home page
+      // The user state should be cleared regardless
+      router.push('/');
     }
   };
 
@@ -686,26 +695,77 @@ export default function Dashboard() {
 
               {/* User Menu */}
               <div className="flex items-center space-x-3">
-                {/* Desktop: Logout button */}
-                <button
-                  onClick={handleLogout}
-                  className="hidden md:block w-8 h-8 rounded-full overflow-hidden hover:scale-105 transition-transform border-2 border-white/50"
-                  title="Logout"
-                >
-                  {user?.avatarUrl ? (
-                    <Image
-                      src={user.avatarUrl}
-                      alt="Profile"
-                      width={32}
-                      height={32}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-sm font-medium">
-                      {user?.fullName?.charAt(0) || user?.email?.charAt(0) || 'U'}
-                    </div>
+                {/* Desktop: Profile dropdown */}
+                <div className="hidden md:block relative" ref={desktopMenuRef}>
+                  <button
+                    onClick={() => setDesktopMenuOpen(!desktopMenuOpen)}
+                    className="w-8 h-8 rounded-full overflow-hidden hover:scale-105 transition-transform border-2 border-white/50"
+                    title="Profile Menu"
+                  >
+                    {user?.avatarUrl ? (
+                      <Image
+                        src={user.avatarUrl}
+                        alt="Profile"
+                        width={32}
+                        height={32}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-sm font-medium">
+                        {user?.fullName?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                      </div>
+                    )}
+                  </button>
+
+                  {/* Desktop Dropdown Menu */}
+                  {desktopMenuOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="absolute top-full right-0 mt-2 w-48 bg-card/90 backdrop-blur-md border border-border/50 rounded-2xl shadow-lg overflow-hidden z-50"
+                    >
+                      <div className="p-2">
+                        {/* User Info */}
+                        <div className="px-3 py-2 border-b border-border/50 mb-2">
+                          <p className="text-sm font-medium text-card-foreground truncate">
+                            {user?.fullName || user?.email}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {user?.email}
+                          </p>
+                        </div>
+
+                        {/* Menu Items */}
+                        <button
+                          onClick={() => {
+                            setDesktopMenuOpen(false);
+                            handleEditProfile();
+                          }}
+                          className="flex items-center space-x-3 w-full text-left px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                          <span className="text-sm font-medium">Edit Profile</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setDesktopMenuOpen(false);
+                            handleLogout();
+                          }}
+                          className="flex items-center space-x-3 w-full text-left px-3 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                          </svg>
+                          <span className="text-sm font-medium">Logout</span>
+                        </button>
+                      </div>
+                    </motion.div>
                   )}
-                </button>
+                </div>
 
                 {/* Mobile: Menu toggle */}
                 <button

@@ -369,14 +369,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        throw error;
-      }
+      // Always clear the user state first
       setUser(null);
+      
+      // Try to sign out from Supabase, but handle session errors gracefully
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        // Check if it's a session-related error that we can ignore
+        if (error.message?.includes('Auth session missing') || 
+            error.message?.includes('session_not_found') ||
+            error.message?.includes('Forbidden')) {
+          console.log('Session already invalid, logout completed locally');
+          // Session was already invalid, which is fine for logout
+          return;
+        }
+        
+        // For other errors, log but don't throw
+        console.warn('Logout warning (non-critical):', error);
+      }
+      
+      console.log('Logout completed successfully');
     } catch (error) {
-      console.error('Logout error:', error);
-      throw error;
+      console.warn('Logout error (handled gracefully):', error);
+      // Even if logout fails, we've cleared the local user state
+      // This ensures the user is logged out from the app's perspective
     }
   };
 

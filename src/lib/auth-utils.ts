@@ -1,7 +1,7 @@
 import { supabase } from './supabase';
 
 /**
- * Checks if an error is related to invalid refresh tokens
+ * Checks if an error is related to invalid refresh tokens or missing sessions
  */
 export function isRefreshTokenError(error: unknown): boolean {
   if (!error) return false;
@@ -11,7 +11,9 @@ export function isRefreshTokenError(error: unknown): boolean {
     errorMessage.includes('refresh_token_not_found') ||
     errorMessage.includes('Invalid Refresh Token') ||
     errorMessage.includes('Refresh Token Not Found') ||
-    errorMessage.includes('invalid_grant')
+    errorMessage.includes('invalid_grant') ||
+    errorMessage.includes('Auth session missing') ||
+    errorMessage.includes('session_not_found')
   );
 }
 
@@ -20,18 +22,23 @@ export function isRefreshTokenError(error: unknown): boolean {
  */
 export async function handleAuthError(error: unknown): Promise<void> {
   if (isRefreshTokenError(error)) {
-    console.warn('Refresh token error detected, clearing session:', (error as Error)?.message || String(error));
+    console.warn('Auth session error detected, clearing session:', (error as Error)?.message || String(error));
     
     try {
-      // Sign out to clear invalid session
-      await supabase.auth.signOut();
+      // Only attempt signOut if the error isn't about missing session
+      const errorMessage = (error as Error)?.message || String(error);
+      if (!errorMessage.includes('Auth session missing') && !errorMessage.includes('session_not_found')) {
+        await supabase.auth.signOut();
+      } else {
+        console.log('Session already missing, skipping signOut call');
+      }
       
       // Clear localStorage manually as backup
       if (typeof window !== 'undefined') {
         localStorage.removeItem('supabase.auth.token');
       }
     } catch (signOutError) {
-      console.error('Error during auth cleanup:', signOutError);
+      console.warn('Error during auth cleanup (handled gracefully):', signOutError);
       
       // Force clear localStorage if signOut fails
       if (typeof window !== 'undefined') {
