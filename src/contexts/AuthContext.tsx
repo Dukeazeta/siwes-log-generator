@@ -78,20 +78,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       async (event, session) => {
         console.log('Auth state change:', event, session?.user?.email);
 
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        if (event === 'SIGNED_IN') {
           if (session?.user) {
             try {
-              console.log('Starting user transformation...');
+              console.log('User signed in, starting transformation...');
               setAuthenticationStage('oauth_callback');
               const transformedUser = await transformSupabaseUser(session.user);
               setUser(transformedUser);
               console.log('User transformed and set:', transformedUser.email, 'onboarding:', transformedUser.hasCompletedOnboarding);
-              // Only set loading to false AFTER user is set
               setIsLoading(false);
             } catch (error) {
-              console.error('Error transforming user:', error);
+              console.error('Error transforming user on sign in:', error);
               setAuthenticationStage('complete');
-              // Set a basic user object even if transformation fails
               const basicUser = {
                 id: session.user.id,
                 email: session.user.email || '',
@@ -99,15 +97,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 lastName: session.user.user_metadata?.last_name || session.user.user_metadata?.family_name || '',
                 fullName: session.user.user_metadata?.full_name || session.user.user_metadata?.name || '',
                 avatarUrl: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || '',
-                hasCompletedOnboarding: false // Default to false if we can't check
+                hasCompletedOnboarding: false
               };
               setUser(basicUser);
               console.log('Set basic user due to transformation error:', basicUser.email);
-              // Set loading to false even if transformation failed
               setIsLoading(false);
             }
           } else {
-            // No user in session, set loading to false
+            setAuthenticationStage('idle');
+            setIsLoading(false);
+          }
+        } else if (event === 'TOKEN_REFRESHED') {
+          // For token refresh, only validate the session without re-transforming
+          if (session?.user && user && session.user.id === user.id) {
+            console.log('Token refreshed for existing user - no transformation needed');
+            setIsLoading(false);
+          } else if (session?.user && (!user || session.user.id !== user.id)) {
+            // Different user or no current user - need to transform
+            console.log('Token refreshed for different user - transforming...');
+            try {
+              setAuthenticationStage('oauth_callback');
+              const transformedUser = await transformSupabaseUser(session.user);
+              setUser(transformedUser);
+              console.log('User re-transformed after token refresh:', transformedUser.email);
+              setIsLoading(false);
+            } catch (error) {
+              console.error('Error transforming user on token refresh:', error);
+              setAuthenticationStage('complete');
+              setIsLoading(false);
+            }
+          } else {
             setAuthenticationStage('idle');
             setIsLoading(false);
           }
@@ -131,7 +150,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Separate effect for session validation on focus
   useEffect(() => {
     const handleFocus = async () => {
-      if (document.visibilityState === 'visible') {
+      if (document.visibilityState === 'visible' && user) {
         try {
           const { session, error } = await getSafeSession();
 
@@ -143,7 +162,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           } else if (!session && user) {
             // Session expired, clear user
+            console.log('Session expired, clearing user');
             setUser(null);
+          } else if (session?.user && session.user.id === user.id) {
+            // Session is valid and user is the same - no need to re-transform
+            console.log('Session validated for existing user, no transformation needed');
           }
         } catch (error) {
           console.error('Session check failed:', error);
@@ -257,16 +280,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const profileCheckPromise = checkProfileStatusWithRetry(supabaseUser.id);
       const timeoutPromise = new Promise<boolean>((resolve) => {
         setTimeout(() => {
-          console.warn('Profile check timed out after 15 seconds, assuming onboarding needed');
-          resolve(false);
+          console.warn('Profile check timed out after 15 seconds, will let dashboard handle verification');
+          resolve(false); // Don't assume onboarding needed, let dashboard verify
         }, 15000);
       });
       
       hasCompletedOnboarding = await Promise.race([profileCheckPromise, timeoutPromise]);
       console.log('Final profile status result:', hasCompletedOnboarding);
     } catch (error) {
-      console.warn('Profile check with retry failed, assuming onboarding needed:', error);
-      hasCompletedOnboarding = false;
+      console.warn('Profile check with retry failed, will let dashboard handle verification:', error);
+      hasCompletedOnboarding = false; // Conservative approach
     }
 
     const transformedUser = {

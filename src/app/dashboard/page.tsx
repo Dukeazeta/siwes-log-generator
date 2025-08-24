@@ -191,6 +191,21 @@ export default function Dashboard() {
       // Handle multiple or no profiles
       if (!profileData || profileData.length === 0) {
         console.error('No profile data returned for user:', user.id);
+        
+        // If user claims to have completed onboarding but no profile exists,
+        // this might be a data inconsistency - redirect to onboarding to fix it
+        if (user.hasCompletedOnboarding) {
+          console.warn('User marked as onboarded but no profile found - data inconsistency');
+          setNotification({
+            type: 'error',
+            message: 'Profile data missing. Please complete your profile setup.'
+          });
+          setTimeout(() => {
+            router.push('/onboarding');
+          }, 2000);
+          return;
+        }
+        
         throw new Error('No profile found for this user');
       }
 
@@ -201,6 +216,13 @@ export default function Dashboard() {
       const profile = profileData[0];
       console.log('Profile loaded successfully:', profile.full_name);
       setProfile(profile);
+
+      // If profile exists and has completed_onboarding=true, but user context says false,
+      // update the user context to prevent future redirects
+      if (profile.completed_onboarding === true && !user.hasCompletedOnboarding && refreshUser) {
+        console.log('Profile shows completed onboarding but user context does not - refreshing');
+        refreshUser(); // This should fix the hasCompletedOnboarding status
+      }
 
       // Sync the profile's completed_onboarding status with user context if needed
       if (profile.completed_onboarding !== user.hasCompletedOnboarding && refreshUser) {
@@ -279,15 +301,37 @@ export default function Dashboard() {
       return;
     }
 
-    // Check onboarding status and redirect if needed
+    // Check onboarding status and redirect if needed - but only if we're confident about the status
     if (!user.hasCompletedOnboarding) {
-      console.log('User has not completed onboarding, redirecting:', {
+      console.log('User appears to have not completed onboarding:', {
         userId: user.id,
         email: user.email,
         hasCompletedOnboarding: user.hasCompletedOnboarding
       });
-      router.push('/onboarding');
-      return;
+      
+      // Before redirecting, do a quick profile check to avoid false redirects
+      if (!hasLoadedData && !profileLoading) {
+        console.log('Doing profile verification before onboarding redirect');
+        loadUserData();
+        return; // Let loadUserData handle the flow
+      }
+      
+      // Only redirect if we've tried to load data and still no profile
+      if (hasLoadedData && !profile) {
+        console.log('Confirmed: User needs onboarding, redirecting');
+        router.push('/onboarding');
+        return;
+      }
+      
+      // If we have a profile but hasCompletedOnboarding is false, it's likely a cache issue
+      if (profile) {
+        console.log('Profile exists but onboarding status is false - refreshing auth context');
+        if (refreshUser) {
+          refreshUser(); // This should update the onboarding status
+        }
+        // Don't redirect, let the user stay on dashboard
+        return;
+      }
     }
 
     // Load user data if we haven't loaded it yet and not currently loading
