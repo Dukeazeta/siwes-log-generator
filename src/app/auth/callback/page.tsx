@@ -61,13 +61,13 @@ export default function AuthCallback() {
   // Progressive loading messages
   useEffect(() => {
     const progressTimers = [
-      setTimeout(() => setLoadingMessage('Setting up your profile...'), 5000),
-      setTimeout(() => setLoadingMessage('Almost ready...'), 15000),
-      setTimeout(() => setLoadingMessage('Taking longer than expected...'), 25000),
+      setTimeout(() => setLoadingMessage('Setting up your profile...'), 3000),
+      setTimeout(() => setLoadingMessage('Almost ready...'), 8000),
+      setTimeout(() => setLoadingMessage('Taking longer than expected...'), 15000),
       setTimeout(() => {
         setLoadingMessage('Having trouble? You can try refreshing.');
         setShowRetryOption(true);
-      }, 30000)
+      }, 20000)
     ];
 
     return () => {
@@ -75,7 +75,7 @@ export default function AuthCallback() {
     };
   }, []);
 
-  // Extended timeout with retry option
+  // Reduced timeout with retry option
   useEffect(() => {
     const timeoutTimer = setTimeout(() => {
       if (isLoading && !showRetryOption) {
@@ -83,21 +83,21 @@ export default function AuthCallback() {
         setShowRetryOption(true);
         setLoadingMessage('Authentication is taking longer than expected.');
       }
-    }, 30000); // Extended to 30 seconds
+    }, 20000); // Reduced to 20 seconds
 
     return () => {
       clearTimeout(timeoutTimer);
     };
   }, [isLoading, showRetryOption]);
 
-  // Final timeout - redirect to login after 45 seconds
+  // Final timeout - redirect to login after 30 seconds
   useEffect(() => {
     const finalTimeoutTimer = setTimeout(() => {
       if (isLoading) {
         console.log('Final auth callback timeout, redirecting to login');
         router.push('/login?error=timeout');
       }
-    }, 45000);
+    }, 30000); // Reduced to 30 seconds
 
     return () => {
       clearTimeout(finalTimeoutTimer);
@@ -111,17 +111,27 @@ export default function AuthCallback() {
       setShowRetryOption(false);
       setLoadingMessage('Retrying authentication...');
       
-      // Try to refresh user context
+      // Try to refresh user context with shorter timeout
       if (refreshUser) {
-        await refreshUser();
+        const refreshPromise = refreshUser();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Refresh timeout')), 10000)
+        );
+        
+        try {
+          await Promise.race([refreshPromise, timeoutPromise]);
+        } catch (error) {
+          console.warn('Refresh timed out or failed:', error);
+        }
       }
       
-      // If still not authenticated after retry, redirect to signup
+      // Check auth state after a short delay
       setTimeout(() => {
         if (!isAuthenticated) {
+          console.log('Still not authenticated after retry, redirecting to signup');
           router.push('/signup?error=retry_failed');
         }
-      }, 10000);
+      }, 3000); // Reduced from 10 seconds to 3 seconds
     } catch (error) {
       console.error('Retry failed:', error);
       router.push('/signup?error=retry_failed');

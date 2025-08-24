@@ -167,22 +167,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Utility function for delays in retry logic
   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-  // Enhanced profile status check with retry logic
-  const checkProfileStatusWithRetry = async (userId: string, maxRetries: number = 3): Promise<boolean> => {
+  // Enhanced profile status check with retry logic and timeout
+  const checkProfileStatusWithRetry = async (userId: string, maxRetries: number = 2, timeoutMs: number = 15000): Promise<boolean> => {
+    const startTime = Date.now();
+    
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      // Check if we're approaching timeout
+      if (Date.now() - startTime > timeoutMs - 2000) {
+        console.warn('Approaching timeout, skipping further retries');
+        break;
+      }
+      
       try {
         console.log(`Profile check attempt ${attempt}/${maxRetries} for user:`, userId);
         
-        const { data: profile, error } = await supabase
+        // Add timeout to individual query
+        const queryPromise = supabase
           .from('user_profiles')
           .select('completed_onboarding')
           .eq('user_id', userId)
-          .single();
+          .maybeSingle(); // Use maybeSingle instead of single to handle no results gracefully
+
+        const timeoutPromise = new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('Query timeout')), 5000)
+        );
+
+        const { data: profile, error } = await Promise.race([queryPromise, timeoutPromise]);
 
         if (!error && profile) {
           console.log('Profile check successful on attempt', attempt, 'result:', profile.completed_onboarding);
           return profile.completed_onboarding === true;
-        } else if (error && error.code === 'PGRST116') {
+        } else if (!error && !profile) {
           console.log('No profile found on attempt', attempt, '- user needs onboarding');
           return false;
         } else {
@@ -194,19 +209,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch (error) {
         console.warn(`Profile check failed on attempt ${attempt}:`, error);
         if (attempt === maxRetries) {
-          throw error;
+          console.warn('All profile check attempts failed, assuming onboarding needed');
+          return false; // Don't throw, just assume onboarding needed
         }
       }
       
-      // Exponential backoff: wait longer between retries
+      // Shorter delays to fit within timeout
       if (attempt < maxRetries) {
-        const delayMs = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // Cap at 5 seconds
+        const delayMs = Math.min(1000 * attempt, 2000); // Max 2 seconds delay
         console.log(`Waiting ${delayMs}ms before retry...`);
         await delay(delayMs);
       }
     }
     
     // Fallback: assume onboarding needed if all retries failed
+    console.log('Profile check timed out or failed, assuming onboarding needed');
     return false;
   };
   // Enhanced checkProfileStatus function with retry logic
@@ -231,11 +248,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log('Transforming Supabase user:', supabaseUser.email, 'metadata:', metadata);
     setAuthenticationStage('profile_check');
 
-    // Enhanced profile status check with retry logic
+    // Enhanced profile status check with timeout
     let hasCompletedOnboarding = false;
     try {
       console.log('Checking profile status with retry for user:', supabaseUser.email, 'id:', supabaseUser.id);
-      hasCompletedOnboarding = await checkProfileStatusWithRetry(supabaseUser.id);
+      
+      // Add overall timeout to profile check
+      const profileCheckPromise = checkProfileStatusWithRetry(supabaseUser.id);
+      const timeoutPromise = new Promise<boolean>((resolve) => {
+        setTimeout(() => {
+          console.warn('Profile check timed out after 15 seconds, assuming onboarding needed');
+          resolve(false);
+        }, 15000);
+      });
+      
+      hasCompletedOnboarding = await Promise.race([profileCheckPromise, timeoutPromise]);
       console.log('Final profile status result:', hasCompletedOnboarding);
     } catch (error) {
       console.warn('Profile check with retry failed, assuming onboarding needed:', error);
