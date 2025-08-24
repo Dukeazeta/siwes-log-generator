@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@sentry/nextjs": "^10.5.0",
     "@supabase/supabase-js": "^2.53.0",
     "framer-motion": "^12.23.12",
     "groq-sdk": "^0.29.0",

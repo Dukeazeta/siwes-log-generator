@@ -51,6 +51,42 @@ export default function CreateLog() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [editLogId, setEditLogId] = useState<string | null>(null);
   const [originalLogData, setOriginalLogData] = useState<WeeklyLogData | null>(null);
+  const [existingWeeks, setExistingWeeks] = useState<number[]>([]);
+
+  // Load existing weeks to suggest next available week
+  useEffect(() => {
+    const loadExistingWeeks = async () => {
+      if (user?.id && !isEditMode) {
+        try {
+          const { data, error } = await supabase
+            .from('weekly_logs')
+            .select('week_number')
+            .eq('user_id', user.id)
+            .order('week_number', { ascending: true });
+
+          if (error && error.code !== 'PGRST116') {
+            console.error('Error loading existing weeks:', error);
+            return;
+          }
+
+          const weeks = data?.map(log => log.week_number) || [];
+          setExistingWeeks(weeks);
+          
+          // Auto-set to next available week
+          if (weeks.length > 0) {
+            const nextWeek = Math.max(...weeks) + 1;
+            if (nextWeek <= 24) {
+              setWeekNumber(nextWeek);
+            }
+          }
+        } catch (error) {
+          console.error('Error loading existing weeks:', error);
+        }
+      }
+    };
+
+    loadExistingWeeks();
+  }, [user?.id, isEditMode]);
 
   // Load user profile and check for edit mode on component mount
   useEffect(() => {
@@ -112,6 +148,27 @@ export default function CreateLog() {
     setError('');
 
     try {
+      // Check for existing week number if not in edit mode
+      if (!isEditMode && user?.id) {
+        console.log('Checking for existing week:', weekNumber);
+        const { data: existingLog, error: checkError } = await supabase
+          .from('weekly_logs')
+          .select('id, week_number')
+          .eq('user_id', user.id)
+          .eq('week_number', weekNumber)
+          .single();
+
+        if (checkError && checkError.code !== 'PGRST116') {
+          console.error('Error checking existing log:', checkError);
+          throw checkError;
+        }
+
+        if (existingLog) {
+          throw new Error(`Week ${weekNumber} already exists. Please choose a different week number or edit the existing log.`);
+        }
+      }
+
+      console.log('Generating log with AI...');
       const response = await fetch('/api/generate-log', {
         method: 'POST',
         headers: {
@@ -133,8 +190,11 @@ export default function CreateLog() {
         throw new Error(result.details || result.error || 'Failed to generate log');
       }
 
+      console.log('AI generation successful, saving to database...');
+
       if (isEditMode && editLogId) {
         // Update existing log
+        console.log('Updating existing log:', editLogId);
         const { error: updateError } = await supabase
           .from('weekly_logs')
           .update({
@@ -147,10 +207,15 @@ export default function CreateLog() {
           .eq('id', editLogId)
           .eq('user_id', user?.id);
 
-        if (updateError) throw updateError;
+        if (updateError) {
+          console.error('Error updating log:', updateError);
+          throw updateError;
+        }
+        console.log('Log updated successfully');
       } else {
         // Save new log to database
-        const { error: saveError } = await supabase
+        console.log('Saving new log for user:', user?.id, 'week:', weekNumber);
+        const { data: insertData, error: saveError } = await supabase
           .from('weekly_logs')
           .insert({
             user_id: user?.id,
@@ -159,11 +224,17 @@ export default function CreateLog() {
             end_date: endDate,
             content: JSON.stringify(result.data),
             raw_activities: activities,
-          });
+          })
+          .select(); // Add select to get the inserted data
 
-        if (saveError) throw saveError;
+        if (saveError) {
+          console.error('Error saving log:', saveError);
+          throw saveError;
+        }
+        console.log('Log saved successfully:', insertData);
       }
 
+      console.log('Redirecting to dashboard...');
       // Redirect to dashboard with success message
       if (isEditMode) {
         router.push('/dashboard?updated=true');
@@ -236,6 +307,11 @@ export default function CreateLog() {
             <div>
               <label className="block text-sm font-semibold text-foreground mb-3">
                 Week Number
+                {existingWeeks.length > 0 && (
+                  <span className="text-xs text-muted-foreground ml-2">
+                    ({existingWeeks.length} weeks created)
+                  </span>
+                )}
               </label>
               <div className="relative">
                 <select
@@ -244,11 +320,20 @@ export default function CreateLog() {
                   disabled={isEditMode}
                   className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring focus:border-ring text-card-foreground appearance-none cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {[...Array(24)].map((_, i) => (
-                    <option key={i + 1} value={i + 1} className="text-card-foreground">
-                      Week {i + 1}
-                    </option>
-                  ))}
+                  {[...Array(24)].map((_, i) => {
+                    const week = i + 1;
+                    const isExisting = existingWeeks.includes(week);
+                    return (
+                      <option 
+                        key={week} 
+                        value={week} 
+                        className="text-card-foreground"
+                        disabled={isExisting && !isEditMode}
+                      >
+                        Week {week} {isExisting ? '(Created)' : ''}
+                      </option>
+                    );
+                  })}
                 </select>
                 {/* Custom dropdown arrow */}
                 <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
@@ -257,6 +342,11 @@ export default function CreateLog() {
                   </svg>
                 </div>
               </div>
+              {existingWeeks.includes(weekNumber) && !isEditMode && (
+                <p className="text-xs text-orange-600 mt-2">
+                  ⚠️ Week {weekNumber} already exists. Please choose a different week or edit the existing one.
+                </p>
+              )}
             </div>
 
             {/* Date Range */}

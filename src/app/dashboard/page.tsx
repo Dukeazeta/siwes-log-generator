@@ -57,11 +57,12 @@ export default function Dashboard() {
   const mobileMenuRef = useRef<HTMLDivElement>(null);
 
   // Auto-refresh function for weekly logs
-  const refreshWeeklyLogs = useCallback(async () => {
+  const refreshWeeklyLogs = useCallback(async (forceRefresh = false) => {
     if (!user?.id) return;
     
-    console.log('Refreshing weekly logs data...');
+    console.log('Refreshing weekly logs data...', { forceRefresh, userId: user.id });
     try {
+      // Add timestamp to force fresh data
       const { data: logsData, error: logsError } = await supabase
         .from('weekly_logs')
         .select('*')
@@ -74,11 +75,17 @@ export default function Dashboard() {
       }
 
       console.log('Weekly logs refreshed:', logsData?.length || 0, 'logs found');
+      console.log('Log data:', logsData?.map(log => ({ id: log.id, week: log.week_number, created: log.created_at })));
       setWeeklyLogs(logsData || []);
 
-      // Set active week to the first available week if none selected
-      if (logsData && logsData.length > 0 && !logsData.find(log => log.week_number === activeWeek)) {
-        setActiveWeek(logsData[0].week_number);
+      // Set active week to the latest week if none selected or force refresh
+      if (logsData && logsData.length > 0) {
+        if (forceRefresh || !logsData.find(log => log.week_number === activeWeek)) {
+          // Set to the highest week number (latest)
+          const latestWeek = Math.max(...logsData.map(log => log.week_number));
+          setActiveWeek(latestWeek);
+          console.log('Set active week to:', latestWeek);
+        }
       }
     } catch (error) {
       console.error('Error refreshing weekly logs:', error);
@@ -91,23 +98,29 @@ export default function Dashboard() {
     const updated = searchParams.get('updated');
     
     if (created === 'true') {
+      console.log('Log creation detected - refreshing data');
       setNotification({
         type: 'success',
         message: 'Weekly log created successfully!'
       });
       setTimeout(() => setNotification(null), 4000);
-      // Refresh weekly logs data to show new content
-      refreshWeeklyLogs();
+      // Force refresh weekly logs data to show new content
+      setTimeout(() => {
+        refreshWeeklyLogs(true);
+      }, 100); // Small delay to ensure state is ready
       // Remove the parameter from URL
       router.replace('/dashboard', { scroll: false });
     } else if (updated === 'true') {
+      console.log('Log update detected - refreshing data');
       setNotification({
         type: 'success',
         message: 'Weekly log updated successfully!'
       });
       setTimeout(() => setNotification(null), 4000);
-      // Refresh weekly logs data to show updated content
-      refreshWeeklyLogs();
+      // Force refresh weekly logs data to show updated content
+      setTimeout(() => {
+        refreshWeeklyLogs(true);
+      }, 100); // Small delay to ensure state is ready
       // Remove the parameter from URL
       router.replace('/dashboard', { scroll: false });
     }
@@ -117,21 +130,27 @@ export default function Dashboard() {
     if (hasLoadedData || profileLoading || !user?.id) return; // Prevent multiple loads
 
     console.log('Starting loadUserData for user:', user.email, 'hasCompletedOnboarding:', user.hasCompletedOnboarding);
+    console.log('User ID for profile query:', user.id);
     setProfileLoading(true);
     setHasLoadedData(true);
 
     try {
-      // Load profile
+      // Load profile with detailed logging
       console.log('Querying user_profiles for user_id:', user.id);
       const { data: profileData, error: profileError } = await supabase
         .from('user_profiles')
         .select('*')
-        .eq('user_id', user.id)
-        .single();
+        .eq('user_id', user.id);
 
-      console.log('Profile query result:', { profileData, profileError });
+      console.log('Profile query result:', { 
+        profileData, 
+        profileError, 
+        profileCount: profileData?.length,
+        userId: user.id 
+      });
 
       if (profileError) {
+        console.error('Profile query error:', profileError);
         if (profileError.code === 'PGRST116') {
           // No profile found - this is a data inconsistency since user should have completed onboarding
           console.warn('Profile not found for user who completed onboarding. User:', user.email);
@@ -164,15 +183,25 @@ export default function Dashboard() {
           router.push('/onboarding');
           return;
         }
-        console.error('Profile query error:', profileError);
         throw profileError;
       }
 
-      console.log('Profile loaded successfully:', profileData.full_name);
-      setProfile(profileData);
+      // Handle multiple or no profiles
+      if (!profileData || profileData.length === 0) {
+        console.error('No profile data returned for user:', user.id);
+        throw new Error('No profile found for this user');
+      }
+
+      if (profileData.length > 1) {
+        console.warn('Multiple profiles found for user:', user.id, 'using first one');
+      }
+
+      const profile = profileData[0];
+      console.log('Profile loaded successfully:', profile.full_name);
+      setProfile(profile);
 
       // Sync the profile's completed_onboarding status with user context if needed
-      if (profileData.completed_onboarding !== user.hasCompletedOnboarding && refreshUser) {
+      if (profile.completed_onboarding !== user.hasCompletedOnboarding && refreshUser) {
         console.log('Profile onboarding status mismatch, refreshing user context');
         refreshUser(); // Don't await to avoid blocking UI
       }
@@ -191,11 +220,14 @@ export default function Dashboard() {
       }
 
       console.log('Weekly logs loaded:', logsData?.length || 0, 'logs found');
+      console.log('Initial log data:', logsData?.map(log => ({ id: log.id, week: log.week_number, created: log.created_at })));
       setWeeklyLogs(logsData || []);
 
-      // Set active week to the first available week
+      // Set active week to the latest week (highest week number)
       if (logsData && logsData.length > 0) {
-        setActiveWeek(logsData[0].week_number);
+        const latestWeek = Math.max(...logsData.map(log => log.week_number));
+        setActiveWeek(latestWeek);
+        console.log('Initial active week set to:', latestWeek);
       }
     } catch (error) {
       console.error('Error loading user data:', error);
@@ -203,7 +235,7 @@ export default function Dashboard() {
       // Show error notification instead of showing error state immediately
       setNotification({
         type: 'error',
-        message: 'Failed to load profile data. Click "Retry Loading" to try again.'
+        message: `Failed to load profile data: ${error instanceof Error ? error.message : 'Unknown error'}. Click "Retry Loading" to try again.`
       });
       setTimeout(() => setNotification(null), 8000);
       
@@ -322,14 +354,25 @@ export default function Dashboard() {
     const handleVisibilityChange = () => {
       if (!document.hidden && user?.id) {
         console.log('Page became visible, refreshing weekly logs...');
-        refreshWeeklyLogs();
+        // Force refresh when page becomes visible (user returning from another page)
+        refreshWeeklyLogs(true);
+      }
+    };
+
+    // Also listen for focus events (when user switches back to tab)
+    const handleFocus = () => {
+      if (user?.id) {
+        console.log('Page focused, refreshing weekly logs...');
+        refreshWeeklyLogs(true);
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
     };
   }, [refreshWeeklyLogs, user?.id]);
 
@@ -917,12 +960,12 @@ export default function Dashboard() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
               <h2 className="text-lg font-semibold text-card-foreground">Weekly Logs</h2>
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                <button className="flex items-center justify-center space-x-2 px-4 py-2 text-sm text-orange-600 bg-orange-50 rounded-full border border-orange-200 hover:bg-orange-100 transition-colors font-medium">
+                <button className="flex items-center justify-center space-x-2 px-4 py-2 text-sm text-gray-400 bg-gray-50 rounded-full border border-gray-200 cursor-not-allowed transition-colors font-medium" disabled>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                   <span>Download PDF</span>
-                  <span className="bg-orange-200 text-orange-800 text-xs px-2 py-0.5 rounded-full font-medium">NEW</span>
+                  <span className="bg-orange-200 text-orange-800 text-xs px-2 py-0.5 rounded-full font-medium">COMING SOON</span>
                 </button>
                 <motion.button
                   whileHover={{ scale: 1.02 }}
@@ -1196,6 +1239,73 @@ export default function Dashboard() {
                 <div className="text-center py-20">
                   <h3 className="text-3xl font-bold text-gray-900 mb-4">No logs yet</h3>
                   <p className="text-gray-600 mb-8 text-lg leading-relaxed max-w-2xl mx-auto">Start by creating your first weekly log entry. Transform your weekly activities into professional logbook entries.</p>
+                  
+                  {/* Debug info in development */}
+                  {process.env.NODE_ENV === 'development' && (
+                    <div className="bg-gray-100 border border-gray-200 rounded-lg p-4 mb-6 text-left max-w-md mx-auto">
+                      <h4 className="font-semibold text-gray-800 mb-2">Debug Info:</h4>
+                      <ul className="text-sm text-gray-600 space-y-1">
+                        <li>User ID: {user?.id || 'Not loaded'}</li>
+                        <li>User Email: {user?.email || 'Not loaded'}</li>
+                        <li>Has Completed Onboarding: {user?.hasCompletedOnboarding ? 'Yes' : 'No'}</li>
+                        <li>Profile Loaded: {profile ? 'Yes' : 'No'}</li>
+                        <li>Weekly Logs: {weeklyLogs.length} found</li>
+                        <li>Has Loaded Data: {hasLoadedData ? 'Yes' : 'No'}</li>
+                        <li>Profile Loading: {profileLoading ? 'Yes' : 'No'}</li>
+                        <li>Redirect Attempts: {redirectAttempts}</li>
+                      </ul>
+                      <button
+                        onClick={() => {
+                          console.log('Manual data reload triggered');
+                          setHasLoadedData(false);
+                          setProfileLoading(false);
+                          setRedirectAttempts(0);
+                          setProfile(null);
+                          setWeeklyLogs([]);
+                          // Clear localStorage to force fresh load
+                          localStorage.removeItem('lastLoadedUserId');
+                          setTimeout(() => loadUserData(), 100);
+                        }}
+                        className="mt-3 w-full bg-blue-600 text-white px-3 py-2 rounded text-sm font-medium hover:bg-blue-700 transition-colors"
+                      >
+                        Force Reload Data
+                      </button>
+                      <button
+                        onClick={async () => {
+                          console.log('=== DIRECT DATABASE QUERY DEBUG ===');
+                          console.log('User ID:', user?.id);
+                          
+                          // Direct query to user_profiles
+                          try {
+                            const { data: profiles, error: profileError } = await supabase
+                              .from('user_profiles')
+                              .select('*')
+                              .eq('user_id', user?.id);
+                            
+                            console.log('Direct profiles query result:', { profiles, profileError, count: profiles?.length });
+                            
+                            // Direct query to weekly_logs
+                            const { data: logs, error: logsError } = await supabase
+                              .from('weekly_logs')
+                              .select('*')
+                              .eq('user_id', user?.id);
+                            
+                            console.log('Direct logs query result:', { logs, logsError, count: logs?.length });
+                            
+                            // Show results in UI
+                            alert(`Database Debug Results:\nProfiles found: ${profiles?.length || 0}\nLogs found: ${logs?.length || 0}\nCheck console for details`);
+                          } catch (error) {
+                            console.error('Direct query error:', error);
+                            alert('Direct query failed - check console');
+                          }
+                        }}
+                        className="mt-2 w-full bg-green-600 text-white px-3 py-2 rounded text-sm font-medium hover:bg-green-700 transition-colors"
+                      >
+                        Debug Database
+                      </button>
+                    </div>
+                  )}
+                  
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
