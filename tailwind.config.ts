@@ -25,6 +25,12 @@ const config: Config = {
         border: 'var(--color-border)',
         input: 'var(--color-input)',
         ring: 'var(--color-ring)',
+        
+        // Additional shadcn/ui colors
+        destructive: 'var(--color-destructive, hsl(0 84.2% 60.2%))',
+        'destructive-foreground': 'var(--color-destructive-foreground, hsl(210 40% 98%))',
+        popover: 'var(--color-popover, var(--color-card))',
+        'popover-foreground': 'var(--color-popover-foreground, var(--color-card-foreground))',
 
         // Semantic colors
         success: 'var(--color-success)',

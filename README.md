@@ -5,7 +5,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org)
 [![Supabase](https://img.shields.io/badge/Supabase-Backend-green.svg)](https://supabase.com)
 
-**The smartest way for IT students to create professional SIWES logbook entries.** Transform your weekly summaries into detailed daily logs with AI-powered generation.
+**The smartest way for SIWES students to create professional logbook entries.** Transform your weekly summaries into detailed daily logs with AI-powered generation.
 
 🌐 **Live Demo**: [https://swiftlog-beta.vercel.app](https://swiftlog-beta.vercel.app)
 

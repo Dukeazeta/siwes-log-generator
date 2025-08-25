@@ -9,6 +9,17 @@ import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import PageTransition from '../../components/PageTransition';
 import Logo from '../../components/Logo';
+import DateRangeSelector from '../../components/DateRangeSelector';
+import { TextShimmer } from '../../components/ui/text-shimmer';
+import { LumaSpin } from '../../components/ui/luma-spin';
+import {
+  PromptInput,
+  PromptInputAction,
+  PromptInputActions,
+  PromptInputTextarea,
+} from '../../components/ui/prompt-input';
+import { Button } from '../../components/ui/button';
+import { ArrowUp, Square } from 'lucide-react';
 
 interface UserProfile {
   full_name: string;
@@ -43,8 +54,8 @@ export default function CreateLog() {
   const { user } = useAuth();
   const [isGenerating, setIsGenerating] = useState(false);
   const [weekNumber, setWeekNumber] = useState(1);
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
   const [activities, setActivities] = useState('');
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [error, setError] = useState('');
@@ -133,8 +144,8 @@ export default function CreateLog() {
       if (error) throw error;
       
       // Pre-fill the form with existing data
-      setStartDate(data.start_date);
-      setEndDate(data.end_date);
+      setStartDate(new Date(data.start_date));
+      setEndDate(new Date(data.end_date));
       setActivities(data.raw_activities || '');
       setOriginalLogData(data);
     } catch (error) {
@@ -169,17 +180,18 @@ export default function CreateLog() {
       }
 
       console.log('Generating log with AI...');
-      const response = await fetch('/api/generate-log', {
+      const response = await fetch('/api/generate-log-unified', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           weekNumber,
-          startDate,
-          endDate,
+          startDate: startDate?.toISOString().split('T')[0],
+          endDate: endDate?.toISOString().split('T')[0],
           activities,
           userProfile,
+          provider: 'auto',
         }),
       });
 
@@ -249,6 +261,11 @@ export default function CreateLog() {
     }
   };
 
+  const handleDateRangeChange = (selectedStartDate: Date | null, selectedEndDate: Date | null) => {
+    setStartDate(selectedStartDate);
+    setEndDate(selectedEndDate);
+  };
+
 
 
   return (
@@ -288,14 +305,14 @@ export default function CreateLog() {
         </motion.header>
 
         {/* Main Content */}
-        <main className="pt-24 md:pt-32 px-4 py-6 max-w-2xl mx-auto">
-          <div className="space-y-6">
+        <main className="pt-28 md:pt-36 px-4 py-8 max-w-2xl mx-auto">
+          <div className="space-y-8">
             {/* Header */}
-            <div className="text-center mb-8">
-              <h1 className="text-2xl font-bold text-foreground mb-2">
+            <div className="text-center mb-10">
+              <h1 className="text-2xl font-bold text-foreground mb-3">
                 {isEditMode ? 'Edit Weekly Log' : 'Create Weekly Log'}
               </h1>
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground text-base">
                 {isEditMode 
                   ? 'Update your activities and regenerate your logbook entry' 
                   : 'Transform your activities into a professional logbook entry'
@@ -304,8 +321,8 @@ export default function CreateLog() {
             </div>
 
             {/* Week Selection */}
-            <div>
-              <label className="block text-sm font-semibold text-foreground mb-3">
+            <div className="mb-8">
+              <label className="block text-sm font-semibold text-foreground mb-4">
                 Week Number
                 {existingWeeks.length > 0 && (
                   <span className="text-xs text-muted-foreground ml-2">
@@ -318,7 +335,8 @@ export default function CreateLog() {
                   value={weekNumber}
                   onChange={(e) => setWeekNumber(Number(e.target.value))}
                   disabled={isEditMode}
-                  className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring focus:border-ring text-card-foreground appearance-none cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full px-4 py-4 !bg-transparent border border-border rounded-xl focus:ring-2 focus:ring-ring focus:border-ring text-foreground appearance-none cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ backgroundColor: 'transparent !important' }}
                 >
                   {[...Array(24)].map((_, i) => {
                     const week = i + 1;
@@ -327,7 +345,7 @@ export default function CreateLog() {
                       <option 
                         key={week} 
                         value={week} 
-                        className="text-card-foreground"
+                        className="text-foreground bg-background"
                         disabled={isExisting && !isEditMode}
                       >
                         Week {week} {isExisting ? '(Created)' : ''}
@@ -343,58 +361,63 @@ export default function CreateLog() {
                 </div>
               </div>
               {existingWeeks.includes(weekNumber) && !isEditMode && (
-                <p className="text-xs text-orange-600 mt-2">
+                <p className="text-xs text-orange-600 mt-3">
                   ⚠️ Week {weekNumber} already exists. Please choose a different week or edit the existing one.
                 </p>
               )}
             </div>
 
-            {/* Date Range */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-3">
-                  Start Date
-                </label>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring focus:border-ring text-card-foreground transition-colors"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-3">
-                  End Date
-                </label>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring focus:border-ring text-card-foreground transition-colors"
-                />
-              </div>
+            {/* Date Range Selector */}
+            <div className="mb-8">
+              <label className="block text-sm font-semibold text-foreground mb-4">
+                Training Week Dates
+              </label>
+              <DateRangeSelector
+                onDateRangeChange={handleDateRangeChange}
+                initialStartDate={startDate || undefined}
+                initialEndDate={endDate || undefined}
+              />
             </div>
 
             {/* Activities */}
-            <div>
-              <label className="block text-sm font-semibold text-foreground mb-3">
-                Activities & Tasks
-              </label>
-              <textarea
+            <div className="mb-8">
+              <PromptInput
                 value={activities}
-                onChange={(e) => setActivities(e.target.value)}
-                placeholder="Describe the activities, tasks, and projects you worked on this week..."
-                rows={6}
-                className="w-full px-4 py-3 bg-card border border-border rounded-xl focus:ring-2 focus:ring-ring focus:border-ring text-card-foreground placeholder-muted-foreground resize-none transition-colors"
-              />
-              <p className="text-xs text-muted-foreground mt-2">
-                Be specific about your daily activities, learning outcomes, and contributions.
-              </p>
+                onValueChange={setActivities}
+                isLoading={isGenerating}
+                onSubmit={handleGenerate}
+                className="w-full"
+                maxHeight={200}
+              >
+                <PromptInputTextarea 
+                  placeholder="What did you do this week?"
+                  disabled={isGenerating}
+                />
+                <PromptInputActions className="justify-end pt-2">
+                  <PromptInputAction
+                    tooltip={isGenerating ? "Generating..." : "Generate with AI"}
+                  >
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8 rounded-full"
+                      onClick={handleGenerate}
+                      disabled={isGenerating || !startDate || !endDate}
+                    >
+                      {isGenerating ? (
+                        <Square className="size-4 fill-current" />
+                      ) : (
+                        <ArrowUp className="size-4" />
+                      )}
+                    </Button>
+                  </PromptInputAction>
+                </PromptInputActions>
+              </PromptInput>
             </div>
 
             {/* Error Message */}
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-8">
                 <div className="flex items-center space-x-2">
                   <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -404,33 +427,10 @@ export default function CreateLog() {
               </div>
             )}
 
-            {/* Generate Button */}
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleGenerate}
-              disabled={isGenerating || !startDate || !endDate || !activities.trim()}
-              className="w-full bg-primary text-primary-foreground py-4 rounded-full font-semibold hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2 text-base"
-            >
-              {isGenerating ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
-                  <span>{isEditMode ? 'Updating Log...' : 'Generating Log...'}</span>
-                </>
-              ) : (
-                <>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                  <span>{isEditMode ? 'Update with AI' : 'Generate with AI'}</span>
-                </>
-              )}
-            </motion.button>
-
             {/* Tips */}
-            <div className="bg-muted border border-border rounded-xl p-4">
-              <h3 className="text-sm font-semibold text-foreground mb-3">💡 Tips for better logs</h3>
-              <ul className="text-sm text-muted-foreground space-y-2">
+            <div className="bg-muted border border-border rounded-xl p-6">
+              <h3 className="text-sm font-semibold text-foreground mb-4">💡 Tips for better logs</h3>
+              <ul className="text-sm text-muted-foreground space-y-3">
                 <li>• Include specific technical skills and tools used</li>
                 <li>• Mention learning outcomes and challenges faced</li>
                 <li>• Describe your contributions to team projects</li>
@@ -439,6 +439,17 @@ export default function CreateLog() {
             </div>
           </div>
         </main>
+
+        {/* Full-screen LumaSpin loader */}
+        {isGenerating && (
+          <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+            <div className="flex flex-col items-center">
+              <LumaSpin />
+              <p className="mt-4 text-lg font-medium text-foreground">Generating Log</p>
+              <p className="mt-2 text-sm text-muted-foreground">Please wait while we create your professional logbook entry</p>
+            </div>
+          </div>
+        )}
       </div>
     </PageTransition>
   );

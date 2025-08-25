@@ -204,7 +204,7 @@ export default function Onboarding() {
                   value={formData.course}
                   onChange={(e) => handleInputChange('course', e.target.value)}
                   className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent text-card-foreground placeholder-muted-foreground bg-card transition-colors"
-                  placeholder="e.g., Computer Science"
+                  placeholder="e.g., Computer Science, Accounting, Engineering, etc."
                 />
               </div>
               <div>
@@ -269,6 +269,7 @@ export default function Onboarding() {
                   className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent text-card-foreground bg-card transition-colors"
                 >
                   <option value="">Select department</option>
+                  {/* Technology & IT Departments */}
                   <option value="Software Engineering">Software Engineering</option>
                   <option value="Information Technology">Information Technology</option>
                   <option value="Network Administration">Network Administration</option>
@@ -282,16 +283,71 @@ export default function Onboarding() {
                   <option value="System Administration">System Administration</option>
                   <option value="Technical Support">Technical Support</option>
                   <option value="UI/UX Design">UI/UX Design</option>
-                  <option value="Product Management">Product Management</option>
-                  <option value="Project Management">Project Management</option>
-                  <option value="Business Analysis">Business Analysis</option>
+                  {/* Business & Finance Departments */}
                   <option value="Accounting">Accounting</option>
                   <option value="Finance">Finance</option>
+                  <option value="Auditing">Auditing</option>
+                  <option value="Tax & Revenue">Tax & Revenue</option>
+                  <option value="Budget & Planning">Budget & Planning</option>
+                  <option value="Investment Banking">Investment Banking</option>
+                  <option value="Risk Management">Risk Management</option>
+                  <option value="Credit Analysis">Credit Analysis</option>
+                  {/* Engineering Departments */}
+                  <option value="Civil Engineering">Civil Engineering</option>
+                  <option value="Mechanical Engineering">Mechanical Engineering</option>
+                  <option value="Electrical Engineering">Electrical Engineering</option>
+                  <option value="Chemical Engineering">Chemical Engineering</option>
+                  <option value="Petroleum Engineering">Petroleum Engineering</option>
+                  <option value="Environmental Engineering">Environmental Engineering</option>
+                  <option value="Structural Engineering">Structural Engineering</option>
+                  <option value="Project Engineering">Project Engineering</option>
+                  {/* Management & Administration */}
                   <option value="Human Resources">Human Resources</option>
-                  <option value="Marketing">Marketing</option>
-                  <option value="Sales">Sales</option>
+                  <option value="Project Management">Project Management</option>
+                  <option value="Product Management">Product Management</option>
+                  <option value="Business Analysis">Business Analysis</option>
                   <option value="Operations">Operations</option>
+                  <option value="Administration">Administration</option>
+                  <option value="Executive Office">Executive Office</option>
+                  <option value="Strategy & Planning">Strategy & Planning</option>
+                  {/* Sales & Marketing */}
+                  <option value="Marketing">Marketing</option>
+                  <option value="Digital Marketing">Digital Marketing</option>
+                  <option value="Sales">Sales</option>
+                  <option value="Business Development">Business Development</option>
+                  <option value="Customer Service">Customer Service</option>
+                  <option value="Public Relations">Public Relations</option>
+                  {/* Healthcare & Science */}
+                  <option value="Medical Services">Medical Services</option>
+                  <option value="Laboratory Services">Laboratory Services</option>
+                  <option value="Pharmacy">Pharmacy</option>
+                  <option value="Health Information Management">Health Information Management</option>
                   <option value="Research & Development">Research & Development</option>
+                  <option value="Quality Control">Quality Control</option>
+                  {/* Legal & Compliance */}
+                  <option value="Legal Services">Legal Services</option>
+                  <option value="Compliance">Compliance</option>
+                  <option value="Regulatory Affairs">Regulatory Affairs</option>
+                  {/* Education & Training */}
+                  <option value="Academic Affairs">Academic Affairs</option>
+                  <option value="Student Affairs">Student Affairs</option>
+                  <option value="Training & Development">Training & Development</option>
+                  <option value="Curriculum Development">Curriculum Development</option>
+                  {/* Media & Communications */}
+                  <option value="Media & Communications">Media & Communications</option>
+                  <option value="Broadcasting">Broadcasting</option>
+                  <option value="Journalism">Journalism</option>
+                  <option value="Content Creation">Content Creation</option>
+                  {/* Agriculture & Environment */}
+                  <option value="Agricultural Services">Agricultural Services</option>
+                  <option value="Environmental Services">Environmental Services</option>
+                  <option value="Forestry">Forestry</option>
+                  <option value="Animal Husbandry">Animal Husbandry</option>
+                  {/* Architecture & Planning */}
+                  <option value="Architecture">Architecture</option>
+                  <option value="Urban Planning">Urban Planning</option>
+                  <option value="Interior Design">Interior Design</option>
+                  <option value="Construction Management">Construction Management</option>
                   <option value="Other">Other</option>
                 </select>
               </div>
@@ -325,6 +381,25 @@ export default function Onboarding() {
                   <option value="Government">Government</option>
                   <option value="Manufacturing">Manufacturing</option>
                   <option value="Consulting">Consulting</option>
+                  <option value="Oil & Gas">Oil & Gas</option>
+                  <option value="Engineering & Construction">Engineering & Construction</option>
+                  <option value="Agriculture">Agriculture</option>
+                  <option value="Real Estate">Real Estate</option>
+                  <option value="Media & Entertainment">Media & Entertainment</option>
+                  <option value="Transportation & Logistics">Transportation & Logistics</option>
+                  <option value="Hospitality & Tourism">Hospitality & Tourism</option>
+                  <option value="Retail & Consumer Goods">Retail & Consumer Goods</option>
+                  <option value="Legal Services">Legal Services</option>
+                  <option value="Non-Profit Organization">Non-Profit Organization</option>
+                  <option value="Insurance">Insurance</option>
+                  <option value="Pharmaceutical">Pharmaceutical</option>
+                  <option value="Aviation">Aviation</option>
+                  <option value="Maritime">Maritime</option>
+                  <option value="Mining">Mining</option>
+                  <option value="Food & Beverage">Food & Beverage</option>
+                  <option value="Textile & Fashion">Textile & Fashion</option>
+                  <option value="Architecture & Design">Architecture & Design</option>
+                  <option value="Environmental Services">Environmental Services</option>
                   <option value="Other">Other</option>
                 </select>
               </div>

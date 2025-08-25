@@ -33,8 +33,10 @@ export async function POST(request: NextRequest) {
 Student Information:
 - Name: ${userProfile?.full_name || 'Student'}
 - Course: ${userProfile?.course || 'Not specified'}
+- Institution: ${userProfile?.institution || 'Not specified'}
 - Company: ${userProfile?.company_name || 'Not specified'}
 - Department: ${userProfile?.department || 'Not specified'}
+- Industry: ${userProfile?.industry_type || 'Not specified'}
 
 Week Details:
 - Week Number: ${weekNumber}
@@ -52,10 +54,12 @@ Please generate a professional SIWES logbook entry with the following structure:
 Requirements:
 - Use professional, formal language appropriate for academic assessment
 - Make activities specific and detailed, showing progression throughout the week
-- Include relevant technical terms related to the student's field
-- Ensure each day has meaningful, distinct activities
-- Focus on learning, contribution, and professional development
+- Include relevant technical terms and industry-specific terminology related to the student's field of study (${userProfile?.course || 'the specified course'})
+- Tailor the content to match the student's academic discipline and the industry/department they're working in
+- Ensure each day has meaningful, distinct activities that are realistic for their field
+- Focus on learning, contribution, and professional development appropriate to their course of study
 - Keep the tone educational and reflective
+- Avoid assuming the student is in a technology-related field unless explicitly specified
 
 Format the response as a structured JSON object with the following keys:
 - weekSummary: string
@@ -64,7 +68,7 @@ Format the response as a structured JSON object with the following keys:
 - challengesFaced: string
 - learningOutcomes: string
 
-Make sure the content is realistic, educational, and demonstrates genuine learning and contribution in a professional environment.`;
+Make sure the content is realistic, educational, demonstrates genuine learning and contribution in a professional environment, and is appropriately tailored to the student's academic background and industry placement.`;
 
     // Generate the logbook entry using Groq
     console.log('Calling Groq API...');
