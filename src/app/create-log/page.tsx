@@ -20,6 +20,7 @@ import {
 } from '../../components/ui/prompt-input';
 import { Button } from '../../components/ui/button';
 import { ArrowUp, Square } from 'lucide-react';
+import { VoiceInputAction } from '../../components/ui/voice-input-action';
 
 interface UserProfile {
   full_name: string;
@@ -305,19 +306,10 @@ export default function CreateLog() {
         </motion.header>
 
         {/* Main Content */}
-        <main className="pt-28 md:pt-36 px-4 py-8 max-w-2xl mx-auto">
+        <main className="pt-20 md:pt-24 px-4 py-8 max-w-2xl mx-auto">
           <div className="space-y-8">
             {/* Header */}
             <div className="text-center mb-10">
-              <h1 className="text-2xl font-bold text-foreground mb-3">
-                {isEditMode ? 'Edit Weekly Log' : 'Create Weekly Log'}
-              </h1>
-              <p className="text-muted-foreground text-base">
-                {isEditMode 
-                  ? 'Update your activities and regenerate your logbook entry' 
-                  : 'Transform your activities into a professional logbook entry'
-                }
-              </p>
             </div>
 
             {/* Week Selection */}
@@ -394,6 +386,11 @@ export default function CreateLog() {
                   disabled={isGenerating}
                 />
                 <PromptInputActions className="justify-end pt-2">
+                  <VoiceInputAction
+                    currentText={activities}
+                    onTextChange={setActivities}
+                    disabled={isGenerating}
+                  />
                   <PromptInputAction
                     tooltip={isGenerating ? "Generating..." : "Generate with AI"}
                   >

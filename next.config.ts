@@ -47,6 +47,16 @@ const nextConfig: NextConfig = {
   // Compression
   compress: true,
 
+  // PWA support
+  async rewrites() {
+    return [
+      {
+        source: '/sw.js',
+        destination: '/sw.js'
+      }
+    ];
+  },
+
   // Security headers
   async headers() {
     return [

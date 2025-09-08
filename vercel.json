@@ -7,5 +7,15 @@
     "src/app/api/**/*.ts": {
       "maxDuration": 30
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/send-weekly-summary?type=reminder&auth=${CRON_AUTH_KEY}",
+      "schedule": "0 9 * * 1"
+    },
+    {
+      "path": "/api/send-weekly-summary?type=summary&auth=${CRON_AUTH_KEY}",
+      "schedule": "0 18 * * 5"
+    }
+  ]
 }

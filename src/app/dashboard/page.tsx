@@ -1174,61 +1174,67 @@ export default function Dashboard() {
                             const isEditing = editingDay?.logId === currentLog.id && editingDay?.dayIndex === index;
                             
                             return (
-                              <div key={index} className="border-l-4 border-primary pl-4">
-                                <div className="flex items-center justify-between mb-2">
-                                  <div className="text-foreground font-semibold text-sm">{activity.day}</div>
-                                  <div className="flex items-center space-x-2">
-                                    <div className="text-muted-foreground text-xs font-medium">{activity.date}</div>
-                                    {!isEditing && (
-                                      <button
-                                        onClick={() => handleEditDay(currentLog.id, index, activity.activities)}
-                                        className="p-1 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded transition-colors"
-                                        title="Edit this day"
-                                      >
-                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                        </svg>
-                                      </button>
-                                    )}
-                                  </div>
-                                </div>
-                                {isEditing ? (
-                                  <div className="space-y-2">
-                                    <textarea
-                                      value={editingText}
-                                      onChange={(e) => setEditingText(e.target.value)}
-                                      className="w-full p-2 text-sm border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-background text-foreground resize-none"
-                                      rows={3}
-                                      placeholder="Enter activities for this day..."
-                                    />
+                              <div key={index}>
+                                <div className="border-l-4 border-primary pl-4">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <div className="text-foreground font-semibold text-sm">{activity.day}</div>
                                     <div className="flex items-center space-x-2">
-                                      <button
-                                        onClick={handleSaveDay}
-                                        disabled={isSavingDay}
-                                        className="px-3 py-1 bg-primary text-primary-foreground rounded text-xs font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center space-x-1"
-                                      >
-                                        {isSavingDay ? (
-                                          <>
-                                            <div className="w-3 h-3 border border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
-                                            <span>Saving...</span>
-                                          </>
-                                        ) : (
-                                          <span>Save</span>
-                                        )}
-                                      </button>
-                                      <button
-                                        onClick={handleCancelEditDay}
-                                        disabled={isSavingDay}
-                                        className="px-3 py-1 bg-muted text-muted-foreground rounded text-xs font-medium hover:bg-muted/80 transition-colors disabled:opacity-50"
-                                      >
-                                        Cancel
-                                      </button>
+                                      <div className="text-muted-foreground text-xs font-medium">{activity.date}</div>
+                                      {!isEditing && (
+                                        <button
+                                          onClick={() => handleEditDay(currentLog.id, index, activity.activities)}
+                                          className="p-1 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded transition-colors"
+                                          title="Edit this day"
+                                        >
+                                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                          </svg>
+                                        </button>
+                                      )}
                                     </div>
                                   </div>
-                                ) : (
-                                  <div className="text-card-foreground text-sm leading-relaxed">
-                                    {activity.activities}
-                                  </div>
+                                  {isEditing ? (
+                                    <div className="space-y-2">
+                                      <textarea
+                                        value={editingText}
+                                        onChange={(e) => setEditingText(e.target.value)}
+                                        className="w-full p-2 text-sm border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-background text-foreground resize-none"
+                                        rows={3}
+                                        placeholder="Enter activities for this day..."
+                                      />
+                                      <div className="flex items-center space-x-2">
+                                        <button
+                                          onClick={handleSaveDay}
+                                          disabled={isSavingDay}
+                                          className="px-3 py-1 bg-primary text-primary-foreground rounded text-xs font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center space-x-1"
+                                        >
+                                          {isSavingDay ? (
+                                            <>
+                                              <div className="w-3 h-3 border border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
+                                              <span>Saving...</span>
+                                            </>
+                                          ) : (
+                                            <span>Save</span>
+                                          )}
+                                        </button>
+                                        <button
+                                          onClick={handleCancelEditDay}
+                                          disabled={isSavingDay}
+                                          className="px-3 py-1 bg-muted text-muted-foreground rounded text-xs font-medium hover:bg-muted/80 transition-colors disabled:opacity-50"
+                                        >
+                                          Cancel
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="text-card-foreground text-sm leading-relaxed">
+                                      {activity.activities}
+                                    </div>
+                                  )}
+                                </div>
+                                {/* Divider after each day except the last one */}
+                                {index < (logContent.dailyActivities?.length || 0) - 1 && (
+                                  <div className="border-b-2 border-primary/30 my-4"></div>
                                 )}
                               </div>
                             );
