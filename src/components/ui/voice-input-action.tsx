@@ -166,7 +166,42 @@ export function VoiceInputAction({
 // Extend the Window interface for TypeScript
 declare global {
   interface Window {
-    SpeechRecognition: typeof SpeechRecognition
-    webkitSpeechRecognition: typeof SpeechRecognition
+    SpeechRecognition: new () => SpeechRecognition
+    webkitSpeechRecognition: new () => SpeechRecognition
+  }
+  
+  interface SpeechRecognition extends EventTarget {
+    continuous: boolean
+    interimResults: boolean
+    lang: string
+    onresult: (event: SpeechRecognitionEvent) => void
+    onerror: (event: SpeechRecognitionErrorEvent) => void
+    onend: () => void
+    start(): void
+    stop(): void
+  }
+  
+  interface SpeechRecognitionEvent {
+    resultIndex: number
+    results: SpeechRecognitionResultList
+  }
+  
+  interface SpeechRecognitionResultList {
+    readonly length: number
+    [index: number]: SpeechRecognitionResult
+  }
+  
+  interface SpeechRecognitionResult {
+    readonly isFinal: boolean
+    [index: number]: SpeechRecognitionAlternative
+  }
+  
+  interface SpeechRecognitionAlternative {
+    readonly transcript: string
+    readonly confidence: number
+  }
+  
+  interface SpeechRecognitionErrorEvent {
+    error: string
   }
 }
