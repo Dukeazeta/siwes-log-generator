@@ -132,32 +132,14 @@ export function VoiceInputAction({
   }
 
   return (
-    <PromptInputAction 
-      tooltip={
-        error 
-          ? error
-          : isListening 
-            ? "Stop voice recording" 
-            : "Start voice recording"
-      }
-    >
+    <PromptInputAction tooltip="Voice input feature coming soon">
       <Button
         variant="outline"
         size="icon"
-        className={cn(
-          "h-8 w-8 rounded-full transition-colors",
-          isListening && "bg-red-50 border-red-200 text-red-600 hover:bg-red-100",
-          error && "opacity-50 cursor-not-allowed",
-          className
-        )}
-        onClick={handleClick}
-        disabled={disabled || !!error}
+        className="h-8 w-8 rounded-full opacity-50 cursor-not-allowed"
+        disabled
       >
-        {isListening ? (
-          <Square className="size-4 fill-current animate-pulse" />
-        ) : (
-          <Mic className="size-4" />
-        )}
+        <Mic className="size-4" />
       </Button>
     </PromptInputAction>
   )
