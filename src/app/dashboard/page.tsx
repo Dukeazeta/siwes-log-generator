@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import Link from "next/link";
-import Image from "next/image";
 import { motion } from "framer-motion";
-import { useEffect, useState, useRef, useCallback } from "react";
-import { useAuth } from "../../contexts/AuthContext";
+import Image from "next/image";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { supabase } from "../../lib/supabase";
-import PageTransition from "../../components/PageTransition";
-import Logo from "../../components/Logo";
+import { useCallback, useEffect, useRef, useState } from "react";
 import LogCreationChoiceModal from "../../components/LogCreationChoiceModal";
+import Logo from "../../components/Logo";
+import PageTransition from "../../components/PageTransition";
+import { useAuth } from "../../contexts/AuthContext";
+import { supabase } from "../../lib/supabase";
 
 interface UserProfile {
   full_name: string;
@@ -49,63 +49,73 @@ export default function Dashboard() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [logToDelete, setLogToDelete] = useState<WeeklyLog | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
+  const [notification, setNotification] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
   const [redirectAttempts, setRedirectAttempts] = useState(0);
   const [trainingInfoExpanded, setTrainingInfoExpanded] = useState(false);
-  const [editingDay, setEditingDay] = useState<{logId: string, dayIndex: number} | null>(null);
-  const [editingText, setEditingText] = useState('');
+  const [editingDay, setEditingDay] = useState<{ logId: string; dayIndex: number } | null>(null);
+  const [editingText, setEditingText] = useState("");
   const [isSavingDay, setIsSavingDay] = useState(false);
   const [desktopMenuOpen, setDesktopMenuOpen] = useState(false);
   const [showChoiceModal, setShowChoiceModal] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const desktopMenuRef = useRef<HTMLDivElement>(null);
+  const hasRedirectedRef = useRef(false);
 
   // Auto-refresh function for weekly logs
-  const refreshWeeklyLogs = useCallback(async (forceRefresh = false) => {
-    if (!user?.id) return;
-    
-    console.log('Refreshing weekly logs data...', { forceRefresh, userId: user.id });
-    try {
-      // Add timestamp to force fresh data
-      const { data: logsData, error: logsError } = await supabase
-        .from('weekly_logs')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('week_number', { ascending: true });
+  const refreshWeeklyLogs = useCallback(
+    async (forceRefresh = false) => {
+      if (!user?.id) return;
 
-      if (logsError && logsError.code !== 'PGRST116') {
-        console.error('Weekly logs refresh error:', logsError);
-        return;
-      }
+      console.log("Refreshing weekly logs data...", { forceRefresh, userId: user.id });
+      try {
+        // Add timestamp to force fresh data
+        const { data: logsData, error: logsError } = await supabase
+          .from("weekly_logs")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("week_number", { ascending: true });
 
-      console.log('Weekly logs refreshed:', logsData?.length || 0, 'logs found');
-      console.log('Log data:', logsData?.map(log => ({ id: log.id, week: log.week_number, created: log.created_at })));
-      setWeeklyLogs(logsData || []);
-
-      // Set active week to the latest week if none selected or force refresh
-      if (logsData && logsData.length > 0) {
-        if (forceRefresh || !logsData.find(log => log.week_number === activeWeek)) {
-          // Set to the highest week number (latest)
-          const latestWeek = Math.max(...logsData.map(log => log.week_number));
-          setActiveWeek(latestWeek);
-          console.log('Set active week to:', latestWeek);
+        if (logsError && logsError.code !== "PGRST116") {
+          console.error("Weekly logs refresh error:", logsError);
+          return;
         }
+
+        console.log("Weekly logs refreshed:", logsData?.length || 0, "logs found");
+        console.log(
+          "Log data:",
+          logsData?.map((log) => ({ id: log.id, week: log.week_number, created: log.created_at })),
+        );
+        setWeeklyLogs(logsData || []);
+
+        // Set active week to the latest week if none selected or force refresh
+        if (logsData && logsData.length > 0) {
+          if (forceRefresh || !logsData.find((log) => log.week_number === activeWeek)) {
+            // Set to the highest week number (latest)
+            const latestWeek = Math.max(...logsData.map((log) => log.week_number));
+            setActiveWeek(latestWeek);
+            console.log("Set active week to:", latestWeek);
+          }
+        }
+      } catch (error) {
+        console.error("Error refreshing weekly logs:", error);
       }
-    } catch (error) {
-      console.error('Error refreshing weekly logs:', error);
-    }
-  }, [user?.id, activeWeek]);
+    },
+    [user?.id, activeWeek],
+  );
 
   // Check for success notifications from URL params and refresh data
   useEffect(() => {
-    const created = searchParams.get('created');
-    const updated = searchParams.get('updated');
-    
-    if (created === 'true') {
-      console.log('Log creation detected - refreshing data');
+    const created = searchParams.get("created");
+    const updated = searchParams.get("updated");
+
+    if (created === "true") {
+      console.log("Log creation detected - refreshing data");
       setNotification({
-        type: 'success',
-        message: 'Weekly log created successfully!'
+        type: "success",
+        message: "Weekly log created successfully!",
       });
       setTimeout(() => setNotification(null), 4000);
       // Force refresh weekly logs data to show new content
@@ -113,12 +123,12 @@ export default function Dashboard() {
         refreshWeeklyLogs(true);
       }, 100); // Small delay to ensure state is ready
       // Remove the parameter from URL
-      router.replace('/dashboard', { scroll: false });
-    } else if (updated === 'true') {
-      console.log('Log update detected - refreshing data');
+      router.replace("/dashboard", { scroll: false });
+    } else if (updated === "true") {
+      console.log("Log update detected - refreshing data");
       setNotification({
-        type: 'success',
-        message: 'Weekly log updated successfully!'
+        type: "success",
+        message: "Weekly log updated successfully!",
       });
       setTimeout(() => setNotification(null), 4000);
       // Force refresh weekly logs data to show updated content
@@ -126,65 +136,54 @@ export default function Dashboard() {
         refreshWeeklyLogs(true);
       }, 100); // Small delay to ensure state is ready
       // Remove the parameter from URL
-      router.replace('/dashboard', { scroll: false });
+      router.replace("/dashboard", { scroll: false });
     }
   }, [searchParams, router, refreshWeeklyLogs]);
 
   const loadUserData = useCallback(async () => {
     if (hasLoadedData || profileLoading || !user?.id) return; // Prevent multiple loads
 
-    console.log('Starting loadUserData for user:', user.email, 'hasCompletedOnboarding:', user.hasCompletedOnboarding);
-    console.log('User ID for profile query:', user.id);
+    console.log(
+      "Starting loadUserData for user:",
+      user.email,
+      "hasCompletedOnboarding:",
+      user.hasCompletedOnboarding,
+    );
+    console.log("User ID for profile query:", user.id);
     setProfileLoading(true);
     setHasLoadedData(true);
 
     try {
       // Load profile with detailed logging
-      console.log('Querying user_profiles for user_id:', user.id);
+      console.log("Querying user_profiles for user_id:", user.id);
       const { data: profileData, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('user_id', user.id);
+        .from("user_profiles")
+        .select("*")
+        .eq("user_id", user.id);
 
-      console.log('Profile query result:', { 
-        profileData, 
-        profileError, 
+      console.log("Profile query result:", {
+        profileData,
+        profileError,
         profileCount: profileData?.length,
-        userId: user.id 
+        userId: user.id,
       });
 
       if (profileError) {
-        console.error('Profile query error:', profileError);
-        if (profileError.code === 'PGRST116') {
+        console.error("Profile query error:", profileError);
+        if (profileError.code === "PGRST116") {
           // No profile found - this is a data inconsistency since user should have completed onboarding
-          console.warn('Profile not found for user who completed onboarding. User:', user.email);
-          
+          console.warn("Profile not found for user who completed onboarding. User:", user.email);
+
           // Check if the user actually has completed onboarding in the database
           const { data: authUser, error: authError } = await supabase.auth.getUser();
-          console.log('Auth user check:', { authUser: authUser?.user?.email, authError });
-          
-          // Prevent infinite redirects
-          if (redirectAttempts >= 2) {
-            console.error('Too many redirect attempts, showing error state');
-            setNotification({
-              type: 'error',
-              message: 'Profile setup incomplete. Please contact support or try re-setting up your profile.'
-            });
-            return;
+          console.log("Auth user check:", { authUser: authUser?.user?.email, authError });
+
+          // Redirect to onboarding to fix data inconsistency
+          console.log("Redirecting to onboarding to complete profile setup");
+          if (!hasRedirectedRef.current) {
+            hasRedirectedRef.current = true;
+            router.push("/onboarding");
           }
-          
-          setRedirectAttempts(prev => prev + 1);
-          
-          // Force refresh user to get the latest onboarding status
-          if (refreshUser) {
-            console.log('Refreshing user context...');
-            await refreshUser();
-            return; // Let the refreshed user data trigger this function again
-          }
-          
-          // Fallback: redirect to onboarding if refresh fails
-          console.log('Redirecting to onboarding as fallback');
-          router.push('/onboarding');
           return;
         }
         throw profileError;
@@ -192,88 +191,87 @@ export default function Dashboard() {
 
       // Handle multiple or no profiles
       if (!profileData || profileData.length === 0) {
-        console.error('No profile data returned for user:', user.id);
-        
+        console.error("No profile data returned for user:", user.id);
+
         // If user claims to have completed onboarding but no profile exists,
         // this might be a data inconsistency - redirect to onboarding to fix it
         if (user.hasCompletedOnboarding) {
-          console.warn('User marked as onboarded but no profile found - data inconsistency');
+          console.warn("User marked as onboarded but no profile found - data inconsistency");
           setNotification({
-            type: 'error',
-            message: 'Profile data missing. Please complete your profile setup.'
+            type: "error",
+            message: "Profile data missing. Please complete your profile setup.",
           });
           setTimeout(() => {
-            router.push('/onboarding');
+            router.push("/onboarding");
           }, 2000);
           return;
         }
-        
-        throw new Error('No profile found for this user');
+
+        throw new Error("No profile found for this user");
       }
 
       if (profileData.length > 1) {
-        console.warn('Multiple profiles found for user:', user.id, 'using first one');
+        console.warn("Multiple profiles found for user:", user.id, "using first one");
       }
 
       const profile = profileData[0];
-      console.log('Profile loaded successfully:', profile.full_name);
+      console.log("Profile loaded successfully:", profile.full_name);
       setProfile(profile);
 
-      // If profile exists and has completed_onboarding=true, but user context says false,
-      // update the user context to prevent future redirects
-      if (profile.completed_onboarding === true && !user.hasCompletedOnboarding && refreshUser) {
-        console.log('Profile shows completed onboarding but user context does not - refreshing');
-        refreshUser(); // This should fix the hasCompletedOnboarding status
-      }
-
-      // Sync the profile's completed_onboarding status with user context if needed
-      if (profile.completed_onboarding !== user.hasCompletedOnboarding && refreshUser) {
-        console.log('Profile onboarding status mismatch, refreshing user context');
-        refreshUser(); // Don't await to avoid blocking UI
-      }
-
       // Load weekly logs
-      console.log('Loading weekly logs...');
+      console.log("Loading weekly logs...");
       const { data: logsData, error: logsError } = await supabase
-        .from('weekly_logs')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('week_number', { ascending: true });
+        .from("weekly_logs")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("week_number", { ascending: true });
 
-      if (logsError && logsError.code !== 'PGRST116') {
-        console.error('Weekly logs query error:', logsError);
+      if (logsError && logsError.code !== "PGRST116") {
+        console.error("Weekly logs query error:", logsError);
         throw logsError;
       }
 
-      console.log('Weekly logs loaded:', logsData?.length || 0, 'logs found');
-      console.log('Initial log data:', logsData?.map(log => ({ id: log.id, week: log.week_number, created: log.created_at })));
+      console.log("Weekly logs loaded:", logsData?.length || 0, "logs found");
+      console.log(
+        "Initial log data:",
+        logsData?.map((log) => ({ id: log.id, week: log.week_number, created: log.created_at })),
+      );
       setWeeklyLogs(logsData || []);
 
       // Set active week to the latest week (highest week number)
       if (logsData && logsData.length > 0) {
-        const latestWeek = Math.max(...logsData.map(log => log.week_number));
+        const latestWeek = Math.max(...logsData.map((log) => log.week_number));
         setActiveWeek(latestWeek);
-        console.log('Initial active week set to:', latestWeek);
+        console.log("Initial active week set to:", latestWeek);
       }
     } catch (error) {
-      console.error('Error loading user data:', error);
-      
+      console.error("Error loading user data:", error);
+
       // Show error notification instead of showing error state immediately
       setNotification({
-        type: 'error',
-        message: `Failed to load profile data: ${error instanceof Error ? error.message : 'Unknown error'}. Click "Retry Loading" to try again.`
+        type: "error",
+        message: `Failed to load profile data: ${error instanceof Error ? error.message : "Unknown error"}. Click "Retry Loading" to try again.`,
       });
       setTimeout(() => setNotification(null), 8000);
-      
+
       // Don't set profile to null immediately - give user a chance to retry
       // setProfile(null); // Removed this line
     } finally {
       setProfileLoading(false);
     }
-  }, [user?.id, user?.email, user?.hasCompletedOnboarding, router, hasLoadedData, profileLoading, refreshUser, redirectAttempts]);
+  }, [
+    user?.id,
+    user?.email,
+    user?.hasCompletedOnboarding,
+    router,
+    hasLoadedData,
+    profileLoading,
+    refreshUser,
+    redirectAttempts,
+  ]);
 
   useEffect(() => {
-    console.log('Dashboard useEffect triggered:', {
+    console.log("Dashboard useEffect triggered:", {
       isLoading,
       isAuthenticated,
       userId: user?.id,
@@ -281,88 +279,74 @@ export default function Dashboard() {
       hasCompletedOnboarding: user?.hasCompletedOnboarding,
       hasLoadedData,
       profileLoading,
-      profileExists: !!profile
+      profileExists: !!profile,
     });
-    
+
     // Don't do anything while auth is loading
     if (isLoading) {
-      console.log('Auth is loading, waiting...');
+      console.log("Auth is loading, waiting...");
       return;
     }
 
     // Redirect to login if not authenticated
-    if (!isAuthenticated) {
-      console.log('User not authenticated, redirecting to login');
-      router.push('/login');
+    if (!isAuthenticated && !hasRedirectedRef.current) {
+      console.log("User not authenticated, redirecting to login");
+      hasRedirectedRef.current = true;
+      router.push("/login");
       return;
     }
 
     // Only proceed if we have a valid user
     if (!user?.id) {
-      console.log('No user ID found, waiting for user data...');
+      console.log("No user ID found, waiting for user data...");
       return;
     }
 
-    // Check onboarding status and redirect if needed - but only if we're confident about the status
-    if (!user.hasCompletedOnboarding) {
-      console.log('User appears to have not completed onboarding:', {
-        userId: user.id,
-        email: user.email,
-        hasCompletedOnboarding: user.hasCompletedOnboarding
-      });
-      
-      // Before redirecting, do a quick profile check to avoid false redirects
-      if (!hasLoadedData && !profileLoading) {
-        console.log('Doing profile verification before onboarding redirect');
-        loadUserData();
-        return; // Let loadUserData handle the flow
-      }
-      
-      // Only redirect if we've tried to load data and still no profile
-      if (hasLoadedData && !profile) {
-        console.log('Confirmed: User needs onboarding, redirecting');
-        router.push('/onboarding');
-        return;
-      }
-      
-      // If we have a profile but hasCompletedOnboarding is false, it's likely a cache issue
-      if (profile) {
-        console.log('Profile exists but onboarding status is false - refreshing auth context');
-        if (refreshUser) {
-          refreshUser(); // This should update the onboarding status
-        }
-        // Don't redirect, let the user stay on dashboard
-        return;
-      }
+    // Check onboarding status and redirect if needed
+    if (!user.hasCompletedOnboarding && !hasRedirectedRef.current) {
+      console.log("User has not completed onboarding, redirecting");
+      hasRedirectedRef.current = true;
+      router.push("/onboarding");
+      return;
     }
 
     // Load user data if we haven't loaded it yet and not currently loading
     if (!hasLoadedData && !profileLoading) {
-      console.log('Conditions met for loading user data - starting loadUserData()');
+      console.log("Conditions met for loading user data - starting loadUserData()");
       loadUserData();
     } else {
-      console.log('Skipping loadUserData:', {
+      console.log("Skipping loadUserData:", {
         hasLoadedData,
         profileLoading,
-        reason: hasLoadedData ? 'already loaded' : 'currently loading'
+        reason: hasLoadedData ? "already loaded" : "currently loading",
       });
     }
-  }, [isAuthenticated, isLoading, user?.id, user?.hasCompletedOnboarding, hasLoadedData, profileLoading, loadUserData, router]);
+  }, [
+    isAuthenticated,
+    isLoading,
+    user?.id,
+    user?.hasCompletedOnboarding,
+    hasLoadedData,
+    profileLoading,
+    loadUserData,
+    router,
+    profile,
+  ]);
 
   // Reset loading state when user changes (but not on every render)
   useEffect(() => {
     if (user?.id && hasLoadedData) {
       // Only reset if this is actually a different user
       const currentUserId = user.id;
-      const lastLoadedUserId = localStorage.getItem('lastLoadedUserId');
-      
+      const lastLoadedUserId = localStorage.getItem("lastLoadedUserId");
+
       if (currentUserId !== lastLoadedUserId) {
-        console.log('User changed, resetting dashboard state');
+        console.log("User changed, resetting dashboard state");
         setHasLoadedData(false);
         setProfile(null);
         setWeeklyLogs([]);
         setActiveWeek(1);
-        localStorage.setItem('lastLoadedUserId', currentUserId);
+        localStorage.setItem("lastLoadedUserId", currentUserId);
       }
     }
   }, [user?.id, hasLoadedData]);
@@ -379,11 +363,11 @@ export default function Dashboard() {
     };
 
     if (mobileMenuOpen || desktopMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [mobileMenuOpen, desktopMenuOpen]);
 
@@ -404,7 +388,7 @@ export default function Dashboard() {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden && user?.id) {
-        console.log('Page became visible, refreshing weekly logs...');
+        console.log("Page became visible, refreshing weekly logs...");
         // Force refresh when page becomes visible (user returning from another page)
         refreshWeeklyLogs(true);
       }
@@ -413,17 +397,17 @@ export default function Dashboard() {
     // Also listen for focus events (when user switches back to tab)
     const handleFocus = () => {
       if (user?.id) {
-        console.log('Page focused, refreshing weekly logs...');
+        console.log("Page focused, refreshing weekly logs...");
         refreshWeeklyLogs(true);
       }
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleFocus);
 
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleFocus);
     };
   }, [refreshWeeklyLogs, user?.id]);
 
@@ -431,24 +415,22 @@ export default function Dashboard() {
     try {
       await logout();
       // Always redirect to home page after logout attempt
-      router.push('/');
+      router.push("/");
     } catch (error) {
-      console.warn('Logout error handled:', error);
+      console.warn("Logout error handled:", error);
       // Even if logout fails, redirect to home page
       // The user state should be cleared regardless
-      router.push('/');
+      router.push("/");
     }
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
     });
   };
-
-
 
   const handleAddWeek = () => {
     setShowChoiceModal(true);
@@ -456,12 +438,12 @@ export default function Dashboard() {
 
   const handleAIChoice = () => {
     setShowChoiceModal(false);
-    router.push('/create-log');
+    router.push("/create-log");
   };
 
   const handleManualChoice = () => {
     setShowChoiceModal(false);
-    router.push('/manual-log');
+    router.push("/manual-log");
   };
 
   const toggleMobileMenu = () => {
@@ -484,19 +466,19 @@ export default function Dashboard() {
     setIsDeleting(true);
     try {
       const { error } = await supabase
-        .from('weekly_logs')
+        .from("weekly_logs")
         .delete()
-        .eq('id', logToDelete.id)
-        .eq('user_id', user?.id);
+        .eq("id", logToDelete.id)
+        .eq("user_id", user?.id);
 
       if (error) throw error;
 
       // Remove the log from local state
-      setWeeklyLogs(prev => prev.filter(log => log.id !== logToDelete.id));
-      
+      setWeeklyLogs((prev) => prev.filter((log) => log.id !== logToDelete.id));
+
       // If we deleted the active week, switch to the first available week
       if (logToDelete.week_number === activeWeek) {
-        const remainingLogs = weeklyLogs.filter(log => log.id !== logToDelete.id);
+        const remainingLogs = weeklyLogs.filter((log) => log.id !== logToDelete.id);
         if (remainingLogs.length > 0) {
           setActiveWeek(remainingLogs[0].week_number);
         }
@@ -504,20 +486,20 @@ export default function Dashboard() {
 
       setShowDeleteConfirm(false);
       setLogToDelete(null);
-      
+
       // Show success notification
       setNotification({
-        type: 'success',
-        message: `Week ${logToDelete.week_number} deleted successfully`
+        type: "success",
+        message: `Week ${logToDelete.week_number} deleted successfully`,
       });
-      
+
       // Auto-hide notification after 3 seconds
       setTimeout(() => setNotification(null), 3000);
     } catch (error) {
-      console.error('Error deleting log:', error);
+      console.error("Error deleting log:", error);
       setNotification({
-        type: 'error',
-        message: 'Failed to delete log. Please try again.'
+        type: "error",
+        message: "Failed to delete log. Please try again.",
       });
       setTimeout(() => setNotification(null), 3000);
     } finally {
@@ -541,13 +523,14 @@ export default function Dashboard() {
     setIsSavingDay(true);
     try {
       // Find the current log
-      const currentLog = weeklyLogs.find(log => log.id === editingDay.logId);
-      if (!currentLog) throw new Error('Log not found');
+      const currentLog = weeklyLogs.find((log) => log.id === editingDay.logId);
+      if (!currentLog) throw new Error("Log not found");
 
       // Parse the current content
-      const logContent = typeof currentLog.content === 'string'
-        ? JSON.parse(currentLog.content)
-        : currentLog.content;
+      const logContent =
+        typeof currentLog.content === "string"
+          ? JSON.parse(currentLog.content)
+          : currentLog.content;
 
       // Update the specific day's activities
       if (logContent.dailyActivities && logContent.dailyActivities[editingDay.dayIndex]) {
@@ -556,43 +539,45 @@ export default function Dashboard() {
 
       // Save to database
       const { error } = await supabase
-        .from('weekly_logs')
+        .from("weekly_logs")
         .update({
           content: JSON.stringify(logContent),
           updated_at: new Date().toISOString(),
         })
-        .eq('id', editingDay.logId)
-        .eq('user_id', user.id);
+        .eq("id", editingDay.logId)
+        .eq("user_id", user.id);
 
       if (error) throw error;
 
       // Update local state
-      setWeeklyLogs(prev => prev.map(log => {
-        if (log.id === editingDay.logId) {
-          return {
-            ...log,
-            content: JSON.stringify(logContent),
-            updated_at: new Date().toISOString()
-          };
-        }
-        return log;
-      }));
+      setWeeklyLogs((prev) =>
+        prev.map((log) => {
+          if (log.id === editingDay.logId) {
+            return {
+              ...log,
+              content: JSON.stringify(logContent),
+              updated_at: new Date().toISOString(),
+            };
+          }
+          return log;
+        }),
+      );
 
       // Clear editing state
       setEditingDay(null);
-      setEditingText('');
+      setEditingText("");
 
       // Show success notification
       setNotification({
-        type: 'success',
-        message: 'Day activity updated successfully'
+        type: "success",
+        message: "Day activity updated successfully",
       });
       setTimeout(() => setNotification(null), 3000);
     } catch (error) {
-      console.error('Error saving day activity:', error);
+      console.error("Error saving day activity:", error);
       setNotification({
-        type: 'error',
-        message: 'Failed to save changes. Please try again.'
+        type: "error",
+        message: "Failed to save changes. Please try again.",
       });
       setTimeout(() => setNotification(null), 3000);
     } finally {
@@ -602,18 +587,14 @@ export default function Dashboard() {
 
   const handleCancelEditDay = () => {
     setEditingDay(null);
-    setEditingText('');
+    setEditingText("");
   };
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <Logo
-            width={64}
-            height={64}
-            className="w-16 h-16 mx-auto mb-4 animate-pulse"
-          />
+          <Logo width={64} height={64} className="w-16 h-16 mx-auto mb-4 animate-pulse" />
           <p className="text-gray-600">Loading...</p>
         </div>
       </div>
@@ -628,55 +609,48 @@ export default function Dashboard() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <Logo
-            width={64}
-            height={64}
-            className="w-16 h-16 mx-auto mb-4 animate-pulse"
-          />
+          <Logo width={64} height={64} className="w-16 h-16 mx-auto mb-4 animate-pulse" />
           <p className="text-gray-600">Loading profile...</p>
         </div>
       </div>
     );
   }
 
-
-
   // Show error state only if we've definitively failed to load profile after attempts
   if (!profile && !profileLoading && hasLoadedData && redirectAttempts > 0) {
-    console.log('Showing profile error state:', {
+    console.log("Showing profile error state:", {
       profile: !!profile,
       profileLoading,
       hasLoadedData,
       redirectAttempts,
       userEmail: user?.email,
-      userHasCompletedOnboarding: user?.hasCompletedOnboarding
+      userHasCompletedOnboarding: user?.hasCompletedOnboarding,
     });
-    
+
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto px-4">
-          <Logo
-            width={64}
-            height={64}
-            className="w-16 h-16 mx-auto mb-4"
-          />
+          <Logo width={64} height={64} className="w-16 h-16 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Profile Error</h3>
           <p className="text-gray-600 mb-6">
             There was an issue loading your profile. This might be a temporary problem.
             {user?.email && (
-              <><br /><span className="text-sm text-gray-500">User: {user.email}</span></>
+              <>
+                <br />
+                <span className="text-sm text-gray-500">User: {user.email}</span>
+              </>
             )}
           </p>
           <div className="space-y-3">
             <button
               onClick={() => {
-                console.log('Retry button clicked - resetting state');
+                console.log("Retry button clicked - resetting state");
                 setHasLoadedData(false);
                 setProfileLoading(false);
                 setRedirectAttempts(0);
                 setProfile(null);
                 // Clear localStorage to force fresh load
-                localStorage.removeItem('lastLoadedUserId');
+                localStorage.removeItem("lastLoadedUserId");
                 loadUserData();
               }}
               className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
@@ -685,7 +659,7 @@ export default function Dashboard() {
             </button>
             <button
               onClick={async () => {
-                console.log('Refresh user button clicked');
+                console.log("Refresh user button clicked");
                 if (refreshUser) {
                   await refreshUser();
                 }
@@ -710,7 +684,10 @@ export default function Dashboard() {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-secondary/30 dark:bg-background transition-colors duration-300" style={{ opacity: 1, visibility: 'visible' }}>
+      <div
+        className="min-h-screen bg-secondary/30 dark:bg-background transition-colors duration-300"
+        style={{ opacity: 1, visibility: "visible" }}
+      >
         {/* Floating Glassmorphism Navbar */}
         <motion.header
           ref={mobileMenuRef}
@@ -723,16 +700,12 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               {/* Logo */}
               <Link href="/" className="flex items-center justify-center">
-                <Logo
-                  width={48}
-                  height={48}
-                  className="w-10 h-10 md:w-12 md:h-12"
-                />
+                <Logo width={48} height={48} className="w-10 h-10 md:w-12 md:h-12" />
               </Link>
 
               {/* Navigation Links */}
               <div className="hidden md:flex items-center space-x-8">
-                {['Features', 'Process'].map((item) => (
+                {["Features", "Process"].map((item) => (
                   <a
                     key={item}
                     href={`/#${item.toLowerCase()}`}
@@ -768,7 +741,7 @@ export default function Dashboard() {
                       />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-sm font-medium">
-                        {user?.fullName?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                        {user?.fullName?.charAt(0) || user?.email?.charAt(0) || "U"}
                       </div>
                     )}
                   </button>
@@ -787,9 +760,7 @@ export default function Dashboard() {
                           <p className="text-sm font-medium text-card-foreground truncate">
                             {user?.fullName || user?.email}
                           </p>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {user?.email}
-                          </p>
+                          <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                         </div>
 
                         {/* Menu Items */}
@@ -800,8 +771,18 @@ export default function Dashboard() {
                           }}
                           className="flex items-center space-x-3 w-full text-left px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors"
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                            />
                           </svg>
                           <span className="text-sm font-medium">Edit Profile</span>
                         </button>
@@ -813,8 +794,18 @@ export default function Dashboard() {
                           }}
                           className="flex items-center space-x-3 w-full text-left px-3 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                            />
                           </svg>
                           <span className="text-sm font-medium">Logout</span>
                         </button>
@@ -839,7 +830,7 @@ export default function Dashboard() {
                     />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-sm font-medium">
-                      {user?.fullName?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                      {user?.fullName?.charAt(0) || user?.email?.charAt(0) || "U"}
                     </div>
                   )}
                 </button>
@@ -847,7 +838,7 @@ export default function Dashboard() {
             </div>
           </nav>
 
-              {/* Mobile Menu Dropdown */}
+          {/* Mobile Menu Dropdown */}
           {mobileMenuOpen && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
@@ -858,7 +849,7 @@ export default function Dashboard() {
               <div className="p-4">
                 {/* Navigation Links */}
                 <div className="space-y-3 mb-4">
-                  {['Features', 'Process'].map((item) => (
+                  {["Features", "Process"].map((item) => (
                     <a
                       key={item}
                       href={`/#${item.toLowerCase()}`}
@@ -887,7 +878,12 @@ export default function Dashboard() {
                     className="flex items-center space-x-3 w-full text-left text-muted-foreground hover:text-foreground font-medium transition-colors py-2"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                      />
                     </svg>
                     <span>Edit Profile</span>
                   </button>
@@ -900,7 +896,12 @@ export default function Dashboard() {
                     className="flex items-center space-x-3 w-full text-left text-red-600 hover:text-red-700 font-medium transition-colors py-2"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                      />
                     </svg>
                     <span>Logout</span>
                   </button>
@@ -923,32 +924,49 @@ export default function Dashboard() {
                     Beta v2.2.0
                   </div>
                 </div>
-                <p className="text-base text-muted-foreground">{profile.full_name} • {profile.course}</p>
-                
+                <p className="text-base text-muted-foreground">
+                  {profile.full_name} • {profile.course}
+                </p>
+
                 {/* Quick Info Summary */}
                 <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="bg-muted/30 rounded-lg p-3">
-                    <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">Company</div>
-                    <div className="text-sm font-semibold text-foreground truncate">{profile.company_name}</div>
-                  </div>
-                  <div className="bg-muted/30 rounded-lg p-3">
-                    <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">Department</div>
-                    <div className="text-sm font-semibold text-foreground truncate">{profile.department}</div>
-                  </div>
-                  <div className="bg-muted/30 rounded-lg p-3">
-                    <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">Duration</div>
-                    <div className="text-sm font-semibold text-foreground">
-                      {profile.start_date && profile.end_date ? (
-                        Math.ceil(
-                          (new Date(profile.end_date).getTime() - new Date(profile.start_date).getTime()) / 
-                          (1000 * 3600 * 24 * 7)
-                        ) + ' weeks'
-                      ) : 'N/A'}
+                    <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">
+                      Company
+                    </div>
+                    <div className="text-sm font-semibold text-foreground truncate">
+                      {profile.company_name}
                     </div>
                   </div>
                   <div className="bg-muted/30 rounded-lg p-3">
-                    <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">Logs Created</div>
-                    <div className="text-sm font-semibold text-primary">{weeklyLogs.length} weeks</div>
+                    <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">
+                      Department
+                    </div>
+                    <div className="text-sm font-semibold text-foreground truncate">
+                      {profile.department}
+                    </div>
+                  </div>
+                  <div className="bg-muted/30 rounded-lg p-3">
+                    <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">
+                      Duration
+                    </div>
+                    <div className="text-sm font-semibold text-foreground">
+                      {profile.start_date && profile.end_date
+                        ? Math.ceil(
+                            (new Date(profile.end_date).getTime() -
+                              new Date(profile.start_date).getTime()) /
+                              (1000 * 3600 * 24 * 7),
+                          ) + " weeks"
+                        : "N/A"}
+                    </div>
+                  </div>
+                  <div className="bg-muted/30 rounded-lg p-3">
+                    <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">
+                      Logs Created
+                    </div>
+                    <div className="text-sm font-semibold text-primary">
+                      {weeklyLogs.length} weeks
+                    </div>
                   </div>
                 </div>
               </div>
@@ -961,16 +979,28 @@ export default function Dashboard() {
                 >
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                      <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      <svg
+                        className="w-5 h-5 text-primary"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                        />
                       </svg>
                     </div>
                     <div>
-                      <h2 className="text-lg font-semibold text-card-foreground">Training Information</h2>
+                      <h2 className="text-lg font-semibold text-card-foreground">
+                        Training Information
+                      </h2>
                       <p className="text-sm text-muted-foreground">
-                        {profile.start_date && profile.end_date &&
-                          `${formatDate(profile.start_date)} — ${formatDate(profile.end_date)}`
-                        }
+                        {profile.start_date &&
+                          profile.end_date &&
+                          `${formatDate(profile.start_date)} — ${formatDate(profile.end_date)}`}
                       </p>
                     </div>
                   </div>
@@ -978,8 +1008,18 @@ export default function Dashboard() {
                     animate={{ rotate: trainingInfoExpanded ? 180 : 0 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    <svg
+                      className="w-5 h-5 text-muted-foreground"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
                     </svg>
                   </motion.div>
                 </button>
@@ -988,7 +1028,7 @@ export default function Dashboard() {
                   initial={false}
                   animate={{
                     height: trainingInfoExpanded ? "auto" : 0,
-                    opacity: trainingInfoExpanded ? 1 : 0
+                    opacity: trainingInfoExpanded ? 1 : 0,
                   }}
                   transition={{ duration: 0.3, ease: "easeInOut" }}
                   className="overflow-hidden"
@@ -997,22 +1037,36 @@ export default function Dashboard() {
                     <div className="grid gap-4 md:grid-cols-2">
                       {/* Student Details */}
                       <div>
-                        <h3 className="text-base font-semibold text-card-foreground mb-3">Student Details</h3>
+                        <h3 className="text-base font-semibold text-card-foreground mb-3">
+                          Student Details
+                        </h3>
                         <div className="space-y-2">
                           <div>
-                            <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Name</div>
-                            <div className="text-sm font-medium text-card-foreground">{profile.full_name}</div>
+                            <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">
+                              Name
+                            </div>
+                            <div className="text-sm font-medium text-card-foreground">
+                              {profile.full_name}
+                            </div>
                           </div>
                           <div>
-                            <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Course</div>
+                            <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">
+                              Course
+                            </div>
                             <div className="text-sm text-card-foreground">{profile.course}</div>
                           </div>
                           <div>
-                            <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Institution</div>
-                            <div className="text-sm text-card-foreground">{profile.institution}</div>
+                            <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">
+                              Institution
+                            </div>
+                            <div className="text-sm text-card-foreground">
+                              {profile.institution}
+                            </div>
                           </div>
                           <div>
-                            <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Level</div>
+                            <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">
+                              Level
+                            </div>
                             <div className="text-sm text-card-foreground">{profile.level}</div>
                           </div>
                         </div>
@@ -1020,23 +1074,39 @@ export default function Dashboard() {
 
                       {/* Company Details */}
                       <div>
-                        <h3 className="text-base font-semibold text-card-foreground mb-3">Company Details</h3>
+                        <h3 className="text-base font-semibold text-card-foreground mb-3">
+                          Company Details
+                        </h3>
                         <div className="space-y-2">
                           <div>
-                            <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Company</div>
-                            <div className="text-sm font-medium text-card-foreground">{profile.company_name}</div>
+                            <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">
+                              Company
+                            </div>
+                            <div className="text-sm font-medium text-card-foreground">
+                              {profile.company_name}
+                            </div>
                           </div>
                           <div>
-                            <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Department</div>
+                            <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">
+                              Department
+                            </div>
                             <div className="text-sm text-card-foreground">{profile.department}</div>
                           </div>
                           <div>
-                            <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Industry</div>
-                            <div className="text-sm text-card-foreground">{profile.industry_type}</div>
+                            <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">
+                              Industry
+                            </div>
+                            <div className="text-sm text-card-foreground">
+                              {profile.industry_type}
+                            </div>
                           </div>
                           <div>
-                            <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Address</div>
-                            <div className="text-sm text-card-foreground">{profile.company_address}</div>
+                            <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">
+                              Address
+                            </div>
+                            <div className="text-sm text-card-foreground">
+                              {profile.company_address}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1045,21 +1115,33 @@ export default function Dashboard() {
                     {/* Supervisor & Job Description */}
                     <div className="grid gap-4 md:grid-cols-2 mt-4 pt-4 border-t border-border">
                       <div>
-                        <h4 className="text-base font-semibold text-card-foreground mb-3">Supervisor</h4>
+                        <h4 className="text-base font-semibold text-card-foreground mb-3">
+                          Supervisor
+                        </h4>
                         <div className="space-y-2">
                           <div>
-                            <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Name</div>
-                            <div className="text-sm font-medium text-card-foreground">{profile.supervisor_name}</div>
+                            <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">
+                              Name
+                            </div>
+                            <div className="text-sm font-medium text-card-foreground">
+                              {profile.supervisor_name}
+                            </div>
                           </div>
                           <div>
-                            <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">Title</div>
-                            <div className="text-sm text-card-foreground">{profile.supervisor_title}</div>
+                            <div className="text-xs text-muted-foreground mb-0.5 font-medium uppercase tracking-wide">
+                              Title
+                            </div>
+                            <div className="text-sm text-card-foreground">
+                              {profile.supervisor_title}
+                            </div>
                           </div>
                         </div>
                       </div>
-                      
+
                       <div>
-                        <h4 className="text-base font-semibold text-card-foreground mb-3">Job Description</h4>
+                        <h4 className="text-base font-semibold text-card-foreground mb-3">
+                          Job Description
+                        </h4>
                         <p className="text-sm text-muted-foreground leading-relaxed">
                           {profile.company_description}
                         </p>
@@ -1076,12 +1158,22 @@ export default function Dashboard() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
               <h2 className="text-lg font-semibold text-card-foreground">Weekly Logs</h2>
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                <button className="flex items-center justify-center space-x-2 px-4 py-2 text-sm text-gray-400 bg-gray-50 rounded-full border border-gray-200 cursor-not-allowed transition-colors font-medium" disabled>
+                <button
+                  className="flex items-center justify-center space-x-2 px-4 py-2 text-sm text-gray-400 bg-gray-50 rounded-full border border-gray-200 cursor-not-allowed transition-colors font-medium"
+                  disabled
+                >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
                   </svg>
                   <span>Download PDF</span>
-                  <span className="bg-orange-200 text-orange-800 text-xs px-2 py-0.5 rounded-full font-medium">COMING SOON</span>
+                  <span className="bg-orange-200 text-orange-800 text-xs px-2 py-0.5 rounded-full font-medium">
+                    COMING SOON
+                  </span>
                 </button>
                 <motion.button
                   whileHover={{ scale: 1.02 }}
@@ -1090,7 +1182,12 @@ export default function Dashboard() {
                   className="flex items-center justify-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 transition-colors text-sm font-medium"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                    />
                   </svg>
                   <span>Add Week</span>
                 </motion.button>
@@ -1107,8 +1204,8 @@ export default function Dashboard() {
                       onClick={() => setActiveWeek(log.week_number)}
                       className={`px-5 py-2.5 text-sm font-semibold rounded-full whitespace-nowrap transition-colors min-w-fit ${
                         activeWeek === log.week_number
-                          ? 'bg-primary text-primary-foreground'
-                          : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted"
                       }`}
                     >
                       Week {log.week_number}
@@ -1126,19 +1223,31 @@ export default function Dashboard() {
             <div>
               {weeklyLogs.length > 0 ? (
                 (() => {
-                  const currentLog = weeklyLogs.find(log => log.week_number === activeWeek);
+                  const currentLog = weeklyLogs.find((log) => log.week_number === activeWeek);
                   if (!currentLog) {
                     return (
                       <div className="text-center py-16">
-                        <p className="text-muted-foreground mb-6 text-lg">No log found for Week {activeWeek}</p>
+                        <p className="text-muted-foreground mb-6 text-lg">
+                          No log found for Week {activeWeek}
+                        </p>
                         <motion.button
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
                           onClick={handleAddWeek}
                           className="inline-flex items-center space-x-2 px-6 py-3 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 transition-colors text-sm font-semibold"
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                            />
                           </svg>
                           <span>Create Week {activeWeek}</span>
                         </motion.button>
@@ -1146,15 +1255,17 @@ export default function Dashboard() {
                     );
                   }
 
-                  const logContent = typeof currentLog.content === 'string'
-                    ? JSON.parse(currentLog.content)
-                    : currentLog.content;
+                  const logContent =
+                    typeof currentLog.content === "string"
+                      ? JSON.parse(currentLog.content)
+                      : currentLog.content;
 
                   return (
                     <div>
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-semibold text-foreground">
-                          Week {activeWeek}: {formatDate(currentLog.start_date)} — {formatDate(currentLog.end_date)}
+                          Week {activeWeek}: {formatDate(currentLog.start_date)} —{" "}
+                          {formatDate(currentLog.end_date)}
                         </h3>
                         <div className="flex items-center space-x-2">
                           <motion.button
@@ -1164,8 +1275,18 @@ export default function Dashboard() {
                             className="p-2 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                             title="Delete this week"
                           >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
                             </svg>
                           </motion.button>
                         </div>
@@ -1178,147 +1299,203 @@ export default function Dashboard() {
 
                       {/* Daily Activities */}
                       <div className="mb-5">
-                        <h4 className="text-base font-semibold text-foreground mb-3">Daily Activities</h4>
+                        <h4 className="text-base font-semibold text-foreground mb-3">
+                          Daily Activities
+                        </h4>
 
                         {/* Mobile-friendly cards for small screens */}
                         <div className="block sm:hidden space-y-3">
-                          {logContent.dailyActivities?.map((activity: { day: string; date: string; activities: string }, index: number) => {
-                            const isEditing = editingDay?.logId === currentLog.id && editingDay?.dayIndex === index;
-                            
-                            return (
-                              <div key={index}>
-                                <div className="border-l-4 border-primary pl-4">
-                                  <div className="flex items-center justify-between mb-2">
-                                    <div className="text-foreground font-semibold text-sm">{activity.day}</div>
-                                    <div className="flex items-center space-x-2">
-                                      <div className="text-muted-foreground text-xs font-medium">{activity.date}</div>
-                                      {!isEditing && (
-                                        <button
-                                          onClick={() => handleEditDay(currentLog.id, index, activity.activities)}
-                                          className="p-1 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded transition-colors"
-                                          title="Edit this day"
-                                        >
-                                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                          </svg>
-                                        </button>
-                                      )}
-                                    </div>
-                                  </div>
-                                  {isEditing ? (
-                                    <div className="space-y-2">
-                                      <textarea
-                                        value={editingText}
-                                        onChange={(e) => setEditingText(e.target.value)}
-                                        className="w-full p-2 text-sm border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-background text-foreground resize-none"
-                                        rows={3}
-                                        placeholder="Enter activities for this day..."
-                                      />
+                          {logContent.dailyActivities?.map(
+                            (
+                              activity: { day: string; date: string; activities: string },
+                              index: number,
+                            ) => {
+                              const isEditing =
+                                editingDay?.logId === currentLog.id &&
+                                editingDay?.dayIndex === index;
+
+                              return (
+                                <div key={index}>
+                                  <div className="border-l-4 border-primary pl-4">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <div className="text-foreground font-semibold text-sm">
+                                        {activity.day}
+                                      </div>
                                       <div className="flex items-center space-x-2">
-                                        <button
-                                          onClick={handleSaveDay}
-                                          disabled={isSavingDay}
-                                          className="px-3 py-1 bg-primary text-primary-foreground rounded text-xs font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center space-x-1"
-                                        >
-                                          {isSavingDay ? (
-                                            <>
-                                              <div className="w-3 h-3 border border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
-                                              <span>Saving...</span>
-                                            </>
-                                          ) : (
-                                            <span>Save</span>
-                                          )}
-                                        </button>
-                                        <button
-                                          onClick={handleCancelEditDay}
-                                          disabled={isSavingDay}
-                                          className="px-3 py-1 bg-muted text-muted-foreground rounded text-xs font-medium hover:bg-muted/80 transition-colors disabled:opacity-50"
-                                        >
-                                          Cancel
-                                        </button>
+                                        <div className="text-muted-foreground text-xs font-medium">
+                                          {activity.date}
+                                        </div>
+                                        {!isEditing && (
+                                          <button
+                                            onClick={() =>
+                                              handleEditDay(
+                                                currentLog.id,
+                                                index,
+                                                activity.activities,
+                                              )
+                                            }
+                                            className="p-1 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded transition-colors"
+                                            title="Edit this day"
+                                          >
+                                            <svg
+                                              className="w-3 h-3"
+                                              fill="none"
+                                              stroke="currentColor"
+                                              viewBox="0 0 24 24"
+                                            >
+                                              <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                              />
+                                            </svg>
+                                          </button>
+                                        )}
                                       </div>
                                     </div>
-                                  ) : (
-                                    <div className="text-card-foreground text-sm leading-relaxed">
-                                      {activity.activities}
-                                    </div>
+                                    {isEditing ? (
+                                      <div className="space-y-2">
+                                        <textarea
+                                          value={editingText}
+                                          onChange={(e) => setEditingText(e.target.value)}
+                                          className="w-full p-2 text-sm border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-background text-foreground resize-none"
+                                          rows={3}
+                                          placeholder="Enter activities for this day..."
+                                        />
+                                        <div className="flex items-center space-x-2">
+                                          <button
+                                            onClick={handleSaveDay}
+                                            disabled={isSavingDay}
+                                            className="px-3 py-1 bg-primary text-primary-foreground rounded text-xs font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center space-x-1"
+                                          >
+                                            {isSavingDay ? (
+                                              <>
+                                                <div className="w-3 h-3 border border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
+                                                <span>Saving...</span>
+                                              </>
+                                            ) : (
+                                              <span>Save</span>
+                                            )}
+                                          </button>
+                                          <button
+                                            onClick={handleCancelEditDay}
+                                            disabled={isSavingDay}
+                                            className="px-3 py-1 bg-muted text-muted-foreground rounded text-xs font-medium hover:bg-muted/80 transition-colors disabled:opacity-50"
+                                          >
+                                            Cancel
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="text-card-foreground text-sm leading-relaxed">
+                                        {activity.activities}
+                                      </div>
+                                    )}
+                                  </div>
+                                  {/* Divider after each day except the last one */}
+                                  {index < (logContent.dailyActivities?.length || 0) - 1 && (
+                                    <div className="border-b-2 border-primary/30 my-4"></div>
                                   )}
                                 </div>
-                                {/* Divider after each day except the last one */}
-                                {index < (logContent.dailyActivities?.length || 0) - 1 && (
-                                  <div className="border-b-2 border-primary/30 my-4"></div>
-                                )}
-                              </div>
-                            );
-                          })}
+                              );
+                            },
+                          )}
                         </div>
 
                         {/* Table for larger screens */}
                         <div className="hidden sm:block">
                           <div className="space-y-3">
-                            {logContent.dailyActivities?.map((activity: { day: string; date: string; activities: string }, index: number) => {
-                              const isEditing = editingDay?.logId === currentLog.id && editingDay?.dayIndex === index;
-                              
-                              return (
-                                <div key={index} className="border-l-4 border-primary pl-5 py-1">
-                                  <div className="flex items-center justify-between mb-1.5">
-                                    <div className="text-foreground font-semibold text-sm">{activity.day}</div>
-                                    <div className="flex items-center space-x-3">
-                                      <div className="text-muted-foreground text-xs font-medium">{activity.date}</div>
-                                      {!isEditing && (
-                                        <button
-                                          onClick={() => handleEditDay(currentLog.id, index, activity.activities)}
-                                          className="p-1 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded transition-colors"
-                                          title="Edit this day"
-                                        >
-                                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                          </svg>
-                                        </button>
-                                      )}
-                                    </div>
-                                  </div>
-                                  {isEditing ? (
-                                    <div className="space-y-2">
-                                      <textarea
-                                        value={editingText}
-                                        onChange={(e) => setEditingText(e.target.value)}
-                                        className="w-full p-3 text-sm border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-background text-foreground resize-none"
-                                        rows={4}
-                                        placeholder="Enter activities for this day..."
-                                      />
-                                      <div className="flex items-center space-x-2">
-                                        <button
-                                          onClick={handleSaveDay}
-                                          disabled={isSavingDay}
-                                          className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center space-x-2"
-                                        >
-                                          {isSavingDay ? (
-                                            <>
-                                              <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
-                                              <span>Saving...</span>
-                                            </>
-                                          ) : (
-                                            <span>Save Changes</span>
-                                          )}
-                                        </button>
-                                        <button
-                                          onClick={handleCancelEditDay}
-                                          disabled={isSavingDay}
-                                          className="px-4 py-2 bg-muted text-muted-foreground rounded-lg text-sm font-medium hover:bg-muted/80 transition-colors disabled:opacity-50"
-                                        >
-                                          Cancel
-                                        </button>
+                            {logContent.dailyActivities?.map(
+                              (
+                                activity: { day: string; date: string; activities: string },
+                                index: number,
+                              ) => {
+                                const isEditing =
+                                  editingDay?.logId === currentLog.id &&
+                                  editingDay?.dayIndex === index;
+
+                                return (
+                                  <div key={index} className="border-l-4 border-primary pl-5 py-1">
+                                    <div className="flex items-center justify-between mb-1.5">
+                                      <div className="text-foreground font-semibold text-sm">
+                                        {activity.day}
+                                      </div>
+                                      <div className="flex items-center space-x-3">
+                                        <div className="text-muted-foreground text-xs font-medium">
+                                          {activity.date}
+                                        </div>
+                                        {!isEditing && (
+                                          <button
+                                            onClick={() =>
+                                              handleEditDay(
+                                                currentLog.id,
+                                                index,
+                                                activity.activities,
+                                              )
+                                            }
+                                            className="p-1 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded transition-colors"
+                                            title="Edit this day"
+                                          >
+                                            <svg
+                                              className="w-3 h-3"
+                                              fill="none"
+                                              stroke="currentColor"
+                                              viewBox="0 0 24 24"
+                                            >
+                                              <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                              />
+                                            </svg>
+                                          </button>
+                                        )}
                                       </div>
                                     </div>
-                                  ) : (
-                                    <div className="text-card-foreground text-sm leading-relaxed">
-                                      {activity.activities}
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
+                                    {isEditing ? (
+                                      <div className="space-y-2">
+                                        <textarea
+                                          value={editingText}
+                                          onChange={(e) => setEditingText(e.target.value)}
+                                          className="w-full p-3 text-sm border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-background text-foreground resize-none"
+                                          rows={4}
+                                          placeholder="Enter activities for this day..."
+                                        />
+                                        <div className="flex items-center space-x-2">
+                                          <button
+                                            onClick={handleSaveDay}
+                                            disabled={isSavingDay}
+                                            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center space-x-2"
+                                          >
+                                            {isSavingDay ? (
+                                              <>
+                                                <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
+                                                <span>Saving...</span>
+                                              </>
+                                            ) : (
+                                              <span>Save Changes</span>
+                                            )}
+                                          </button>
+                                          <button
+                                            onClick={handleCancelEditDay}
+                                            disabled={isSavingDay}
+                                            className="px-4 py-2 bg-muted text-muted-foreground rounded-lg text-sm font-medium hover:bg-muted/80 transition-colors disabled:opacity-50"
+                                          >
+                                            Cancel
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="text-card-foreground text-sm leading-relaxed">
+                                        {activity.activities}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              },
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1326,7 +1503,9 @@ export default function Dashboard() {
                       {/* Skills and Learning Outcomes */}
                       <div className="grid gap-4 md:grid-cols-2 mb-4">
                         <div>
-                          <h4 className="text-base font-semibold text-foreground mb-2">Skills Developed</h4>
+                          <h4 className="text-base font-semibold text-foreground mb-2">
+                            Skills Developed
+                          </h4>
                           <ul className="text-card-foreground text-sm space-y-1.5">
                             {logContent.skillsDeveloped?.map((skill: string, index: number) => (
                               <li key={index} className="flex items-start">
@@ -1338,7 +1517,9 @@ export default function Dashboard() {
                         </div>
 
                         <div>
-                          <h4 className="text-base font-semibold text-foreground mb-2">Learning Outcomes</h4>
+                          <h4 className="text-base font-semibold text-foreground mb-2">
+                            Learning Outcomes
+                          </h4>
                           <p className="text-card-foreground text-sm leading-relaxed">
                             {logContent.learningOutcomes}
                           </p>
@@ -1348,7 +1529,9 @@ export default function Dashboard() {
                       {/* Challenges Faced */}
                       {logContent.challengesFaced && (
                         <div className="pt-3 border-t border-border">
-                          <h4 className="text-base font-semibold text-foreground mb-3">Challenges Faced</h4>
+                          <h4 className="text-base font-semibold text-foreground mb-3">
+                            Challenges Faced
+                          </h4>
                           <p className="text-card-foreground text-sm leading-relaxed">
                             {logContent.challengesFaced}
                           </p>
@@ -1360,8 +1543,11 @@ export default function Dashboard() {
               ) : (
                 <div className="text-center py-20">
                   <h3 className="text-3xl font-bold text-gray-900 mb-4">No logs yet</h3>
-                  <p className="text-gray-600 mb-8 text-lg leading-relaxed max-w-2xl mx-auto">Start by creating your first weekly log entry. Transform your weekly activities into professional logbook entries.</p>
-                  
+                  <p className="text-gray-600 mb-8 text-lg leading-relaxed max-w-2xl mx-auto">
+                    Start by creating your first weekly log entry. Transform your weekly activities
+                    into professional logbook entries.
+                  </p>
+
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
@@ -1369,7 +1555,12 @@ export default function Dashboard() {
                     className="inline-flex items-center space-x-2 px-8 py-4 bg-gray-900 text-white rounded-full hover:bg-gray-800 transition-colors text-lg font-semibold"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                      />
                     </svg>
                     <span>Create First Log</span>
                   </motion.button>
@@ -1386,19 +1577,39 @@ export default function Dashboard() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 50, scale: 0.95 }}
             className={`fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40 px-6 py-4 rounded-full shadow-lg border max-w-md mx-4 ${
-              notification.type === 'success'
-                ? 'bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-200'
-                : 'bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-200'
+              notification.type === "success"
+                ? "bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-200"
+                : "bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-200"
             }`}
           >
             <div className="flex items-center space-x-3">
-              {notification.type === 'success' ? (
-                <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              {notification.type === "success" ? (
+                <svg
+                  className="w-5 h-5 flex-shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
               ) : (
-                <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="w-5 h-5 flex-shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               )}
               <span className="text-sm font-medium">{notification.message}</span>
@@ -1417,20 +1628,33 @@ export default function Dashboard() {
             >
               <div className="flex items-center space-x-3 mb-4">
                 <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
-                  <svg className="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.664-.833-2.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  <svg
+                    className="w-5 h-5 text-red-600 dark:text-red-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.664-.833-2.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"
+                    />
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-card-foreground">Delete Week {logToDelete?.week_number}</h3>
+                  <h3 className="text-lg font-semibold text-card-foreground">
+                    Delete Week {logToDelete?.week_number}
+                  </h3>
                   <p className="text-sm text-muted-foreground">This action cannot be undone</p>
                 </div>
               </div>
-              
+
               <p className="text-card-foreground mb-6">
-                Are you sure you want to delete Week {logToDelete?.week_number}? All your logged activities and data for this week will be permanently removed.
+                Are you sure you want to delete Week {logToDelete?.week_number}? All your logged
+                activities and data for this week will be permanently removed.
               </p>
-              
+
               <div className="flex space-x-3">
                 <button
                   onClick={cancelDeleteLog}

@@ -1,13 +1,12 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
-import Image from 'next/image';
-import Link from 'next/link';
-import InstitutionAutocomplete from '../../components/InstitutionAutocomplete';
-import Logo from '../../components/Logo';
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import InstitutionAutocomplete from "../../components/InstitutionAutocomplete";
+import Logo from "../../components/Logo";
+import { useAuth } from "../../contexts/AuthContext";
+import { supabase } from "../../lib/supabase";
 
 interface OnboardingData {
   // Student Details
@@ -15,14 +14,14 @@ interface OnboardingData {
   course: string;
   institution: string;
   level: string;
-  
+
   // Company Details
   companyName: string;
   department: string;
   companyAddress: string;
   industryType: string;
   jobDescription: string;
-  
+
   // Training Period
   startDate: string;
   endDate: string;
@@ -33,39 +32,42 @@ interface OnboardingData {
 export default function Onboarding() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const { user, isAuthenticated, refreshUser } = useAuth();
   const router = useRouter();
+  const hasRedirectedRef = useRef(false);
 
   const [formData, setFormData] = useState<OnboardingData>({
-    fullName: user?.fullName || `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || '',
-    course: '',
-    institution: '',
-    level: '',
-    companyName: '',
-    department: '',
-    companyAddress: '',
-    industryType: '',
-    jobDescription: '',
-    startDate: '',
-    endDate: '',
-    supervisorName: '',
-    supervisorTitle: ''
+    fullName: user?.fullName || `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || "",
+    course: "",
+    institution: "",
+    level: "",
+    companyName: "",
+    department: "",
+    companyAddress: "",
+    industryType: "",
+    jobDescription: "",
+    startDate: "",
+    endDate: "",
+    supervisorName: "",
+    supervisorTitle: "",
   });
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login');
-    } else if (user?.hasCompletedOnboarding) {
+    if (!isAuthenticated && !hasRedirectedRef.current) {
+      hasRedirectedRef.current = true;
+      router.push("/login");
+    } else if (user?.hasCompletedOnboarding && !hasRedirectedRef.current) {
       // If user has already completed onboarding, redirect to dashboard
-      router.push('/dashboard');
+      hasRedirectedRef.current = true;
+      router.push("/dashboard");
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user?.hasCompletedOnboarding, router]);
 
   const handleInputChange = (field: keyof OnboardingData, value: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
@@ -83,7 +85,7 @@ export default function Onboarding() {
 
   const handleSubmit = async () => {
     setIsLoading(true);
-    setError('');
+    setError("");
 
     try {
       // Map camelCase form data to snake_case database columns
@@ -103,25 +105,21 @@ export default function Onboarding() {
         supervisor_name: formData.supervisorName,
         supervisor_title: formData.supervisorTitle,
         completed_onboarding: true,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       };
 
-      const { error } = await supabase
-        .from('user_profiles')
-        .upsert(profileData);
+      const { error } = await supabase.from("user_profiles").upsert(profileData);
 
       if (error) throw error;
 
       // Refresh user data to update onboarding status
       await refreshUser();
 
-      // Small delay to ensure auth state is updated
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      router.push('/dashboard');
+      // Redirect to dashboard
+      router.push("/dashboard");
     } catch (error) {
-      console.error('Profile save error:', error);
-      setError(error instanceof Error ? error.message : 'Failed to save profile');
+      console.error("Profile save error:", error);
+      setError(error instanceof Error ? error.message : "Failed to save profile");
     } finally {
       setIsLoading(false);
     }
@@ -135,7 +133,7 @@ export default function Onboarding() {
       const diffWeeks = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 7));
       return `${diffWeeks} weeks`;
     }
-    return '';
+    return "";
   };
 
   if (!isAuthenticated) {
@@ -148,11 +146,7 @@ export default function Onboarding() {
       <header className="border-b border-border bg-background transition-colors duration-300">
         <div className="max-w-4xl mx-auto px-6 py-4">
           <Link href="/" className="flex items-center justify-center">
-            <Logo
-              width={40}
-              height={40}
-              className="w-10 h-10"
-            />
+            <Logo width={40} height={40} className="w-10 h-10" />
           </Link>
         </div>
       </header>
@@ -190,7 +184,7 @@ export default function Onboarding() {
                 <input
                   type="text"
                   value={formData.fullName}
-                  onChange={(e) => handleInputChange('fullName', e.target.value)}
+                  onChange={(e) => handleInputChange("fullName", e.target.value)}
                   className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent text-card-foreground placeholder-muted-foreground bg-card transition-colors"
                   placeholder="Enter your full name"
                 />
@@ -202,18 +196,16 @@ export default function Onboarding() {
                 <input
                   type="text"
                   value={formData.course}
-                  onChange={(e) => handleInputChange('course', e.target.value)}
+                  onChange={(e) => handleInputChange("course", e.target.value)}
                   className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent text-card-foreground placeholder-muted-foreground bg-card transition-colors"
                   placeholder="e.g., Computer Science, Accounting, Engineering, etc."
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Institution
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Institution</label>
                 <InstitutionAutocomplete
                   value={formData.institution}
-                  onChange={(value) => handleInputChange('institution', value)}
+                  onChange={(value) => handleInputChange("institution", value)}
                   placeholder="Search for your university/polytechnic..."
                 />
               </div>
@@ -223,7 +215,7 @@ export default function Onboarding() {
                 </label>
                 <select
                   value={formData.level}
-                  onChange={(e) => handleInputChange('level', e.target.value)}
+                  onChange={(e) => handleInputChange("level", e.target.value)}
                   className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent text-card-foreground bg-card transition-colors"
                 >
                   <option value="">Select your level</option>
@@ -254,7 +246,7 @@ export default function Onboarding() {
                 <input
                   type="text"
                   value={formData.companyName}
-                  onChange={(e) => handleInputChange('companyName', e.target.value)}
+                  onChange={(e) => handleInputChange("companyName", e.target.value)}
                   className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent text-card-foreground placeholder-muted-foreground bg-card transition-colors"
                   placeholder="Name of your IT placement company"
                 />
@@ -265,7 +257,7 @@ export default function Onboarding() {
                 </label>
                 <select
                   value={formData.department}
-                  onChange={(e) => handleInputChange('department', e.target.value)}
+                  onChange={(e) => handleInputChange("department", e.target.value)}
                   className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent text-card-foreground bg-card transition-colors"
                 >
                   <option value="">Select department</option>
@@ -321,7 +313,9 @@ export default function Onboarding() {
                   <option value="Medical Services">Medical Services</option>
                   <option value="Laboratory Services">Laboratory Services</option>
                   <option value="Pharmacy">Pharmacy</option>
-                  <option value="Health Information Management">Health Information Management</option>
+                  <option value="Health Information Management">
+                    Health Information Management
+                  </option>
                   <option value="Research & Development">Research & Development</option>
                   <option value="Quality Control">Quality Control</option>
                   {/* Legal & Compliance */}
@@ -357,7 +351,7 @@ export default function Onboarding() {
                 </label>
                 <textarea
                   value={formData.companyAddress}
-                  onChange={(e) => handleInputChange('companyAddress', e.target.value)}
+                  onChange={(e) => handleInputChange("companyAddress", e.target.value)}
                   rows={3}
                   className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent text-card-foreground placeholder-muted-foreground bg-card transition-colors"
                   placeholder="Full address of the company"
@@ -369,7 +363,7 @@ export default function Onboarding() {
                 </label>
                 <select
                   value={formData.industryType}
-                  onChange={(e) => handleInputChange('industryType', e.target.value)}
+                  onChange={(e) => handleInputChange("industryType", e.target.value)}
                   className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent text-card-foreground bg-card transition-colors"
                 >
                   <option value="">Select industry type</option>
@@ -409,7 +403,7 @@ export default function Onboarding() {
                 </label>
                 <textarea
                   value={formData.jobDescription}
-                  onChange={(e) => handleInputChange('jobDescription', e.target.value)}
+                  onChange={(e) => handleInputChange("jobDescription", e.target.value)}
                   rows={4}
                   className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent text-card-foreground placeholder-muted-foreground bg-card transition-colors"
                   placeholder="Describe your role, responsibilities, and what you'll be doing during your IT training"
@@ -422,7 +416,9 @@ export default function Onboarding() {
         {/* Step 3: Training Period */}
         {currentStep === 3 && (
           <div className="bg-card border border-border rounded-xl p-8 transition-colors duration-300">
-            <h2 className="text-xl font-semibold text-card-foreground mb-6">Training Period & Supervision</h2>
+            <h2 className="text-xl font-semibold text-card-foreground mb-6">
+              Training Period & Supervision
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-card-foreground mb-2">
@@ -431,7 +427,7 @@ export default function Onboarding() {
                 <input
                   type="date"
                   value={formData.startDate}
-                  onChange={(e) => handleInputChange('startDate', e.target.value)}
+                  onChange={(e) => handleInputChange("startDate", e.target.value)}
                   className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent text-card-foreground bg-card transition-colors"
                 />
               </div>
@@ -442,7 +438,7 @@ export default function Onboarding() {
                 <input
                   type="date"
                   value={formData.endDate}
-                  onChange={(e) => handleInputChange('endDate', e.target.value)}
+                  onChange={(e) => handleInputChange("endDate", e.target.value)}
                   className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent text-card-foreground bg-card transition-colors"
                 />
               </div>
@@ -462,7 +458,7 @@ export default function Onboarding() {
                 <input
                   type="text"
                   value={formData.supervisorName}
-                  onChange={(e) => handleInputChange('supervisorName', e.target.value)}
+                  onChange={(e) => handleInputChange("supervisorName", e.target.value)}
                   className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent text-card-foreground placeholder-muted-foreground bg-card transition-colors"
                   placeholder="Name of your IT supervisor"
                 />
@@ -474,7 +470,7 @@ export default function Onboarding() {
                 <input
                   type="text"
                   value={formData.supervisorTitle}
-                  onChange={(e) => handleInputChange('supervisorTitle', e.target.value)}
+                  onChange={(e) => handleInputChange("supervisorTitle", e.target.value)}
                   className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent text-card-foreground placeholder-muted-foreground bg-card transition-colors"
                   placeholder="e.g., IT Manager, Senior Developer"
                 />
@@ -506,7 +502,7 @@ export default function Onboarding() {
               disabled={isLoading}
               className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors"
             >
-              {isLoading ? 'Saving...' : 'Complete Setup'}
+              {isLoading ? "Saving..." : "Complete Setup"}
             </button>
           )}
         </div>
