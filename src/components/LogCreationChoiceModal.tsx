@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
+import { AnimatePresence, motion } from "framer-motion";
+import { X } from "lucide-react";
+import React from "react";
 
 interface LogCreationChoiceModalProps {
   isOpen: boolean;
@@ -15,7 +15,7 @@ export default function LogCreationChoiceModal({
   isOpen,
   onClose,
   onAIChoice,
-  onManualChoice
+  onManualChoice,
 }: LogCreationChoiceModalProps) {
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
@@ -24,29 +24,29 @@ export default function LogCreationChoiceModal({
   };
 
   const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === 'Escape') {
+    if (e.key === "Escape") {
       onClose();
     }
   };
 
   React.useEffect(() => {
     if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'hidden';
+      document.addEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "hidden";
 
       // Focus management for accessibility
       const firstFocusable = document.querySelector('[data-choice-modal="true"]') as HTMLElement;
       firstFocusable?.focus();
     } else {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'unset';
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "unset";
     }
 
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'unset';
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "unset";
     };
-  }, [isOpen]);
+  }, [isOpen, handleKeyDown]);
 
   return (
     <AnimatePresence>
@@ -69,7 +69,7 @@ export default function LogCreationChoiceModal({
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{
               duration: 0.3,
-              ease: "easeOut"
+              ease: "easeOut",
             }}
             className="relative w-full max-w-md mx-auto bg-card/95 backdrop-blur-md border border-border/50 rounded-2xl shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
@@ -77,9 +77,7 @@ export default function LogCreationChoiceModal({
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-border/50">
               <div>
-                <h2 className="text-xl font-semibold text-foreground">
-                  Create New Log
-                </h2>
+                <h2 className="text-xl font-semibold text-foreground">Create New Log</h2>
                 <p className="text-sm text-muted-foreground mt-1">
                   Choose how you want to create your log entry
                 </p>
@@ -107,20 +105,39 @@ export default function LogCreationChoiceModal({
               >
                 <div className="flex items-start space-x-4">
                   <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                    <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    <svg
+                      className="w-6 h-6 text-blue-600 dark:text-blue-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                      />
                     </svg>
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-foreground mb-2">
-                      AI Generation
-                    </h3>
+                    <h3 className="text-lg font-semibold text-foreground mb-2">AI Generation</h3>
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                      Let AI transform your weekly activities into professional log entries. Just describe what you did, and we'll format it properly.
+                      Let AI transform your weekly activities into professional log entries. Just
+                      describe what you did, and we&apos;ll format it properly.
                     </p>
                     <div className="flex items-center mt-3 text-xs text-blue-600 dark:text-blue-400 font-medium">
-                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      <svg
+                        className="w-4 h-4 mr-1"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13 10V3L4 14h7v7l9-11h-7z"
+                        />
                       </svg>
                       Fast and convenient
                     </div>
@@ -138,20 +155,39 @@ export default function LogCreationChoiceModal({
               >
                 <div className="flex items-start space-x-4">
                   <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/50 rounded-full flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                    <svg className="w-6 h-6 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    <svg
+                      className="w-6 h-6 text-emerald-600 dark:text-emerald-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                      />
                     </svg>
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-foreground mb-2">
-                      Manual Input
-                    </h3>
+                    <h3 className="text-lg font-semibold text-foreground mb-2">Manual Input</h3>
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                      Write your log entries manually with complete control over the content and formatting. Perfect for detailed documentation.
+                      Write your log entries manually with complete control over the content and
+                      formatting. Perfect for detailed documentation.
                     </p>
                     <div className="flex items-center mt-3 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      <svg
+                        className="w-4 h-4 mr-1"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
                       </svg>
                       Full control over content
                     </div>
