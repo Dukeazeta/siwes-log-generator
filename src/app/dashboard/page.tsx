@@ -9,6 +9,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import PageTransition from "../../components/PageTransition";
 import Logo from "../../components/Logo";
+import LogCreationChoiceModal from "../../components/LogCreationChoiceModal";
 
 interface UserProfile {
   full_name: string;
@@ -55,6 +56,7 @@ export default function Dashboard() {
   const [editingText, setEditingText] = useState('');
   const [isSavingDay, setIsSavingDay] = useState(false);
   const [desktopMenuOpen, setDesktopMenuOpen] = useState(false);
+  const [showChoiceModal, setShowChoiceModal] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const desktopMenuRef = useRef<HTMLDivElement>(null);
 
@@ -449,7 +451,17 @@ export default function Dashboard() {
 
 
   const handleAddWeek = () => {
+    setShowChoiceModal(true);
+  };
+
+  const handleAIChoice = () => {
+    setShowChoiceModal(false);
     router.push('/create-log');
+  };
+
+  const handleManualChoice = () => {
+    setShowChoiceModal(false);
+    router.push('/manual-log');
   };
 
   const toggleMobileMenu = () => {
@@ -1445,6 +1457,14 @@ export default function Dashboard() {
             </motion.div>
           </div>
         )}
+
+        {/* Log Creation Choice Modal */}
+        <LogCreationChoiceModal
+          isOpen={showChoiceModal}
+          onClose={() => setShowChoiceModal(false)}
+          onAIChoice={handleAIChoice}
+          onManualChoice={handleManualChoice}
+        />
       </div>
     </PageTransition>
   );
