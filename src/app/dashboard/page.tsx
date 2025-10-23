@@ -37,7 +37,7 @@ interface WeeklyLog {
 }
 
 export default function Dashboard() {
-  const { user, logout, isAuthenticated, isLoading, refreshUser } = useAuth();
+  const { user, logout, isAuthenticated, isLoading, refreshProfile } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -259,16 +259,7 @@ export default function Dashboard() {
     } finally {
       setProfileLoading(false);
     }
-  }, [
-    user?.id,
-    user?.email,
-    user?.hasCompletedOnboarding,
-    router,
-    hasLoadedData,
-    profileLoading,
-    refreshUser,
-    redirectAttempts,
-  ]);
+  }, [user?.id, user?.email, user?.hasCompletedOnboarding, hasLoadedData, profileLoading, router]);
 
   useEffect(() => {
     console.log("Dashboard useEffect triggered:", {
@@ -279,7 +270,6 @@ export default function Dashboard() {
       hasCompletedOnboarding: user?.hasCompletedOnboarding,
       hasLoadedData,
       profileLoading,
-      profileExists: !!profile,
     });
 
     // Don't do anything while auth is loading
@@ -330,7 +320,6 @@ export default function Dashboard() {
     profileLoading,
     loadUserData,
     router,
-    profile,
   ]);
 
   // Reset loading state when user changes (but not on every render)
@@ -660,8 +649,8 @@ export default function Dashboard() {
             <button
               onClick={async () => {
                 console.log("Refresh user button clicked");
-                if (refreshUser) {
-                  await refreshUser();
+                if (refreshProfile) {
+                  await refreshProfile();
                 }
                 setHasLoadedData(false);
                 setRedirectAttempts(0);

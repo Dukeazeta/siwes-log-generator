@@ -33,7 +33,7 @@ export default function Onboarding() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const { user, isAuthenticated, refreshUser } = useAuth();
+  const { user, isAuthenticated, refreshProfile } = useAuth();
   const router = useRouter();
   const hasRedirectedRef = useRef(false);
 
@@ -113,7 +113,7 @@ export default function Onboarding() {
       if (error) throw error;
 
       // Refresh user data to update onboarding status
-      await refreshUser();
+      await refreshProfile();
 
       // Redirect to dashboard
       router.push("/dashboard");

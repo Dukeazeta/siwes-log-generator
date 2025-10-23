@@ -1,9 +1,35 @@
 "use client";
 
-import type { User as SupabaseUser } from "@supabase/supabase-js";
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { getSafeSession, handleAuthError, isRefreshTokenError } from "../lib/auth-utils";
+import { Session, User as SupabaseUser } from "@supabase/supabase-js";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { supabase } from "../lib/supabase";
+
+// Types
+interface UserProfile {
+  user_id: string;
+  first_name: string;
+  last_name: string;
+  institution: string;
+  course_of_study: string;
+  matric_number: string;
+  company_name: string;
+  company_address: string;
+  supervisor_name: string;
+  supervisor_phone: string;
+  start_date: string;
+  end_date: string;
+  completed_onboarding: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
 
 interface User {
   id: string;
@@ -12,22 +38,20 @@ interface User {
   lastName?: string;
   fullName?: string;
   avatarUrl?: string;
-  hasCompletedOnboarding?: boolean;
+  hasCompletedOnboarding: boolean;
+  profile?: UserProfile;
 }
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isProfileLoading: boolean;
-  profileError: string | null;
-  authenticationStage: "idle" | "oauth_callback" | "profile_check" | "complete";
+  isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (userData: SignupData) => Promise<void>;
+  signup: (data: SignupData) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
-  refreshUser: () => Promise<void>;
-  checkProfileStatus: (userId: string) => Promise<boolean>;
-  isAuthenticated: boolean;
+  refreshProfile: () => Promise<void>;
 }
 
 interface SignupData {
@@ -40,486 +64,288 @@ interface SignupData {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isProfileLoading, setIsProfileLoading] = useState(false);
-  const [profileError, setProfileError] = useState<string | null>(null);
-  const [authenticationStage, setAuthenticationStage] = useState<
-    "idle" | "oauth_callback" | "profile_check" | "complete"
-  >("idle");
+  // Simple state - no reducer needed
+  const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [isLoadingSession, setIsLoadingSession] = useState(true);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+
+  // Refs for stable access in callbacks without causing re-renders
+  const sessionRef = useRef<Session | null>(null);
+  const profileRef = useRef<UserProfile | null>(null);
+  const isMountedRef = useRef(true);
+
+  // Update refs when state changes
+  useEffect(() => {
+    sessionRef.current = session;
+  }, [session]);
 
   useEffect(() => {
-    // Get initial session function
-    const getInitialSession = async () => {
-      try {
-        const { session, error } = await getSafeSession();
+    profileRef.current = profile;
+  }, [profile]);
 
-        if (error) {
-          console.error("Session error:", error);
-          await handleAuthError(error);
-          return;
-        }
+  // Load profile - completely decoupled from auth state
+  const loadProfile = useCallback(async (userId: string) => {
+    if (!isMountedRef.current) return;
 
-        if (session?.user) {
-          const transformedUser = await transformSupabaseUser(session.user);
-          setUser(transformedUser);
-        }
-      } catch (error) {
-        console.error("Error getting initial session:", error);
-        await handleAuthError(error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    setIsLoadingProfile(true);
+    try {
+      const { data, error } = await supabase
+        .from("user_profiles")
+        .select("*")
+        .eq("user_id", userId)
+        .single();
 
-    // Get initial session
-    getInitialSession();
+      if (!isMountedRef.current) return;
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth state change:", event, session?.user?.email);
-
-      if (event === "SIGNED_IN") {
-        if (session?.user) {
-          try {
-            console.log("User signed in, starting transformation...");
-            setAuthenticationStage("oauth_callback");
-            const transformedUser = await transformSupabaseUser(session.user);
-            setUser(transformedUser);
-            console.log(
-              "User transformed and set:",
-              transformedUser.email,
-              "onboarding:",
-              transformedUser.hasCompletedOnboarding,
-            );
-            setIsLoading(false);
-          } catch (error) {
-            console.error("Error transforming user on sign in:", error);
-            setAuthenticationStage("complete");
-            const basicUser = {
-              id: session.user.id,
-              email: session.user.email || "",
-              firstName:
-                session.user.user_metadata?.first_name ||
-                session.user.user_metadata?.given_name ||
-                "",
-              lastName:
-                session.user.user_metadata?.last_name ||
-                session.user.user_metadata?.family_name ||
-                "",
-              fullName:
-                session.user.user_metadata?.full_name || session.user.user_metadata?.name || "",
-              avatarUrl:
-                session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || "",
-              hasCompletedOnboarding: false,
-            };
-            setUser(basicUser);
-            console.log("Set basic user due to transformation error:", basicUser.email);
-            setIsLoading(false);
-          }
-        } else {
-          setAuthenticationStage("idle");
-          setIsLoading(false);
-        }
-      } else if (event === "TOKEN_REFRESHED") {
-        // For token refresh, only validate the session without re-transforming
-        if (session?.user && user && session.user.id === user.id) {
-          console.log("Token refreshed for existing user - no transformation needed");
-          setIsLoading(false);
-        } else if (session?.user && (!user || session.user.id !== user.id)) {
-          // Different user or no current user - need to transform
-          console.log("Token refreshed for different user - transforming...");
-          try {
-            setAuthenticationStage("oauth_callback");
-            const transformedUser = await transformSupabaseUser(session.user);
-            setUser(transformedUser);
-            console.log("User re-transformed after token refresh:", transformedUser.email);
-            setIsLoading(false);
-          } catch (error) {
-            console.error("Error transforming user on token refresh:", error);
-            setAuthenticationStage("complete");
-            setIsLoading(false);
-          }
-        } else {
-          setAuthenticationStage("idle");
-          setIsLoading(false);
-        }
-      } else if (event === "SIGNED_OUT") {
-        setUser(null);
-        setAuthenticationStage("idle");
-        console.log("User signed out");
-        setIsLoading(false);
+      if (error) {
+        console.error("Profile load error:", error);
+        setProfile(null);
       } else {
-        // For other events, just set loading to false
-        setIsLoading(false);
+        console.log("Profile loaded successfully");
+        setProfile(data);
       }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
+    } catch (error) {
+      console.error("Profile load exception:", error);
+      if (isMountedRef.current) {
+        setProfile(null);
+      }
+    } finally {
+      if (isMountedRef.current) {
+        setIsLoadingProfile(false);
+      }
+    }
   }, []);
 
-  // Separate effect for session validation on focus
+  // Transform Supabase user to our User type
+  const transformUser = useCallback(
+    (supabaseUser: SupabaseUser | null, profile: UserProfile | null): User | null => {
+      if (!supabaseUser) return null;
+
+      const metadata = supabaseUser.user_metadata || {};
+
+      return {
+        id: supabaseUser.id,
+        email: supabaseUser.email || "",
+        firstName: profile?.first_name || metadata.first_name || metadata.given_name,
+        lastName: profile?.last_name || metadata.last_name || metadata.family_name,
+        fullName:
+          metadata.full_name ||
+          metadata.name ||
+          (profile ? `${profile.first_name} ${profile.last_name}`.trim() : undefined),
+        avatarUrl: metadata.avatar_url || metadata.picture,
+        hasCompletedOnboarding: profile?.completed_onboarding === true,
+        profile: profile || undefined,
+      };
+    },
+    [],
+  );
+
+  // Stable auth state change handler - uses refs, not state
+  const handleAuthStateChange = useCallback(
+    async (event: string, newSession: Session | null) => {
+      console.log(`Auth state change: ${event}`);
+
+      switch (event) {
+        case "SIGNED_IN":
+          if (newSession) {
+            setSession(newSession);
+            // Load profile in parallel, don't await
+            loadProfile(newSession.user.id);
+          }
+          break;
+
+        case "SIGNED_OUT":
+          setSession(null);
+          setProfile(null);
+          break;
+
+        case "TOKEN_REFRESHED":
+          if (newSession) {
+            setSession(newSession);
+          }
+          break;
+
+        case "USER_UPDATED":
+          if (newSession) {
+            setSession(newSession);
+            // Reload profile to get any updates
+            loadProfile(newSession.user.id);
+          }
+          break;
+      }
+    },
+    [loadProfile],
+  );
+
+  // Initialize auth - runs ONCE on mount
   useEffect(() => {
-    const handleFocus = async () => {
-      if (document.visibilityState === "visible" && user) {
-        try {
-          const { session, error } = await getSafeSession();
+    let mounted = true;
+    isMountedRef.current = true;
 
-          if (error) {
-            console.error("Session validation error:", error);
-            await handleAuthError(error);
-            if (isRefreshTokenError(error)) {
-              setUser(null);
-            }
-          } else if (!session && user) {
-            // Session expired, clear user
-            console.log("Session expired, clearing user");
-            setUser(null);
-          } else if (session?.user && session.user.id === user.id) {
-            // Session is valid and user is the same - no need to re-transform
-            console.log("Session validated for existing user, no transformation needed");
-          }
-        } catch (error) {
-          console.error("Session check failed:", error);
-          await handleAuthError(error);
-          if (isRefreshTokenError(error)) {
-            setUser(null);
-          }
-        }
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleFocus);
-
-    return () => {
-      document.removeEventListener("visibilitychange", handleFocus);
-    };
-  }, [user]);
-
-  // Utility function for delays in retry logic
-  const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-  // Enhanced profile status check with retry logic and timeout
-  const checkProfileStatusWithRetry = async (
-    userId: string,
-    maxRetries: number = 2,
-    timeoutMs: number = 15000,
-  ): Promise<boolean> => {
-    const startTime = Date.now();
-
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      // Check if we're approaching timeout
-      if (Date.now() - startTime > timeoutMs - 2000) {
-        console.warn("Approaching timeout, skipping further retries");
-        break;
-      }
-
+    const initializeAuth = async () => {
       try {
-        console.log(`Profile check attempt ${attempt}/${maxRetries} for user:`, userId);
+        console.log("Initializing auth...");
 
-        // Add timeout to individual query
-        const queryPromise = supabase
-          .from("user_profiles")
-          .select("completed_onboarding")
-          .eq("user_id", userId)
-          .maybeSingle(); // Use maybeSingle instead of single to handle no results gracefully
+        // Get initial session
+        const {
+          data: { session: initialSession },
+          error,
+        } = await supabase.auth.getSession();
 
-        const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("Query timeout")), 5000),
-        );
+        if (!mounted) return;
 
-        const { data: profile, error } = await Promise.race([queryPromise, timeoutPromise]);
-
-        if (!error && profile) {
-          console.log(
-            "Profile check successful on attempt",
-            attempt,
-            "result:",
-            profile.completed_onboarding,
-          );
-          return profile.completed_onboarding === true;
-        } else if (!error && !profile) {
-          console.log("No profile found on attempt", attempt, "- user needs onboarding");
-          return false;
+        if (error) {
+          console.error("Initial session error:", error);
+          setSession(null);
+        } else if (initialSession) {
+          console.log("Initial session found");
+          setSession(initialSession);
+          // Load profile in parallel
+          loadProfile(initialSession.user.id);
         } else {
-          console.warn(`Profile query error on attempt ${attempt}:`, error);
-          if (attempt === maxRetries) {
-            throw error;
-          }
+          console.log("No initial session");
+          setSession(null);
         }
       } catch (error) {
-        console.warn(`Profile check failed on attempt ${attempt}:`, error);
-        if (attempt === maxRetries) {
-          console.warn("All profile check attempts failed, assuming onboarding needed");
-          return false; // Don't throw, just assume onboarding needed
+        console.error("Auth initialization error:", error);
+        if (mounted) {
+          setSession(null);
+        }
+      } finally {
+        if (mounted) {
+          setIsLoadingSession(false);
         }
       }
-
-      // Shorter delays to fit within timeout
-      if (attempt < maxRetries) {
-        const delayMs = Math.min(1000 * attempt, 2000); // Max 2 seconds delay
-        console.log(`Waiting ${delayMs}ms before retry...`);
-        await delay(delayMs);
-      }
-    }
-
-    // Fallback: assume onboarding needed if all retries failed
-    console.log("Profile check timed out or failed, assuming onboarding needed");
-    return false;
-  };
-  // Enhanced checkProfileStatus function with retry logic
-  const checkProfileStatus = async (userId: string): Promise<boolean> => {
-    setIsProfileLoading(true);
-    setProfileError(null);
-
-    try {
-      const result = await checkProfileStatusWithRetry(userId);
-      return result;
-    } catch (error) {
-      console.warn("Profile status check failed after retries:", error);
-      setProfileError(error instanceof Error ? error.message : "Failed to check profile");
-      return false;
-    } finally {
-      setIsProfileLoading(false);
-    }
-  };
-
-  const transformSupabaseUser = async (supabaseUser: SupabaseUser): Promise<User> => {
-    const metadata = supabaseUser.user_metadata || {};
-    console.log("Transforming Supabase user:", supabaseUser.email, "metadata:", metadata);
-    setAuthenticationStage("profile_check");
-
-    // Enhanced profile status check with timeout
-    let hasCompletedOnboarding = false;
-    try {
-      console.log(
-        "Checking profile status with retry for user:",
-        supabaseUser.email,
-        "id:",
-        supabaseUser.id,
-      );
-
-      // Add overall timeout to profile check
-      const profileCheckPromise = checkProfileStatusWithRetry(supabaseUser.id);
-      const timeoutPromise = new Promise<boolean>((resolve) => {
-        setTimeout(() => {
-          console.warn(
-            "Profile check timed out after 15 seconds, will let dashboard handle verification",
-          );
-          resolve(false); // Don't assume onboarding needed, let dashboard verify
-        }, 15000);
-      });
-
-      hasCompletedOnboarding = await Promise.race([profileCheckPromise, timeoutPromise]);
-      console.log("Final profile status result:", hasCompletedOnboarding);
-    } catch (error) {
-      console.warn(
-        "Profile check with retry failed, will let dashboard handle verification:",
-        error,
-      );
-      hasCompletedOnboarding = false; // Conservative approach
-    }
-
-    const transformedUser = {
-      id: supabaseUser.id,
-      email: supabaseUser.email || "",
-      firstName: metadata.first_name || metadata.given_name || "",
-      lastName: metadata.last_name || metadata.family_name || "",
-      fullName: metadata.full_name || metadata.name || "",
-      avatarUrl: metadata.avatar_url || metadata.picture || "",
-      hasCompletedOnboarding,
     };
 
-    console.log("User transformation complete:", {
-      email: transformedUser.email,
-      hasCompletedOnboarding: transformedUser.hasCompletedOnboarding,
-      fullName: transformedUser.fullName,
-    });
+    // Initialize auth
+    initializeAuth();
 
-    setAuthenticationStage("complete");
-    return transformedUser;
-  };
+    // Set up auth listener - ONCE
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return;
 
-  const login = async (email: string, password: string) => {
-    try {
-      setIsLoading(true);
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      if (data.user) {
-        setUser(await transformSupabaseUser(data.user));
-      }
-    } catch (error) {
-      console.error("Login error:", error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const signup = async (userData: SignupData) => {
-    try {
-      setIsLoading(true);
-      const { data, error } = await supabase.auth.signUp({
-        email: userData.email,
-        password: userData.password,
-        options: {
-          data: {
-            first_name: userData.firstName,
-            last_name: userData.lastName,
-            full_name: `${userData.firstName} ${userData.lastName}`.trim(),
-          },
-        },
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      if (data.user) {
-        setUser(await transformSupabaseUser(data.user));
-      }
-    } catch (error) {
-      console.error("Signup error:", error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const signInWithGoogle = async () => {
-    try {
-      // Use consistent redirect URL that matches Supabase configuration
-      const redirectUrl =
-        typeof window !== "undefined" && window.location.hostname === "localhost"
-          ? "http://localhost:3000/auth/callback"
-          : "https://swiftlog-beta.vercel.app/auth/callback";
-
-      console.log("Starting Google OAuth with redirect URL:", redirectUrl);
-
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: redirectUrl,
-        },
-      });
-
-      if (error) {
-        throw error;
-      }
-    } catch (error) {
-      console.error("Google sign in error:", error);
-      throw error;
-    }
-  };
-
-  const logout = async () => {
-    try {
-      // Always clear the user state first
-      setUser(null);
-
-      // Try to sign out from Supabase, but handle session errors gracefully
-      const { error } = await supabase.auth.signOut();
-
-      if (error) {
-        // Check if it's a session-related error that we can ignore
-        if (
-          error.message?.includes("Auth session missing") ||
-          error.message?.includes("session_not_found") ||
-          error.message?.includes("Forbidden")
-        ) {
-          console.log("Session already invalid, logout completed locally");
-          // Session was already invalid, which is fine for logout
-          return;
-        }
-
-        // For other errors, log but don't throw
-        console.warn("Logout warning (non-critical):", error);
-      }
-
-      console.log("Logout completed successfully");
-    } catch (error) {
-      console.warn("Logout error (handled gracefully):", error);
-      // Even if logout fails, we've cleared the local user state
-      // This ensures the user is logged out from the app's perspective
-    }
-  };
-
-  const refreshUser = async () => {
-    try {
-      console.log("Refreshing user session and profile status...");
-      const { session, error } = await getSafeSession();
-      if (error) {
-        console.error("Refresh user session error:", error);
-        await handleAuthError(error);
-        if (isRefreshTokenError(error)) {
-          setUser(null);
-        }
+      // Skip initial session as we handle it above
+      if (event === "INITIAL_SESSION") {
         return;
       }
 
-      if (session?.user) {
-        const transformedUser = await transformSupabaseUser(session.user);
+      handleAuthStateChange(event, session);
+    });
 
-        // Only update user state if data has actually changed
-        // This prevents unnecessary re-renders and race conditions
-        if (
-          !user ||
-          user.id !== transformedUser.id ||
-          user.hasCompletedOnboarding !== transformedUser.hasCompletedOnboarding ||
-          user.email !== transformedUser.email
-        ) {
-          setUser(transformedUser);
-          console.log(
-            "User refreshed successfully (data changed):",
-            transformedUser.email,
-            "onboarding:",
-            transformedUser.hasCompletedOnboarding,
-          );
-        } else {
-          console.log("User refresh skipped (no changes detected):", transformedUser.email);
-        }
-      } else {
-        console.log("No session found during refresh");
-        if (user !== null) {
-          setUser(null);
-        }
-      }
-    } catch (error) {
-      console.error("Refresh user error:", error);
-      await handleAuthError(error);
-      if (isRefreshTokenError(error)) {
-        setUser(null);
-      }
+    // Cleanup
+    return () => {
+      mounted = false;
+      isMountedRef.current = false;
+      subscription.unsubscribe();
+    };
+  }, [handleAuthStateChange, loadProfile]); // These are stable, won't cause re-runs
+
+  // Stable auth methods with no dependencies
+  const login = useCallback(async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      throw error;
     }
-  };
 
-  const value: AuthContextType = {
-    user,
-    isLoading,
-    isProfileLoading,
-    profileError,
-    authenticationStage,
-    login,
-    signup,
-    signInWithGoogle,
-    logout,
-    refreshUser,
-    checkProfileStatus,
-    isAuthenticated: !!user,
-  };
+    // Session will be handled by auth state listener
+    return;
+  }, []);
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  const signup = useCallback(async (userData: SignupData) => {
+    const { data, error } = await supabase.auth.signUp({
+      email: userData.email,
+      password: userData.password,
+      options: {
+        data: {
+          first_name: userData.firstName,
+          last_name: userData.lastName,
+          full_name: `${userData.firstName} ${userData.lastName}`.trim(),
+        },
+      },
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    // Session will be handled by auth state listener
+    return;
+  }, []);
+
+  const signInWithGoogle = useCallback(async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+
+    if (error) {
+      throw error;
+    }
+  }, []);
+
+  const logout = useCallback(async () => {
+    const { error } = await supabase.auth.signOut();
+
+    if (error && !error.message?.includes("session_not_found")) {
+      throw error;
+    }
+
+    // State will be cleared by auth state listener
+  }, []);
+
+  const refreshProfile = useCallback(async () => {
+    const currentSession = sessionRef.current;
+    if (currentSession?.user) {
+      await loadProfile(currentSession.user.id);
+    }
+  }, [loadProfile]);
+
+  // Compute derived values
+  const user = useMemo(
+    () => transformUser(session?.user || null, profile),
+    [session?.user, profile, transformUser],
+  );
+
+  const isAuthenticated = Boolean(session?.user);
+  const isLoading = isLoadingSession;
+
+  // Memoize context value to prevent unnecessary re-renders
+  const contextValue = useMemo<AuthContextType>(
+    () => ({
+      user,
+      isLoading,
+      isProfileLoading: isLoadingProfile,
+      isAuthenticated,
+      login,
+      signup,
+      signInWithGoogle,
+      logout,
+      refreshProfile,
+    }),
+    [
+      user,
+      isLoading,
+      isLoadingProfile,
+      isAuthenticated,
+      login,
+      signup,
+      signInWithGoogle,
+      logout,
+      refreshProfile,
+    ],
+  );
+
+  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
@@ -529,3 +355,6 @@ export function useAuth() {
   }
   return context;
 }
+
+// Export types for use in other files
+export type { AuthContextType, User, UserProfile };
