@@ -246,7 +246,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Stable auth methods with no dependencies
   const login = useCallback(async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { data: _data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -260,7 +260,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signup = useCallback(async (userData: SignupData) => {
-    const { data, error } = await supabase.auth.signUp({
+    const { data: _data, error } = await supabase.auth.signUp({
       email: userData.email,
       password: userData.password,
       options: {

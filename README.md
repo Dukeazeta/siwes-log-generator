@@ -37,6 +37,15 @@
 - **Progress Tracking**: Visual indicators for completed weeks
 - **Responsive Design**: Optimized for desktop, tablet, and mobile
 
+### 📸 AI-Enhanced OCR Manual Entry
+
+- **Smart Text Extraction**: Capture logbook pages with your camera or upload images
+- **Google Vision OCR**: Advanced handwriting recognition for SIWES logbooks
+- **GROQ AI Processing**: Intelligently organizes and corrects extracted text
+- **Auto-Fill Activities**: Automatically populates Monday-Friday entries with cleaned, properly formatted content
+- **Intelligent Parsing**: AI removes dates, signatures, page numbers, and other metadata
+- **Error Correction**: GROQ AI fixes OCR errors and improves readability
+
 ### 🎨 Modern UI/UX
 
 - **Glassmorphism Design**: Beautiful frosted glass navigation bars
@@ -76,8 +85,22 @@
    ```env
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-   GROQ_API_KEY=your_groq_api_key
+   GROQ_API_KEY=your_groq_api_key  # For AI-enhanced OCR and log generation
+   NEXT_PUBLIC_GOOGLE_VISION_API_KEY=your_google_vision_api_key  # For OCR feature
    ```
+
+   **Google Vision API Setup (for OCR):**
+   - Go to [Google Cloud Console](https://console.cloud.google.com)
+   - Create a new project or select existing one
+   - Enable the [Cloud Vision API](https://console.cloud.google.com/apis/library/vision.googleapis.com)
+   - Create credentials (API Key) in the [Credentials page](https://console.cloud.google.com/apis/credentials)
+   - Copy the API key to your `.env.local` file
+
+   **GROQ API Setup (for AI-enhanced OCR and log generation):**
+   - Go to [GROQ Console](https://console.groq.com)
+   - Create an API key
+   - Copy the API key to your `.env.local` file
+   - This enables intelligent text processing, error correction, and AI-powered log generation
 
 4. **Run the development server**
 

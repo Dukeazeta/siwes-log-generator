@@ -1,16 +1,16 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
-import Link from 'next/link';
-import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
-import PageTransition from '../../components/PageTransition';
-import Logo from '../../components/Logo';
-import DateRangeSelector from '../../components/DateRangeSelector';
-import { Button } from '../../components/ui/button';
-import { ArrowLeft, Save, X } from 'lucide-react';
+import { motion } from "framer-motion";
+import { ArrowLeft, Camera, Copy, Save, X } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import DateRangeSelector from "../../components/DateRangeSelector";
+import Logo from "../../components/Logo";
+import CameraCapture from "../../components/ocr/CameraCapture";
+import PageTransition from "../../components/PageTransition";
+import { useAuth } from "../../contexts/AuthContext";
+import { supabase } from "../../lib/supabase";
 
 interface UserProfile {
   full_name: string;
@@ -34,9 +34,17 @@ interface DayInput {
   activities: string;
 }
 
-const DAYS_OF_WEEK = [
-  'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'
-];
+interface OCRActivities {
+  monday?: string;
+  tuesday?: string;
+  wednesday?: string;
+  thursday?: string;
+  friday?: string;
+  saturday?: string;
+  sunday?: string;
+}
+
+const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 export default function ManualLog() {
   const router = useRouter();
@@ -46,8 +54,16 @@ export default function ManualLog() {
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [existingWeeks, setExistingWeeks] = useState<number[]>([]);
+  const [showCamera, setShowCamera] = useState(false);
+  const [isProcessingOCR, setIsProcessingOCR] = useState(false);
+  const [ocrWarnings, setOCRWarnings] = useState<string[]>([]);
+  const [ocrPreview, setOCRPreview] = useState<{
+    activities: OCRActivities;
+    fullText?: string;
+  } | null>(null);
+  const [showOCRPreview, setShowOCRPreview] = useState(false);
   const [dailyInputs, setDailyInputs] = useState<DayInput[]>([]);
   const [characterCounts, setCharacterCounts] = useState<{ [key: number]: number }>({});
 
@@ -64,8 +80,8 @@ export default function ManualLog() {
 
         inputs.push({
           day: dayName,
-          date: currentDate.toISOString().split('T')[0],
-          activities: ''
+          date: currentDate.toISOString().split("T")[0],
+          activities: "",
         });
       }
 
@@ -79,17 +95,17 @@ export default function ManualLog() {
       if (user?.id) {
         try {
           const { data, error } = await supabase
-            .from('weekly_logs')
-            .select('week_number')
-            .eq('user_id', user.id)
-            .order('week_number', { ascending: true });
+            .from("weekly_logs")
+            .select("week_number")
+            .eq("user_id", user.id)
+            .order("week_number", { ascending: true });
 
-          if (error && error.code !== 'PGRST116') {
-            console.error('Error loading existing weeks:', error);
+          if (error && error.code !== "PGRST116") {
+            console.error("Error loading existing weeks:", error);
             return;
           }
 
-          const weeks = data?.map(log => log.week_number) || [];
+          const weeks = data?.map((log) => log.week_number) || [];
           setExistingWeeks(weeks);
 
           // Auto-set to next available week
@@ -100,7 +116,7 @@ export default function ManualLog() {
             }
           }
         } catch (error) {
-          console.error('Error loading existing weeks:', error);
+          console.error("Error loading existing weeks:", error);
         }
       }
     };
@@ -114,15 +130,15 @@ export default function ManualLog() {
       if (user) {
         try {
           const { data, error } = await supabase
-            .from('user_profiles')
-            .select('*')
-            .eq('user_id', user.id)
+            .from("user_profiles")
+            .select("*")
+            .eq("user_id", user.id)
             .single();
 
           if (error) throw error;
           setUserProfile(data);
         } catch (error) {
-          console.error('Error loading profile:', error);
+          console.error("Error loading profile:", error);
         }
       }
     };
@@ -141,15 +157,15 @@ export default function ManualLog() {
     setDailyInputs(newInputs);
 
     // Update character count
-    setCharacterCounts(prev => ({
+    setCharacterCounts((prev) => ({
       ...prev,
-      [index]: value.length
+      [index]: value.length,
     }));
   };
 
   const validateForm = () => {
     if (!startDate || !endDate) {
-      setError('Please select a date range for this week');
+      setError("Please select a date range for this week");
       return false;
     }
 
@@ -159,9 +175,9 @@ export default function ManualLog() {
     }
 
     // Check if at least 3 days have content
-    const daysWithContent = dailyInputs.filter(input => input.activities.trim().length > 0);
+    const daysWithContent = dailyInputs.filter((input) => input.activities.trim().length > 0);
     if (daysWithContent.length < 3) {
-      setError('Please provide activities for at least 3 days of the week');
+      setError("Please provide activities for at least 3 days of the week");
       return false;
     }
 
@@ -181,61 +197,159 @@ export default function ManualLog() {
     if (!validateForm()) return;
 
     setIsSaving(true);
-    setError('');
+    setError("");
 
     try {
       // Create the log structure matching AI-generated format
       const logContent = {
         weekSummary: `Week ${weekNumber} activities from ${dailyInputs[0].date} to ${dailyInputs[6].date}`,
-        dailyActivities: dailyInputs.map(input => ({
+        dailyActivities: dailyInputs.map((input) => ({
           day: input.day,
           date: input.date,
-          activities: input.activities
+          activities: input.activities,
         })),
         skillsDeveloped: [], // Empty for manual logs - can be enhanced later
-        learningOutcomes: '', // Empty for manual logs - can be enhanced later
-        challengesFaced: '', // Empty for manual logs - can be enhanced later
+        learningOutcomes: "", // Empty for manual logs - can be enhanced later
+        challengesFaced: "", // Empty for manual logs - can be enhanced later
       };
 
-      console.log('Saving manual log for user:', user?.id, 'week:', weekNumber);
+      console.log("Saving manual log for user:", user?.id, "week:", weekNumber);
       const { data: insertData, error: saveError } = await supabase
-        .from('weekly_logs')
+        .from("weekly_logs")
         .insert({
           user_id: user?.id,
           week_number: weekNumber,
           start_date: startDate,
           end_date: endDate,
           content: JSON.stringify(logContent),
-          raw_activities: dailyInputs.map(input => `${input.day}: ${input.activities}`).join('\n\n'),
+          raw_activities: dailyInputs
+            .map((input) => `${input.day}: ${input.activities}`)
+            .join("\n\n"),
         })
         .select();
 
       if (saveError) {
-        console.error('Error saving manual log:', saveError);
+        console.error("Error saving manual log:", saveError);
         throw saveError;
       }
 
-      console.log('Manual log saved successfully:', insertData);
-      router.push('/dashboard?created=true');
+      console.log("Manual log saved successfully:", insertData);
+      router.push("/dashboard?created=true");
     } catch (error) {
-      console.error('Error saving manual log:', error);
-      setError(error instanceof Error ? error.message : 'Failed to save manual log');
+      console.error("Error saving manual log:", error);
+      setError(error instanceof Error ? error.message : "Failed to save manual log");
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleCancel = () => {
-    router.push('/dashboard');
+    router.push("/dashboard");
   };
 
   const clearAllInputs = () => {
-    const clearedInputs = dailyInputs.map(input => ({
+    const clearedInputs = dailyInputs.map((input) => ({
       ...input,
-      activities: ''
+      activities: "",
     }));
     setDailyInputs(clearedInputs);
     setCharacterCounts({});
+  };
+
+  const handleOCRCapture = async (imageFile: File) => {
+    setIsProcessingOCR(true);
+    setError("");
+    setOCRWarnings([]);
+
+    try {
+      // Prepare form data for API
+      const formData = new FormData();
+      formData.append("image", imageFile);
+      formData.append("weekNumber", weekNumber.toString());
+      formData.append("useAI", "true"); // Enable AI processing
+
+      // Call AI-enhanced OCR API
+      const response = await fetch("/api/ocr/process-with-ai", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "OCR processing failed");
+      }
+
+      if (!result.success) {
+        throw new Error(result.error || "Failed to extract text from image");
+      }
+
+      // Process the extracted activities
+      const { activities, warnings, fullText } = result;
+
+      if (warnings && warnings.length > 0) {
+        setOCRWarnings(warnings);
+      }
+
+      // Store OCR results for preview
+      setOCRPreview({ activities, fullText });
+
+      // Close the camera modal
+      setShowCamera(false);
+
+      // Show preview modal
+      setShowOCRPreview(true);
+
+      // Log success
+      if (Object.keys(activities).length > 0) {
+        const daysFound = Object.keys(activities).length;
+        console.log(`OCR successful: Found activities for ${daysFound} days`);
+      }
+    } catch (error) {
+      console.error("OCR processing error:", error);
+      setError(error instanceof Error ? error.message : "Failed to process image");
+      setShowCamera(false);
+    } finally {
+      setIsProcessingOCR(false);
+    }
+  };
+
+  // Apply OCR results after preview confirmation
+  const applyOCRResults = () => {
+    if (!ocrPreview) return;
+
+    const { activities } = ocrPreview;
+
+    // Update daily inputs with extracted activities
+    const updatedInputs = dailyInputs.map((input) => {
+      const dayKey = input.day.toLowerCase() as keyof typeof activities;
+      if (activities[dayKey]) {
+        return {
+          ...input,
+          activities: activities[dayKey],
+        };
+      }
+      return input;
+    });
+
+    setDailyInputs(updatedInputs);
+
+    // Update character counts
+    const newCounts: { [key: number]: number } = {};
+    updatedInputs.forEach((input, index) => {
+      newCounts[index] = input.activities.length;
+    });
+    setCharacterCounts(newCounts);
+
+    // Close preview and clear data
+    setShowOCRPreview(false);
+    setOCRPreview(null);
+  };
+
+  const discardOCRResults = () => {
+    setShowOCRPreview(false);
+    setOCRPreview(null);
+    setOCRWarnings([]);
   };
 
   if (!user) {
@@ -267,11 +381,7 @@ export default function ManualLog() {
               </Link>
 
               {/* Logo */}
-              <Logo
-                width={40}
-                height={40}
-                className="w-8 h-8 md:w-10 md:h-10"
-              />
+              <Logo width={40} height={40} className="w-8 h-8 md:w-10 md:h-10" />
             </div>
           </nav>
         </motion.header>
@@ -304,7 +414,7 @@ export default function ManualLog() {
                   value={weekNumber}
                   onChange={(e) => setWeekNumber(Number(e.target.value))}
                   className="w-full px-4 py-4 !bg-transparent border border-border rounded-xl focus:ring-2 focus:ring-ring focus:border-ring text-foreground appearance-none cursor-pointer transition-colors"
-                  style={{ backgroundColor: 'transparent !important' }}
+                  style={{ backgroundColor: "transparent !important" }}
                 >
                   {[...Array(24)].map((_, i) => {
                     const week = i + 1;
@@ -316,15 +426,25 @@ export default function ManualLog() {
                         className="text-foreground bg-background"
                         disabled={isExisting}
                       >
-                        Week {week} {isExisting ? '(Created)' : ''}
+                        Week {week} {isExisting ? "(Created)" : ""}
                       </option>
                     );
                   })}
                 </select>
                 {/* Custom dropdown arrow */}
                 <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-                  <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  <svg
+                    className="w-5 h-5 text-muted-foreground"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
                   </svg>
                 </div>
               </div>
@@ -351,16 +471,58 @@ export default function ManualLog() {
             {dailyInputs.length > 0 && (
               <div className="mb-8">
                 <div className="flex items-center justify-between mb-4">
-                  <label className="text-sm font-semibold text-foreground">
-                    Daily Activities
-                  </label>
-                  <button
-                    onClick={clearAllInputs}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    Clear All
-                  </button>
+                  <label className="text-sm font-semibold text-foreground">Daily Activities</label>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setShowCamera(true)}
+                      disabled={!startDate || !endDate || isProcessingOCR}
+                      className="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title={
+                        !startDate || !endDate
+                          ? "Please select dates first"
+                          : "Capture logbook page"
+                      }
+                    >
+                      <Camera className="w-4 h-4" />
+                      <span className="text-sm font-medium">Scan Page</span>
+                    </button>
+                    <button
+                      onClick={clearAllInputs}
+                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      Clear All
+                    </button>
+                  </div>
                 </div>
+
+                {/* OCR Warnings */}
+                {ocrWarnings.length > 0 && (
+                  <div className="bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-4">
+                    <div className="flex items-start gap-3">
+                      <svg
+                        className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                        />
+                      </svg>
+                      <div className="text-sm text-yellow-800 dark:text-yellow-200">
+                        <p className="font-medium mb-1">OCR Processing Notes:</p>
+                        <ul className="list-disc list-inside space-y-1">
+                          {ocrWarnings.map((warning, index) => (
+                            <li key={index}>{warning}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-4">
                   {dailyInputs.map((dayInput, index) => (
@@ -397,7 +559,7 @@ export default function ManualLog() {
                           <div
                             className="bg-primary h-1.5 rounded-full transition-all duration-200"
                             style={{
-                              width: `${Math.min(((characterCounts[index] || 0) / 2000) * 100, 100)}%`
+                              width: `${Math.min(((characterCounts[index] || 0) / 2000) * 100, 100)}%`,
                             }}
                           />
                         </div>
@@ -412,8 +574,18 @@ export default function ManualLog() {
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-8">
                 <div className="flex items-center space-x-2">
-                  <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg
+                    className="w-5 h-5 text-red-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
                   <p className="text-red-700 text-sm">{error}</p>
                 </div>
@@ -470,8 +642,178 @@ export default function ManualLog() {
             <div className="flex flex-col items-center">
               <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
               <p className="text-lg font-medium text-foreground">Saving Manual Log</p>
-              <p className="mt-2 text-sm text-muted-foreground">Please wait while we save your log entry</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Please wait while we save your log entry
+              </p>
             </div>
+          </div>
+        )}
+
+        {/* OCR Camera Modal */}
+        {showCamera && (
+          <CameraCapture
+            onCapture={handleOCRCapture}
+            onClose={() => setShowCamera(false)}
+            isProcessing={isProcessingOCR}
+          />
+        )}
+
+        {/* OCR Preview Modal */}
+        {showOCRPreview && ocrPreview && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-background rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden my-8"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-border">
+                <h2 className="text-xl font-semibold text-foreground">Review Extracted Content</h2>
+                <button
+                  onClick={discardOCRResults}
+                  className="p-2 hover:bg-muted rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="p-6 max-h-[60vh] overflow-y-auto">
+                <div className="space-y-6">
+                  {/* Extraction Summary */}
+                  <div className="bg-muted/50 rounded-lg p-4">
+                    <h3 className="font-medium text-sm text-foreground mb-2">
+                      AI-Enhanced Extraction Summary
+                    </h3>
+                    <div className="text-sm text-muted-foreground space-y-1">
+                      <p>✓ Days found: {Object.keys(ocrPreview.activities).length} out of 5</p>
+                      <p>✓ Total text extracted: {ocrPreview.fullText?.length || 0} characters</p>
+                      <p>✓ AI processed: Text cleaned and organized by Gemini AI</p>
+                    </div>
+                  </div>
+
+                  {/* Warnings if any */}
+                  {ocrWarnings.length > 0 && (
+                    <div className="bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                      <h3 className="font-medium text-sm text-yellow-800 dark:text-yellow-200 mb-2">
+                        Notes:
+                      </h3>
+                      <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1">
+                        {ocrWarnings.map((warning, index) => (
+                          <li key={index}>• {warning}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Extracted Activities Preview */}
+                  <div className="space-y-4">
+                    <h3 className="font-medium text-foreground">Extracted Activities:</h3>
+
+                    {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"].map((day) => {
+                      const dayKey = day.toLowerCase() as keyof OCRActivities;
+                      const content = ocrPreview.activities[dayKey];
+
+                      return (
+                        <div key={day} className="border border-border rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="font-medium text-foreground">{day}</h4>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground">
+                                {content ? `${content.length} chars` : "No content"}
+                              </span>
+                              {content && (
+                                <button
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(content);
+                                    const button = event?.currentTarget as HTMLButtonElement;
+                                    if (button) {
+                                      const originalText = button.innerText;
+                                      button.innerText = "Copied!";
+                                      setTimeout(() => {
+                                        button.innerText = originalText;
+                                      }, 2000);
+                                    }
+                                  }}
+                                  className="flex items-center gap-1 px-2 py-1 text-xs bg-muted hover:bg-muted/80 rounded transition-colors"
+                                >
+                                  <Copy className="w-3 h-3" />
+                                  Copy
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                          <div className="bg-background p-3 rounded border border-border">
+                            {content ? (
+                              <p className="text-sm text-foreground whitespace-pre-wrap">
+                                {content}
+                              </p>
+                            ) : (
+                              <p className="text-sm text-muted-foreground italic">
+                                No activities detected for this day
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Debug Info - Collapsible */}
+                  <details className="bg-muted/30 rounded-lg p-4">
+                    <summary className="cursor-pointer font-medium text-sm text-muted-foreground hover:text-foreground">
+                      Show Raw Extracted Text (Debug)
+                    </summary>
+                    <div className="mt-4 bg-background p-4 rounded border border-border">
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="text-xs font-medium text-muted-foreground">
+                          Raw OCR Output:
+                        </span>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(
+                              ocrPreview.fullText || "No raw text available",
+                            );
+                            // Optional: Show a toast or temporary feedback
+                            const button = event?.currentTarget as HTMLButtonElement;
+                            if (button) {
+                              const originalText = button.innerText;
+                              button.innerText = "Copied!";
+                              setTimeout(() => {
+                                button.innerText = originalText;
+                              }, 2000);
+                            }
+                          }}
+                          className="flex items-center gap-1 px-2 py-1 text-xs bg-muted hover:bg-muted/80 rounded transition-colors"
+                        >
+                          <Copy className="w-3 h-3" />
+                          Copy
+                        </button>
+                      </div>
+                      <pre className="text-xs text-muted-foreground whitespace-pre-wrap overflow-x-auto">
+                        {ocrPreview.fullText || "No raw text available"}
+                      </pre>
+                    </div>
+                  </details>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end gap-4 p-6 border-t border-border">
+                <button
+                  onClick={discardOCRResults}
+                  className="px-6 py-3 bg-muted text-foreground rounded-lg hover:bg-muted/80 transition-colors"
+                >
+                  Discard
+                </button>
+                <button
+                  onClick={applyOCRResults}
+                  className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                >
+                  Apply to Form
+                </button>
+              </div>
+            </motion.div>
           </div>
         )}
       </div>
