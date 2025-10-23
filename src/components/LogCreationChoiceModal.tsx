@@ -137,8 +137,11 @@ export default function LogCreationChoiceModal({
                     <PenTool className="w-6 h-6 sm:w-7 sm:h-7 text-foreground" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-base sm:text-lg font-semibold text-foreground mb-1.5 sm:mb-2">
+                    <h3 className="text-base sm:text-lg font-semibold text-foreground mb-1.5 sm:mb-2 flex items-center gap-2">
                       Manual Input
+                      <span className="px-2 py-0.5 text-xs font-medium bg-primary text-primary-foreground rounded-full">
+                        New
+                      </span>
                     </h3>
                     <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
                       Write your log entries manually with complete control over content and

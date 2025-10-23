@@ -1,9 +1,11 @@
 # Project Context
 
 ## Purpose
+
 SwiftLog is an AI-powered SIWES (Student Industrial Work Experience Scheme) log generation platform designed for IT students in Nigeria. The application transforms weekly summaries into detailed, professional daily logbook entries that meet academic requirements. It aims to simplify the documentation process for students undergoing industrial training by leveraging artificial intelligence to generate contextually relevant technical content.
 
 ## Tech Stack
+
 - **Frontend Framework**: Next.js 15.4.5 with App Router
 - **Language**: TypeScript 5.0 with strict mode enabled
 - **Styling**: Tailwind CSS 4.0 with custom design system
@@ -22,6 +24,7 @@ SwiftLog is an AI-powered SIWES (Student Industrial Work Experience Scheme) log 
 ## Project Conventions
 
 ### Code Style
+
 - **TypeScript**: Strict mode enabled, prefer explicit types, use interfaces for object shapes
 - **Component Naming**: PascalCase for components (e.g., `SmartCTAButton.tsx`)
 - **File Structure**: Organized by feature/domain, not file type
@@ -33,6 +36,7 @@ SwiftLog is an AI-powered SIWES (Student Industrial Work Experience Scheme) log 
 - **Responsive Design**: Mobile-first approach with responsive breakpoints
 
 ### Architecture Patterns
+
 - **App Router**: Next.js 15 App Router with server and client components
 - **Context API**: React Context for global state (AuthContext, ThemeContext)
 - **API Routes**: Next.js API routes for backend logic and AI integration
@@ -44,6 +48,7 @@ SwiftLog is an AI-powered SIWES (Student Industrial Work Experience Scheme) log 
 - **Error Boundaries**: Global error handling with Sentry integration
 
 ### Testing Strategy
+
 - **Current Status**: No automated testing framework currently implemented
 - **Manual Testing**: Manual testing across multiple devices and browsers
 - **Error Monitoring**: Sentry integration for production error tracking
@@ -51,17 +56,20 @@ SwiftLog is an AI-powered SIWES (Student Industrial Work Experience Scheme) log 
 - **Performance**: Vercel Analytics and monitoring tools
 
 ### Git Workflow
+
 - **Branching**: Feature branches from main (e.g., `feature/amazing-feature`)
 - **Commits**: Conventional commit format with descriptive messages
 - **Deployment**: Automatic deployment to Vercel on push to main branch
-- **Version Control**: Semantic versioning (currently v2.2.0)
+- **Version Control**: Semantic versioning (currently v3.0.0)
 - **Commit Patterns**: Recent commits follow `feat:`, `fix:`, `chore:` prefixes
 - **Integration**: GitHub integration with Vercel for CI/CD
 
 ## Domain Context
+
 SwiftLog serves SIWES (Student Industrial Work Experience Scheme) students in Nigeria's higher education system. This is a mandatory industrial training program where IT students work in companies to gain practical experience. Students must maintain detailed logbooks documenting their daily activities, which are submitted to their academic institutions for evaluation.
 
 **Key User Needs:**
+
 - Transform brief weekly summaries into detailed daily logs
 - Maintain professional documentation standards
 - Save time while ensuring academic compliance
@@ -69,6 +77,7 @@ SwiftLog serves SIWES (Student Industrial Work Experience Scheme) students in Ni
 - Secure storage of personal and academic information
 
 **Academic Requirements:**
+
 - Daily activity descriptions with technical details
 - Proper formatting and structure
 - Weekly summaries with specific date ranges
@@ -76,6 +85,7 @@ SwiftLog serves SIWES (Student Industrial Work Experience Scheme) students in Ni
 - Student academic details and institution information
 
 ## Important Constraints
+
 - **Authentication**: Must use Google OAuth for user authentication
 - **Data Privacy**: Student personal and academic data must be protected
 - **Mobile Performance**: Application must work well on mobile devices
@@ -86,6 +96,7 @@ SwiftLog serves SIWES (Student Industrial Work Experience Scheme) students in Ni
 - **Academic Compliance**: Generated content must meet SIWES standards
 
 ## External Dependencies
+
 - **Supabase**: Database, authentication, and storage platform
   - `NEXT_PUBLIC_SUPABASE_URL`: Supabase project URL
   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Anonymous access key
