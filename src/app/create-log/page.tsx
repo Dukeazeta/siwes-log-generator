@@ -262,12 +262,15 @@ export default function CreateLog() {
       }
 
       console.log('Redirecting to dashboard...');
-      // Redirect to dashboard with success message
-      if (isEditMode) {
-        router.push('/dashboard?updated=true');
-      } else {
-        router.push('/dashboard?created=true');
-      }
+      // Add a small delay to ensure auth context is properly hydrated before redirect
+      setTimeout(() => {
+        // Redirect to dashboard with success message
+        if (isEditMode) {
+          router.push('/dashboard?updated=true');
+        } else {
+          router.push('/dashboard?created=true');
+        }
+      }, 100); // 100ms delay to allow auth context to hydrate
     } catch (error) {
       console.error('Error generating log:', error);
 
