@@ -168,9 +168,10 @@ export default function CreateLog() {
           if (existingLog) {
             throw new Error(`Week ${weekNumber} already exists. Please choose a different week number or edit the existing log.`);
           }
-        } catch (queryError: any) {
+        } catch (queryError: unknown) {
           // Handle specific Supabase errors
-          if (queryError.code === '406' || queryError.message?.includes('406')) {
+          const error = queryError as { code?: string; message?: string };
+          if (error.code === '406' || error.message?.includes('406')) {
             console.error('Supabase 406 error, trying alternative approach:', queryError);
             // Fallback: Use array query instead of single
             const { data: logs, error: arrayError } = await supabase

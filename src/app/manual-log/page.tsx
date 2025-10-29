@@ -12,21 +12,22 @@ import PageTransition from "../../components/PageTransition";
 import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../lib/supabase";
 
-interface UserProfile {
-  full_name: string;
-  course: string;
-  institution: string;
-  level: string;
-  company_name: string;
-  department: string;
-  company_address: string;
-  industry_type: string;
-  company_description: string;
-  start_date: string;
-  end_date: string;
-  supervisor_name: string;
-  supervisor_title: string;
-}
+// UserProfile interface defined but not currently used in this component
+// interface UserProfile {
+//   full_name: string;
+//   course: string;
+//   institution: string;
+//   level: string;
+//   company_name: string;
+//   department: string;
+//   company_address: string;
+//   industry_type: string;
+//   company_description: string;
+//   start_date: string;
+//   end_date: string;
+//   supervisor_name: string;
+//   supervisor_title: string;
+// }
 
 interface DayInput {
   day: string;
@@ -128,7 +129,7 @@ export default function ManualLog() {
     const loadUserProfile = async () => {
       if (user) {
         try {
-          const { data, error } = await supabase
+          const { error } = await supabase
             .from("user_profiles")
             .select("*")
             .eq("user_id", user.id)

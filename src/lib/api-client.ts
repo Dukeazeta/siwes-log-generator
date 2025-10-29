@@ -51,7 +51,7 @@ export class ApiClient {
     return headers;
   }
 
-  private isTokenExpired(session: any): boolean {
+  private isTokenExpired(session: { expires_at?: number }): boolean {
     if (!session?.expires_at) return true;
     // Add 5-minute buffer before expiration
     return Date.now() >= (session.expires_at * 1000 - 300000);

@@ -16,9 +16,10 @@ export function VoiceInputAction({
   currentText,
   disabled = false
 }: VoiceInputActionProps) {
-  const [isListening, setIsListening] = useState(false)
+  // Voice input functionality not yet implemented - variables prepared for future use
+  // const [isListening, setIsListening] = useState(false)
   const [isSupported, setIsSupported] = useState(false)
-  
+
   const recognitionRef = useRef<SpeechRecognition | null>(null)
 
   // Check for Web Speech API support
@@ -58,12 +59,12 @@ export function VoiceInputAction({
           // Handle speech recognition errors
           recognitionRef.current.onerror = (event: SpeechRecognitionErrorEvent) => {
             console.error('Speech recognition error:', event.error)
-            setIsListening(false)
+            // setIsListening(false) // Commented out - voice input not implemented
           }
-          
+
           // Handle speech recognition end
           recognitionRef.current.onend = () => {
-            setIsListening(false)
+            // setIsListening(false) // Commented out - voice input not implemented
           }
         }
       } else {
@@ -79,26 +80,27 @@ export function VoiceInputAction({
     }
   }, [currentText, onTextChange])
 
-  const startListening = async () => {
-    if (!recognitionRef.current || !isSupported || disabled) return
-    
-    try {
-      // Request microphone permission
-      await navigator.mediaDevices.getUserMedia({ audio: true })
-      
-      setIsListening(true)
-      recognitionRef.current.start()
-    } catch (err) {
-      console.error('Microphone access denied:', err)
-    }
-  }
+  // Voice input functions - prepared for future implementation
+  // const startListening = async () => {
+  //   if (!recognitionRef.current || !isSupported || disabled) return
 
-  const stopListening = () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop()
-    }
-    setIsListening(false)
-  }
+  //   try {
+  //     // Request microphone permission
+  //     await navigator.mediaDevices.getUserMedia({ audio: true })
+
+  //     setIsListening(true)
+  //     recognitionRef.current.start()
+  //   } catch (err) {
+  //     console.error('Microphone access denied:', err)
+  //   }
+  // }
+
+  // const stopListening = () => {
+  //   if (recognitionRef.current) {
+  //     recognitionRef.current.stop()
+  //   }
+  //   setIsListening(false)
+  // }
 
   if (!isSupported) {
     return (
