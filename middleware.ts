@@ -24,14 +24,25 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    // Get the auth token from the request headers
-    const authHeader = request.headers.get('authorization');
+    // Get the auth token from the request headers (case-insensitive)
+    const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
     const token = authHeader?.replace('Bearer ', '');
+
+    console.log('Middleware: Checking authentication for:', request.nextUrl.pathname, {
+    hasAuthHeader: !!authHeader,
+    hasToken: !!token,
+    authHeaderPreview: authHeader ? authHeader.substring(0, 20) + '...' : null
+  });
 
     if (!token) {
       // For client-side requests, check for session cookie
       const accessToken = request.cookies.get('sb-access-token')?.value ||
                           request.cookies.get('sb-auth-token')?.value;
+
+      console.log('Middleware: No Authorization header, checking cookies:', {
+        hasAccessToken: !!accessToken,
+        cookies: request.cookies.getAll().map(c => ({ name: c.name, hasValue: !!c.value }))
+      });
 
       if (!accessToken) {
         console.error('No authentication token found for:', request.nextUrl.pathname);
