@@ -31,6 +31,7 @@ export class ApiClient {
     return fetch(`${this.baseURL}${endpoint}`, {
       method: 'GET',
       headers,
+      credentials: 'include', // Include cookies for authentication
       ...options,
     });
   }
@@ -41,6 +42,7 @@ export class ApiClient {
     return fetch(`${this.baseURL}${endpoint}`, {
       method: 'POST',
       headers,
+      credentials: 'include', // Include cookies for authentication
       body: data ? JSON.stringify(data) : undefined,
       ...options,
     });

@@ -9,7 +9,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     detectSessionInUrl: true,
     storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-    storageKey: 'supabase.auth.token',
+    storageKey: 'sb-auth-token',
     flowType: 'pkce',
     // Mobile-friendly settings
     debug: process.env.NODE_ENV === 'development'
@@ -27,7 +27,7 @@ if (typeof window !== 'undefined') {
   supabase.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_OUT' && !session) {
       // Clear any remaining auth data from localStorage
-      localStorage.removeItem('supabase.auth.token');
+      localStorage.removeItem('sb-auth-token');
     }
   });
 }
