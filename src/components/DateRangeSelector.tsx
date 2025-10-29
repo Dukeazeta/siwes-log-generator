@@ -144,11 +144,6 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
     setCurrentWeek(newWeek);
   };
 
-  const goToToday = () => {
-    const today = new Date();
-    setCurrentWeek(today);
-  };
-
   const handleDateSelect = (date: Date) => {
     if (!startDate || (startDate && endDate)) {
       // Start new selection
@@ -329,7 +324,7 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
       <div className="bg-card rounded-lg border shadow-sm overflow-hidden">
         {/* Day headers */}
         <div className="grid grid-cols-7 border-b bg-muted/50">
-          {DAYS_OF_WEEK.map((day, index) => (
+          {DAYS_OF_WEEK.map((day) => (
             <div
               key={day}
               className="p-2 sm:p-4 text-center text-xs sm:text-sm font-medium text-muted-foreground border-r last:border-r-0"
@@ -341,7 +336,7 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
 
         {/* Date cells */}
         <div className="grid grid-cols-7">
-          {weekDays.map((day, index) => {
+          {weekDays.map((day) => {
             const isStartDate = startDate && isSameDay(day, startDate);
             const isEndDate = endDate && isSameDay(day, endDate);
             const isInRange = startDate && endDate && day >= startDate && day <= endDate;

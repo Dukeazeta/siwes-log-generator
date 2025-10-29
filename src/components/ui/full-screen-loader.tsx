@@ -7,7 +7,6 @@ import Logo from '../Logo';
 
 interface FullScreenLoaderProps {
   isVisible: boolean;
-  title?: string;
   subtitle?: string;
   shimmerText?: string;
   showLogo?: boolean;
@@ -15,7 +14,6 @@ interface FullScreenLoaderProps {
 
 export function FullScreenLoader({
   isVisible,
-  title = "Generating Log",
   subtitle = "Please wait while we create your professional logbook entry",
   showLogo = true
 }: FullScreenLoaderProps) {

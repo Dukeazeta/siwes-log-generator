@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getAuthDebugInfo, runApiConnectivityTest, logAuthDebugInfo } from '../lib/debug-auth';
+import { getAuthDebugInfo, runApiConnectivityTest, logAuthDebugInfo, type AuthDebugInfo } from '../lib/debug-auth';
 import { Button } from './ui/button';
 
 export function DebugAuth() {
-  const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [debugInfo, setDebugInfo] = useState<AuthDebugInfo | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {

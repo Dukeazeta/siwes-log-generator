@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
@@ -11,7 +10,6 @@ import { apiClient } from '../../lib/api-client';
 import PageTransition from '../../components/PageTransition';
 import Logo from '../../components/Logo';
 import DateRangeSelector from '../../components/DateRangeSelector';
-import { TextShimmer } from '../../components/ui/text-shimmer';
 import { LumaSpin } from '../../components/ui/luma-spin';
 import {
   PromptInput,
@@ -39,17 +37,6 @@ interface UserProfile {
   supervisor_title: string;
 }
 
-interface WeeklyLogData {
-  id: string;
-  week_number: number;
-  start_date: string;
-  end_date: string;
-  content: string;
-  raw_activities: string;
-  created_at: string;
-  updated_at?: string;
-}
-
 export default function CreateLog() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -63,8 +50,27 @@ export default function CreateLog() {
   const [error, setError] = useState('');
   const [isEditMode, setIsEditMode] = useState(false);
   const [editLogId, setEditLogId] = useState<string | null>(null);
-  const [originalLogData, setOriginalLogData] = useState<WeeklyLogData | null>(null);
   const [existingWeeks, setExistingWeeks] = useState<number[]>([]);
+
+  const loadExistingLog = useCallback(async (logId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('weekly_logs')
+        .select('*')
+        .eq('id', logId)
+        .single();
+
+      if (error) throw error;
+
+      // Pre-fill the form with existing data
+      setStartDate(new Date(data.start_date));
+      setEndDate(new Date(data.end_date));
+      setActivities(data.raw_activities || '');
+    } catch (error) {
+      console.error('Error loading existing log:', error);
+      setError('Failed to load log for editing');
+    }
+  }, []);
 
   // Load existing weeks to suggest next available week
   useEffect(() => {
@@ -132,29 +138,7 @@ export default function CreateLog() {
     }
 
     loadUserProfile();
-  }, [user, searchParams]);
-
-  const loadExistingLog = async (logId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('weekly_logs')
-        .select('*')
-        .eq('id', logId)
-        .eq('user_id', user?.id)
-        .single();
-
-      if (error) throw error;
-      
-      // Pre-fill the form with existing data
-      setStartDate(new Date(data.start_date));
-      setEndDate(new Date(data.end_date));
-      setActivities(data.raw_activities || '');
-      setOriginalLogData(data);
-    } catch (error) {
-      console.error('Error loading existing log:', error);
-      setError('Failed to load log for editing');
-    }
-  };
+  }, [user, searchParams, loadExistingLog]);
 
   const handleGenerate = async () => {
     setIsGenerating(true);

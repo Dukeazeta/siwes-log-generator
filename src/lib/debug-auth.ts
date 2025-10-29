@@ -7,7 +7,14 @@ export interface AuthDebugInfo {
   environment: string;
   supabaseConfigured: boolean;
   sessionExists: boolean;
-  sessionData: any;
+  sessionData: {
+  user_id?: string;
+  email?: string;
+  created_at?: string;
+  expires_at?: number | null;
+  access_token_present?: boolean;
+  refresh_token_present?: boolean;
+} | null;
   cookies: string[];
   headers: Record<string, string>;
   errors: string[];

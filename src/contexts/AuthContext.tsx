@@ -1,6 +1,6 @@
 "use client";
 
-import { Session, User as SupabaseUser } from "@supabase/supabase-js";
+import { Session, User as SupabaseUser, WeakPassword } from "@supabase/supabase-js";
 import React, {
   createContext,
   useCallback,
@@ -48,8 +48,8 @@ interface AuthContextType {
   isLoading: boolean;
   isProfileLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (data: SignupData) => Promise<void>;
+  login: (email: string, password: string) => Promise<{ user: SupabaseUser; session: Session; weakPassword?: WeakPassword }>;
+  signup: (data: SignupData) => Promise<{ user: SupabaseUser | null; session: Session | null }>;
   signInWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;

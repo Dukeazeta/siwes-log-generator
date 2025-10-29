@@ -331,6 +331,7 @@ export default function Dashboard() {
     isAuthenticated,
     isLoading,
     user?.id,
+    user?.email,
     user?.hasCompletedOnboarding,
     hasLoadedData,
     profileLoading,

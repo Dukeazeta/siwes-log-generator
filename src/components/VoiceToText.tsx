@@ -93,7 +93,7 @@ export default function VoiceToText({
         recognitionRef.current.stop();
       }
     };
-  }, []);
+  }, [currentText, onTextChange]);
 
   const startListening = async () => {
     if (!recognitionRef.current || !isSupported || disabled) return;

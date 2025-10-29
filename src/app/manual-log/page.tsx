@@ -53,7 +53,6 @@ export default function ManualLog() {
   const [weekNumber, setWeekNumber] = useState(1);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [error, setError] = useState("");
   const [existingWeeks, setExistingWeeks] = useState<number[]>([]);
   const [showCamera, setShowCamera] = useState(false);
@@ -136,7 +135,6 @@ export default function ManualLog() {
             .single();
 
           if (error) throw error;
-          setUserProfile(data);
         } catch (error) {
           console.error("Error loading profile:", error);
         }

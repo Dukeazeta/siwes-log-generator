@@ -35,7 +35,7 @@ export class ApiClient {
     });
   }
 
-  async post(endpoint: string, data?: any, options: RequestInit = {}): Promise<Response> {
+  async post(endpoint: string, data?: Record<string, unknown>, options: RequestInit = {}): Promise<Response> {
     const headers = await this.getAuthHeaders();
 
     return fetch(`${this.baseURL}${endpoint}`, {
@@ -46,7 +46,7 @@ export class ApiClient {
     });
   }
 
-  async put(endpoint: string, data?: any, options: RequestInit = {}): Promise<Response> {
+  async put(endpoint: string, data?: Record<string, unknown>, options: RequestInit = {}): Promise<Response> {
     const headers = await this.getAuthHeaders();
 
     return fetch(`${this.baseURL}${endpoint}`, {
@@ -68,13 +68,12 @@ export class ApiClient {
   }
 
   // Helper method to handle JSON responses with better error handling
-  async handleJsonResponse<T = any>(
-    response: Response,
-    retryFunction?: () => Promise<Response>
+  async handleJsonResponse<T = Record<string, unknown>>(
+    response: Response
   ): Promise<T> {
     if (!response.ok) {
       let errorMessage: string;
-      let errorData: any = null;
+      let errorData: Record<string, unknown> | null = null;
 
       try {
         const responseText = await response.text();
@@ -89,7 +88,8 @@ export class ApiClient {
         // Try to parse as JSON
         try {
           errorData = JSON.parse(responseText);
-          errorMessage = errorData.error || errorData.details || 'Request failed';
+          const errorObj = errorData as Record<string, unknown>;
+          errorMessage = (errorObj.error as string) || (errorObj.details as string) || 'Request failed';
         } catch {
           // If not JSON, use the text response
           if (responseText.startsWith('<!DOCTYPE')) {
@@ -115,9 +115,12 @@ export class ApiClient {
         }
       } else if (response.status === 500) {
         console.error('Server 500 error details:', { errorData, errorMessage });
-        if (errorData?.details?.includes('rate limit') || errorData?.error?.includes('rate limit')) {
+        const errorObj = errorData as Record<string, unknown>;
+        if (typeof errorObj?.details === 'string' && (errorObj.details as string).includes('rate limit') ||
+            typeof errorObj?.error === 'string' && (errorObj.error as string).includes('rate limit')) {
           throw new Error('Rate limit exceeded. Please wait a moment and try again.');
-        } else if (errorData?.details?.includes('API key') || errorData?.error?.includes('API key')) {
+        } else if (typeof errorObj?.details === 'string' && (errorObj.details as string).includes('API key') ||
+                   typeof errorObj?.error === 'string' && (errorObj.error as string).includes('API key')) {
           throw new Error('AI service configuration error. Please contact support.');
         } else {
           throw new Error(`Server error: ${errorMessage}. Please try again in a few moments.`);
@@ -140,9 +143,9 @@ export class ApiClient {
   }
 
   // Convenience methods with retry logic for rate limiting
-  async postJson<T = any>(
+  async postJson<T = Record<string, unknown>>(
     endpoint: string,
-    data?: any,
+    data?: Record<string, unknown>,
     maxRetries: number = 3,
     retryDelay: number = 1000
   ): Promise<T> {
@@ -151,12 +154,7 @@ export class ApiClient {
     while (attempt <= maxRetries) {
       try {
         const response = await this.post(endpoint, data);
-        return await this.handleJsonResponse<T>(
-          response,
-          attempt < maxRetries
-            ? () => this.post(endpoint, data)
-            : undefined
-        );
+        return await this.handleJsonResponse<T>(response);
       } catch (error) {
         attempt++;
 
@@ -181,7 +179,7 @@ export class ApiClient {
     throw new Error('Maximum retries exceeded');
   }
 
-  async getJson<T = any>(endpoint: string): Promise<T> {
+  async getJson<T = Record<string, unknown>>(endpoint: string): Promise<T> {
     const response = await this.get(endpoint);
     return this.handleJsonResponse<T>(response);
   }

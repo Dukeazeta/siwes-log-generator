@@ -1,27 +1,23 @@
 "use client"
 
 import React, { useState, useRef, useEffect } from 'react'
-import { Mic, MicOff, Square } from 'lucide-react'
+import { Mic, MicOff } from 'lucide-react'
 import { Button } from './button'
 import { PromptInputAction } from './prompt-input'
-import { cn } from '../../lib/utils'
 
 interface VoiceInputActionProps {
   onTextChange: (text: string) => void
   currentText: string
   disabled?: boolean
-  className?: string
 }
 
-export function VoiceInputAction({ 
-  onTextChange, 
-  currentText, 
-  disabled = false,
-  className 
+export function VoiceInputAction({
+  onTextChange,
+  currentText,
+  disabled = false
 }: VoiceInputActionProps) {
   const [isListening, setIsListening] = useState(false)
   const [isSupported, setIsSupported] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   
   const recognitionRef = useRef<SpeechRecognition | null>(null)
 
@@ -62,7 +58,6 @@ export function VoiceInputAction({
           // Handle speech recognition errors
           recognitionRef.current.onerror = (event: SpeechRecognitionErrorEvent) => {
             console.error('Speech recognition error:', event.error)
-            setError(`Voice recognition error: ${event.error}`)
             setIsListening(false)
           }
           
@@ -73,7 +68,6 @@ export function VoiceInputAction({
         }
       } else {
         setIsSupported(false)
-        setError('Voice recognition is not supported in this browser')
       }
     }
     
@@ -92,12 +86,10 @@ export function VoiceInputAction({
       // Request microphone permission
       await navigator.mediaDevices.getUserMedia({ audio: true })
       
-      setError(null)
       setIsListening(true)
       recognitionRef.current.start()
     } catch (err) {
       console.error('Microphone access denied:', err)
-      setError('Microphone access is required for voice input')
     }
   }
 
@@ -106,14 +98,6 @@ export function VoiceInputAction({
       recognitionRef.current.stop()
     }
     setIsListening(false)
-  }
-
-  const handleClick = () => {
-    if (isListening) {
-      stopListening()
-    } else {
-      startListening()
-    }
   }
 
   if (!isSupported) {

@@ -91,8 +91,7 @@ export async function POST(request: NextRequest) {
 
       const emailContent = generateWeeklySummaryEmail(
         userProfile,
-        weeklyLog,
-        new Date(weeklyLog.end_date)
+        weeklyLog
       );
 
       const { data, error } = await resend.emails.send({
@@ -241,8 +240,7 @@ export async function GET(request: NextRequest) {
           if (userData.user?.email) {
             const emailContent = generateWeeklySummaryEmail(
               log.user_profiles,
-              log,
-              new Date(log.end_date)
+              log
             );
             
             await resend.emails.send({

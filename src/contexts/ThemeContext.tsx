@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -18,13 +18,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
 
   // Get system preference
-  const getSystemTheme = (): 'light' | 'dark' => {
+  const getSystemTheme = useCallback((): 'light' | 'dark' => {
     if (typeof window === 'undefined') return 'light';
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  };
+  }, []);
 
   // Update resolved theme based on current theme setting
-  const updateResolvedTheme = (currentTheme: Theme) => {
+  const updateResolvedTheme = useCallback((currentTheme: Theme) => {
     const newResolvedTheme = currentTheme === 'system' ? getSystemTheme() : currentTheme;
     setResolvedTheme(newResolvedTheme);
     
@@ -109,7 +109,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         root.style.setProperty('--info-muted-foreground', '#1d4ed8');
       }
     }
-  };
+  }, [getSystemTheme]);
 
   // Initialize theme from localStorage or system preference
   useEffect(() => {
@@ -120,7 +120,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     
     setThemeState(initialTheme);
     updateResolvedTheme(initialTheme);
-  }, []);
+  }, [updateResolvedTheme]);
 
   // Listen for system theme changes
   useEffect(() => {
@@ -135,12 +135,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
     mediaQuery.addEventListener('change', handleSystemThemeChange);
     return () => mediaQuery.removeEventListener('change', handleSystemThemeChange);
-  }, [theme]);
+  }, [theme, updateResolvedTheme]);
 
   // Update resolved theme when theme changes
   useEffect(() => {
     updateResolvedTheme(theme);
-  }, [theme]);
+  }, [theme, updateResolvedTheme]);
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);

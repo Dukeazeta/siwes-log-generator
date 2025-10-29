@@ -35,8 +35,7 @@ interface UserProfile {
 
 export function generateWeeklySummaryEmail(
   userProfile: UserProfile,
-  weeklyLog: WeeklyLogData,
-  _weekEndDate: Date
+  weeklyLog: WeeklyLogData
 ): { html: string; text: string; subject: string } {
   const logContent = typeof weeklyLog.content === 'string' 
     ? JSON.parse(weeklyLog.content) 

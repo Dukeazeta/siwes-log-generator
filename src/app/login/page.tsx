@@ -25,7 +25,7 @@ export default function Login() {
         router.push("/onboarding");
       }
     }
-  }, [isAuthenticated, isLoading, user?.hasCompletedOnboarding, router]);
+  }, [isAuthenticated, isLoading, user, user?.hasCompletedOnboarding, router]);
 
   const handleGoogleSignIn = async () => {
     try {
