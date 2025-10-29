@@ -13,11 +13,17 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     // Mobile-friendly settings
     debug: process.env.NODE_ENV === 'development'
   },
-  // Global configuration
+  // Global configuration with proper headers to avoid 406 errors
   global: {
     headers: {
-      'X-Client-Info': 'swiftlog-web'
+      'X-Client-Info': 'swiftlog-web',
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
     }
+  },
+  // Add custom fetch to ensure proper headers
+  db: {
+    schema: 'public'
   }
 })
 

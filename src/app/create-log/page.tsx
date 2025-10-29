@@ -11,6 +11,7 @@ import PageTransition from '../../components/PageTransition';
 import Logo from '../../components/Logo';
 import DateRangeSelector from '../../components/DateRangeSelector';
 import { LumaSpin } from '../../components/ui/luma-spin';
+import { logAuthDebugInfo } from '../../lib/debug-auth';
 import {
   PromptInput,
   PromptInputAction,
@@ -144,24 +145,51 @@ export default function CreateLog() {
     setIsGenerating(true);
     setError('');
 
+    // Debug authentication state before making API calls
+    logAuthDebugInfo('Before Log Generation');
+
     try {
       // Check for existing week number if not in edit mode
       if (!isEditMode && user?.id) {
         console.log('Checking for existing week:', weekNumber);
-        const { data: existingLog, error: checkError } = await supabase
-          .from('weekly_logs')
-          .select('id, week_number')
-          .eq('user_id', user.id)
-          .eq('week_number', weekNumber)
-          .single();
+        try {
+          const { data: existingLog, error: checkError } = await supabase
+            .from('weekly_logs')
+            .select('id, week_number')
+            .eq('user_id', user.id)
+            .eq('week_number', weekNumber)
+            .maybeSingle(); // Use maybeSingle instead of single to avoid 406
 
-        if (checkError && checkError.code !== 'PGRST116') {
-          console.error('Error checking existing log:', checkError);
-          throw checkError;
-        }
+          if (checkError) {
+            console.error('Error checking existing log:', checkError);
+            throw checkError;
+          }
 
-        if (existingLog) {
-          throw new Error(`Week ${weekNumber} already exists. Please choose a different week number or edit the existing log.`);
+          if (existingLog) {
+            throw new Error(`Week ${weekNumber} already exists. Please choose a different week number or edit the existing log.`);
+          }
+        } catch (queryError: any) {
+          // Handle specific Supabase errors
+          if (queryError.code === '406' || queryError.message?.includes('406')) {
+            console.error('Supabase 406 error, trying alternative approach:', queryError);
+            // Fallback: Use array query instead of single
+            const { data: logs, error: arrayError } = await supabase
+              .from('weekly_logs')
+              .select('id, week_number')
+              .eq('user_id', user.id)
+              .eq('week_number', weekNumber);
+
+            if (arrayError) {
+              console.error('Array query also failed:', arrayError);
+              throw arrayError;
+            }
+
+            if (logs && logs.length > 0) {
+              throw new Error(`Week ${weekNumber} already exists. Please choose a different week number or edit the existing log.`);
+            }
+          } else {
+            throw queryError;
+          }
         }
       }
 

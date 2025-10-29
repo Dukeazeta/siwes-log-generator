@@ -14,34 +14,47 @@ export class ApiClient {
       'Accept': 'application/json',
     };
 
+    let token: string | null = null;
+
     try {
       // First try to get session from Supabase client
       const { data: { session } } = await supabase.auth.getSession();
 
-      if (session?.access_token) {
-        headers['Authorization'] = `Bearer ${session.access_token}`;
-        console.log('API Client: Using token from Supabase session');
+      if (session?.access_token && !this.isTokenExpired(session)) {
+        token = session.access_token;
+        console.log('API Client: Using valid token from Supabase session');
       } else {
+        console.log('API Client: Supabase session invalid or expired, checking cookies');
         // Fallback to cookies
-        const token = authHelpers.getAuthToken();
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
+        const cookieToken = authHelpers.getAuthToken();
+        if (cookieToken) {
+          token = cookieToken;
           console.log('API Client: Using token from cookies');
-        } else {
-          console.warn('API Client: No auth token available');
         }
       }
     } catch (error) {
       console.warn('Failed to get auth session:', error);
       // Try cookies as fallback
-      const token = authHelpers.getAuthToken();
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+      const cookieToken = authHelpers.getAuthToken();
+      if (cookieToken) {
+        token = cookieToken;
         console.log('API Client: Using token from cookies (fallback)');
       }
     }
 
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    } else {
+      console.warn('API Client: No auth token available');
+    }
+
     return headers;
+  }
+
+  private isTokenExpired(session: any): boolean {
+    if (!session?.expires_at) return true;
+    // Add 5-minute buffer before expiration
+    return Date.now() >= (session.expires_at * 1000 - 300000);
   }
 
   async get(endpoint: string, options: RequestInit = {}): Promise<Response> {
