@@ -1,43 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { aiProviderManager } from '../../../lib/ai-provider-manager';
+import Groq from 'groq-sdk';
+
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
+});
 
 export async function POST(request: NextRequest) {
   try {
-    // Debug: Log all headers to see what we're receiving
-    console.log('API Route - All headers:', Object.fromEntries(request.headers.entries()));
-
-    // Get user info from middleware headers
-    const userId = request.headers.get('x-user-id');
-    const userEmail = request.headers.get('x-user-email');
-
-    console.log('API Route - User info from headers:', { userId, userEmail });
-
-    if (!userId) {
-      console.error('API Route - No userId found in headers');
+    // Check if API key is configured
+    if (!process.env.GROQ_API_KEY) {
       return NextResponse.json(
-        {
-          error: 'Authentication required. Please log in again.',
-          debug: {
-            headersReceived: Object.fromEntries(request.headers.entries()),
-            userIdFound: !!userId,
-            userEmailFound: !!userEmail
-          }
-        },
-        { status: 401 }
-      );
-    }
-
-    console.log(`AI API request from user: ${userEmail} (${userId})`);
-
-    // Check if required API keys are configured
-    if (!process.env.GEMINI_API_KEY && !process.env.GROQ_API_KEY) {
-      return NextResponse.json(
-        { error: 'No AI API keys configured. Please add GEMINI_API_KEY or GROQ_API_KEY to .env.local' },
+        { error: 'Groq API key not configured. Please add your Groq API key to .env.local' },
         { status: 500 }
       );
     }
 
-    const { weekNumber, startDate, endDate, activities, userProfile, provider } = await request.json();
+    const { weekNumber, startDate, endDate, activities, userProfile } = await request.json();
 
     // Validate required fields
     if (!weekNumber || !startDate || !endDate || !activities) {
@@ -47,79 +25,93 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Set provider preference if specified
-    if (provider && ['gemini', 'groq', 'auto'].includes(provider)) {
-      aiProviderManager.setProvider(provider);
+    console.log('Generating log with Groq for:', { weekNumber, startDate, endDate, userProfile: userProfile?.full_name });
+
+    // Create the prompt for generating SIWES logbook entry
+    const prompt = `You are an AI assistant helping a SIWES (Students Industrial Work Experience Scheme) student create a professional logbook entry.
+
+Student Information:
+- Name: ${userProfile?.full_name || 'Student'}
+- Course: ${userProfile?.course || 'Not specified'}
+- Company: ${userProfile?.company_name || 'Not specified'}
+- Department: ${userProfile?.department || 'Not specified'}
+
+Week Details:
+- Week Number: ${weekNumber}
+- Date Range: ${startDate} to ${endDate}
+- Activities Summary: ${activities}
+
+Please generate a professional SIWES logbook entry with the following structure:
+
+1. **Week Summary** (2-3 sentences describing the overall focus of the week)
+2. **Daily Breakdown** (5 working days with specific activities for each day)
+3. **Skills Developed** (List of technical and soft skills gained)
+4. **Challenges Faced** (Any difficulties encountered and how they were addressed)
+5. **Learning Outcomes** (Key takeaways and knowledge gained)
+
+Requirements:
+- Use professional, formal language appropriate for academic assessment
+- Make activities specific and detailed, showing progression throughout the week
+- Include relevant technical terms related to the student's field
+- Ensure each day has meaningful, distinct activities
+- Focus on learning, contribution, and professional development
+- Keep the tone educational and reflective
+
+Format the response as a structured JSON object with the following keys:
+- weekSummary: string
+- dailyActivities: array of objects with {day: string, date: string, activities: string}
+- skillsDeveloped: array of strings
+- challengesFaced: string
+- learningOutcomes: string
+
+Make sure the content is realistic, educational, and demonstrates genuine learning and contribution in a professional environment.`;
+
+    // Generate the logbook entry using Groq
+    console.log('Calling Groq API...');
+    const completion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      model: 'llama-3.1-8b-instant',
+      temperature: 0.5,
+      max_tokens: 1200,
+      response_format: { type: 'json_object' },
+    });
+
+    console.log('Groq API response received');
+    const generatedContent = completion.choices[0]?.message?.content;
+
+    if (!generatedContent) {
+      throw new Error('No content generated from Groq API');
     }
 
-    console.log('Generating log with AI Provider Manager for:', { 
-      weekNumber, 
-      startDate, 
-      endDate, 
-      userProfile: userProfile?.full_name,
-      preferredProvider: aiProviderManager.getProvider()
-    });
-
-    // Generate the logbook entry using the AI provider manager
-    const logbookEntry = await aiProviderManager.generateLog({
-      weekNumber,
-      startDate,
-      endDate,
-      activities,
-      userProfile,
-    });
-
-    // Get current usage stats and health for response
-    const usageStats = aiProviderManager.getUsageStats();
-    const healthStats = aiProviderManager.getProviderHealth();
+    console.log('Parsing generated content...');
+    // Parse the JSON response
+    let logbookEntry;
+    try {
+      logbookEntry = JSON.parse(generatedContent);
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError);
+      console.error('Generated content:', generatedContent);
+      throw new Error('Failed to parse generated content as JSON');
+    }
 
     return NextResponse.json({
       success: true,
       data: logbookEntry,
-      meta: {
-        provider: aiProviderManager.getProvider(),
-        usage: usageStats,
-        health: healthStats,
-      },
     });
 
   } catch (error) {
     console.error('Error generating logbook entry:', error);
-    
-    // Get current health stats for error response
-    const healthStats = aiProviderManager.getProviderHealth();
-    
+
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to generate logbook entry',
-        details: error instanceof Error ? error.message : 'Unknown error',
-        health: healthStats,
+        details: error instanceof Error ? error.message : 'Unknown error'
       },
-      { status: 500 }
-    );
-  }
-}
-
-// GET endpoint to check provider status
-export async function GET() {
-  try {
-    const usageStats = aiProviderManager.getUsageStats();
-    const healthStats = aiProviderManager.getProviderHealth();
-    const currentProvider = aiProviderManager.getProvider();
-
-    return NextResponse.json({
-      currentProvider,
-      usage: usageStats,
-      health: healthStats,
-      apiKeysConfigured: {
-        gemini: !!process.env.GEMINI_API_KEY,
-        groq: !!process.env.GROQ_API_KEY,
-      },
-    });
-  } catch (error) {
-    console.error('Error getting provider status:', error);
-    return NextResponse.json(
-      { error: 'Failed to get provider status' },
       { status: 500 }
     );
   }

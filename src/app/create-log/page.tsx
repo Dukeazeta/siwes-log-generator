@@ -196,14 +196,26 @@ export default function CreateLog() {
 
       console.log('Generating log with AI...');
 
-      const result = await apiClient.postJson('/generate-log-unified', {
-        weekNumber,
-        startDate: startDate?.toISOString().split('T')[0],
-        endDate: endDate?.toISOString().split('T')[0],
-        activities,
-        userProfile,
-        provider: 'auto',
+      const response = await fetch('/api/generate-log-unified', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          weekNumber,
+          startDate: startDate?.toISOString().split('T')[0],
+          endDate: endDate?.toISOString().split('T')[0],
+          activities,
+          userProfile,
+        }),
       });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error('API Error Response:', result);
+        throw new Error(result.details || result.error || 'Failed to generate log');
+      }
 
       console.log('AI generation successful, saving to database...');
 
