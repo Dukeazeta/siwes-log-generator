@@ -3,13 +3,26 @@ import { aiProviderManager } from '../../../lib/ai-provider-manager';
 
 export async function POST(request: NextRequest) {
   try {
+    // Debug: Log all headers to see what we're receiving
+    console.log('API Route - All headers:', Object.fromEntries(request.headers.entries()));
+
     // Get user info from middleware headers
     const userId = request.headers.get('x-user-id');
     const userEmail = request.headers.get('x-user-email');
 
+    console.log('API Route - User info from headers:', { userId, userEmail });
+
     if (!userId) {
+      console.error('API Route - No userId found in headers');
       return NextResponse.json(
-        { error: 'Authentication required. Please log in again.' },
+        {
+          error: 'Authentication required. Please log in again.',
+          debug: {
+            headersReceived: Object.fromEntries(request.headers.entries()),
+            userIdFound: !!userId,
+            userEmailFound: !!userEmail
+          }
+        },
         { status: 401 }
       );
     }

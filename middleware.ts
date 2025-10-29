@@ -68,6 +68,15 @@ export async function middleware(request: NextRequest) {
       response.headers.set('x-user-id', user.id);
       response.headers.set('x-user-email', user.email || '');
 
+      console.log('Middleware: Set headers for user (cookie auth):', {
+        userId: user.id,
+        userEmail: user.email,
+        responseHeaders: {
+          'x-user-id': user.id,
+          'x-user-email': user.email || ''
+        }
+      });
+
       return response;
     }
 
@@ -86,6 +95,15 @@ export async function middleware(request: NextRequest) {
     const response = NextResponse.next();
     response.headers.set('x-user-id', user.id);
     response.headers.set('x-user-email', user.email || '');
+
+    console.log('Middleware: Set headers for user:', {
+      userId: user.id,
+      userEmail: user.email,
+      responseHeaders: {
+        'x-user-id': user.id,
+        'x-user-email': user.email || ''
+      }
+    });
 
     return response;
 
