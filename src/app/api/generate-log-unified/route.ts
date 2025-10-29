@@ -1,8 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { aiProviderManager } from '../../../lib/ai-provider-manager';
+import { createClient } from '@supabase/supabase-js';
+
+// Create Supabase client for server-side
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function POST(request: NextRequest) {
   try {
+    // Get user info from middleware headers
+    const userId = request.headers.get('x-user-id');
+    const userEmail = request.headers.get('x-user-email');
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Authentication required. Please log in again.' },
+        { status: 401 }
+      );
+    }
+
+    console.log(`AI API request from user: ${userEmail} (${userId})`);
+
     // Check if required API keys are configured
     if (!process.env.GEMINI_API_KEY && !process.env.GROQ_API_KEY) {
       return NextResponse.json(

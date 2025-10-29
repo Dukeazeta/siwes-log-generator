@@ -10,6 +10,8 @@ import Logo from "../../components/Logo";
 import PageTransition from "../../components/PageTransition";
 import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../lib/supabase";
+import { authLockManager } from "../../lib/auth/auth-lock";
+import { DebugAuth } from "../../components/DebugAuth";
 
 interface UserProfile {
   full_name: string;
@@ -272,45 +274,59 @@ export default function Dashboard() {
       profileLoading,
     });
 
-    // Don't do anything while auth is loading
+    // Don't do anything while auth is loading - CRITICAL FIX
     if (isLoading) {
       console.log("Auth is loading, waiting...");
       return;
     }
 
-    // Redirect to login if not authenticated
-    if (!isAuthenticated && !hasRedirectedRef.current) {
-      console.log("User not authenticated, redirecting to login");
-      hasRedirectedRef.current = true;
-      router.push("/login");
-      return;
-    }
+    // Add a small delay to ensure auth state is fully settled
+    const settleTimer = setTimeout(() => {
+      // Clear any existing auth locks that might be stuck
+      if (authLockManager.getCurrentTransition()?.status === "pending") {
+        const elapsed = authLockManager.getCurrentTransitionElapsedTime();
+        if (elapsed && elapsed > 10000) { // 10 seconds
+          console.log("Clearing stuck auth lock");
+          authLockManager.clearAllLocks();
+        }
+      }
 
-    // Only proceed if we have a valid user
-    if (!user?.id) {
-      console.log("No user ID found, waiting for user data...");
-      return;
-    }
+      // Redirect to login if not authenticated (but only after auth is fully settled)
+      if (!isAuthenticated && !hasRedirectedRef.current) {
+        console.log("User not authenticated, redirecting to login");
+        hasRedirectedRef.current = true;
+        router.push("/login");
+        return;
+      }
 
-    // Check onboarding status and redirect if needed
-    if (!user.hasCompletedOnboarding && !hasRedirectedRef.current) {
-      console.log("User has not completed onboarding, redirecting");
-      hasRedirectedRef.current = true;
-      router.push("/onboarding");
-      return;
-    }
+      // Only proceed if we have a valid user
+      if (!user?.id) {
+        console.log("No user ID found, waiting for user data...");
+        return;
+      }
 
-    // Load user data if we haven't loaded it yet and not currently loading
-    if (!hasLoadedData && !profileLoading) {
-      console.log("Conditions met for loading user data - starting loadUserData()");
-      loadUserData();
-    } else {
-      console.log("Skipping loadUserData:", {
-        hasLoadedData,
-        profileLoading,
-        reason: hasLoadedData ? "already loaded" : "currently loading",
-      });
-    }
+      // Check onboarding status and redirect if needed
+      if (!user.hasCompletedOnboarding && !hasRedirectedRef.current) {
+        console.log("User has not completed onboarding, redirecting");
+        hasRedirectedRef.current = true;
+        router.push("/onboarding");
+        return;
+      }
+
+      // Load user data if we haven't loaded it yet and not currently loading
+      if (!hasLoadedData && !profileLoading) {
+        console.log("Conditions met for loading user data - starting loadUserData()");
+        loadUserData();
+      } else {
+        console.log("Skipping loadUserData:", {
+          hasLoadedData,
+          profileLoading,
+          reason: hasLoadedData ? "already loaded" : "currently loading",
+        });
+      }
+    }, 100); // Small delay to ensure auth is settled
+
+    return () => clearTimeout(settleTimer);
   }, [
     isAuthenticated,
     isLoading,
@@ -339,6 +355,17 @@ export default function Dashboard() {
       }
     }
   }, [user?.id, hasLoadedData]);
+
+  // Cleanup auth locks on component unmount
+  useEffect(() => {
+    return () => {
+      // Clear any stuck auth locks when dashboard unmounts
+      if (authLockManager.isAnyOperationInProgress()) {
+        console.log("Cleaning up auth locks on dashboard unmount");
+        authLockManager.clearAllLocks();
+      }
+    };
+  }, []);
 
   // Close mobile menu when clicking outside
   useEffect(() => {
@@ -673,6 +700,7 @@ export default function Dashboard() {
 
   return (
     <PageTransition>
+      <DebugAuth />
       <div
         className="min-h-screen bg-secondary/30 dark:bg-background transition-colors duration-300"
         style={{ opacity: 1, visibility: "visible" }}

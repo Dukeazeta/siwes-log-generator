@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Logo from "../../../components/Logo";
 import { useAuth } from "../../../contexts/AuthContext";
+import { authLockManager } from "../../../lib/auth/auth-lock";
 
 export default function AuthCallback() {
   const router = useRouter();
@@ -38,23 +39,38 @@ export default function AuthCallback() {
       onboardingStatus: user?.hasCompletedOnboarding,
     });
 
+    // Don't do anything while auth is loading - CRITICAL FIX
     if (isLoading) {
       console.log("Auth still loading, waiting...");
       return;
     }
 
-    if (isAuthenticated && user) {
-      console.log("User authenticated successfully:", user.email);
+    // Add delay to ensure auth state is fully settled and prevent race conditions
+    const settleTimer = setTimeout(() => {
+      // Clear any stuck auth locks
+      if (authLockManager.getCurrentTransition()?.status === "pending") {
+        const elapsed = authLockManager.getCurrentTransitionElapsedTime();
+        if (elapsed && elapsed > 5000) { // Shorter timeout for callback
+          console.log("Clearing stuck auth lock in callback");
+          authLockManager.clearAllLocks();
+        }
+      }
 
-      // Always redirect to dashboard first - let dashboard handle onboarding check
-      // This prevents race conditions where profile check failed in AuthContext
-      console.log("Redirecting to dashboard, will check onboarding status there");
-      router.push("/dashboard");
-    } else if (!isLoading) {
-      // Only redirect to login if we're not loading and definitely not authenticated
-      console.log("No authenticated user after loading complete, redirecting to login");
-      router.push("/login?error=no_session");
-    }
+      if (isAuthenticated && user) {
+        console.log("User authenticated successfully:", user.email);
+
+        // Always redirect to dashboard first - let dashboard handle onboarding check
+        // This prevents race conditions where profile check failed in AuthContext
+        console.log("Redirecting to dashboard, will check onboarding status there");
+        router.push("/dashboard");
+      } else {
+        // Only redirect to login if we're definitely not authenticated
+        console.log("No authenticated user after loading complete, redirecting to login");
+        router.push("/login?error=no_session");
+      }
+    }, 200); // Short delay to ensure auth is settled
+
+    return () => clearTimeout(settleTimer);
   }, [isLoading, isAuthenticated, user, router]);
 
   // Progressive loading messages
@@ -71,6 +87,8 @@ export default function AuthCallback() {
 
     return () => {
       progressTimers.forEach((timer) => clearTimeout(timer));
+      // Clear auth locks when component unmounts to prevent stuck locks
+      authLockManager.clearAllLocks();
     };
   }, []);
 

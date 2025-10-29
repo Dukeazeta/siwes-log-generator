@@ -11,6 +11,7 @@ import React, {
   useState,
 } from "react";
 import { supabase } from "../lib/supabase";
+import { authLockManager, withAuthLock, authDebouncer } from "../lib/auth/auth-lock";
 
 // Types
 interface UserProfile {
@@ -183,9 +184,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let mounted = true;
     isMountedRef.current = true;
 
+    // Clear any existing auth locks that might be stuck from previous sessions
+    authLockManager.clearAllLocks();
+    console.log("Auth locks cleared on initialization");
+
     const initializeAuth = async () => {
       try {
         console.log("Initializing auth...");
+
+        // Add lock to prevent multiple initializations
+        const lockId = await authLockManager.acquireLock("profile_check");
+        if (!lockId) {
+          console.log("Auth initialization already in progress");
+          return;
+        }
 
         // Get initial session
         const {
@@ -193,24 +205,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           error,
         } = await supabase.auth.getSession();
 
-        if (!mounted) return;
+        if (!mounted) {
+          authLockManager.releaseLock(lockId);
+          return;
+        }
 
         if (error) {
           console.error("Initial session error:", error);
           setSession(null);
         } else if (initialSession) {
-          console.log("Initial session found");
+          console.log("Initial session found for user:", initialSession.user.email);
           setSession(initialSession);
-          // Load profile in parallel
+          // Load profile in parallel (don't await to prevent blocking)
           loadProfile(initialSession.user.id);
         } else {
-          console.log("No initial session");
+          console.log("No initial session found");
           setSession(null);
         }
+
+        authLockManager.releaseLock(lockId);
       } catch (error) {
         console.error("Auth initialization error:", error);
         if (mounted) {
           setSession(null);
+          // Clear any locks on error
+          authLockManager.clearAllLocks();
         }
       } finally {
         if (mounted) {
@@ -219,8 +238,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
-    // Initialize auth
-    initializeAuth();
+    // Initialize auth with a small delay to prevent race conditions
+    const initTimer = setTimeout(() => {
+      initializeAuth();
+    }, 50);
 
     // Set up auth listener - ONCE
     const {
@@ -228,9 +249,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
 
+      console.log(`Auth state change event: ${event}`);
+
       // Skip initial session as we handle it above
       if (event === "INITIAL_SESSION") {
         return;
+      }
+
+      // Add lock management for state changes
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+        authLockManager.clearAllLocks();
+        console.log("Auth locks cleared due to sign in/out");
       }
 
       handleAuthStateChange(event, session);
@@ -238,75 +267,92 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Cleanup
     return () => {
+      clearTimeout(initTimer);
       mounted = false;
       isMountedRef.current = false;
       subscription.unsubscribe();
+      // Clear locks when AuthContext unmounts
+      authLockManager.clearAllLocks();
     };
   }, [handleAuthStateChange, loadProfile]); // These are stable, won't cause re-runs
 
   // Stable auth methods with no dependencies
   const login = useCallback(async (email: string, password: string) => {
-    const { data: _data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+    return await withAuthLock("login", async () => {
+      const { data: _data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      // Session will be handled by auth state listener
+      return _data;
     });
-
-    if (error) {
-      throw error;
-    }
-
-    // Session will be handled by auth state listener
-    return;
   }, []);
 
   const signup = useCallback(async (userData: SignupData) => {
-    const { data: _data, error } = await supabase.auth.signUp({
-      email: userData.email,
-      password: userData.password,
-      options: {
-        data: {
-          first_name: userData.firstName,
-          last_name: userData.lastName,
-          full_name: `${userData.firstName} ${userData.lastName}`.trim(),
+    return await withAuthLock("signup", async () => {
+      const { data: _data, error } = await supabase.auth.signUp({
+        email: userData.email,
+        password: userData.password,
+        options: {
+          data: {
+            first_name: userData.firstName,
+            last_name: userData.lastName,
+            full_name: `${userData.firstName} ${userData.lastName}`.trim(),
+          },
         },
-      },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      // Session will be handled by auth state listener
+      return _data;
     });
-
-    if (error) {
-      throw error;
-    }
-
-    // Session will be handled by auth state listener
-    return;
   }, []);
 
   const signInWithGoogle = useCallback(async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
+    return await withAuthLock("oauth", async () => {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
 
-    if (error) {
-      throw error;
-    }
+      if (error) {
+        throw error;
+      }
+    });
   }, []);
 
   const logout = useCallback(async () => {
-    const { error } = await supabase.auth.signOut();
+    return await withAuthLock("logout", async () => {
+      const { error } = await supabase.auth.signOut();
 
-    if (error && !error.message?.includes("session_not_found")) {
-      throw error;
-    }
+      if (error && !error.message?.includes("session_not_found")) {
+        throw error;
+      }
 
-    // State will be cleared by auth state listener
+      // State will be cleared by auth state listener
+    });
   }, []);
 
   const refreshProfile = useCallback(async () => {
     const currentSession = sessionRef.current;
     if (currentSession?.user) {
-      await loadProfile(currentSession.user.id);
+      // Debounce profile refresh to prevent excessive calls
+      const debouncedRefresh = authDebouncer.debounce(
+        `refresh-profile-${currentSession.user.id}`,
+        () => loadProfile(currentSession.user.id),
+        500
+      );
+      debouncedRefresh();
     }
   }, [loadProfile]);
 

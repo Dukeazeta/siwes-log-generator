@@ -78,6 +78,7 @@ class AIProviderManager {
   private readonly GEMINI_MAX_REQUESTS_PER_MINUTE = 15;
   private readonly GEMINI_MAX_TOKENS_PER_DAY = 1000000;
   private readonly GROQ_MAX_REQUESTS_PER_MINUTE = 30;
+  private readonly RETRY_DELAY = 2000; // 2 seconds retry delay
 
   private requestHistory: { provider: string; timestamp: Date; tokens: number }[] = [];
 

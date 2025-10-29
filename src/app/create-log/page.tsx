@@ -7,6 +7,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { apiClient } from '../../lib/api-client';
 import PageTransition from '../../components/PageTransition';
 import Logo from '../../components/Logo';
 import DateRangeSelector from '../../components/DateRangeSelector';
@@ -181,27 +182,15 @@ export default function CreateLog() {
       }
 
       console.log('Generating log with AI...');
-      const response = await fetch('/api/generate-log-unified', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          weekNumber,
-          startDate: startDate?.toISOString().split('T')[0],
-          endDate: endDate?.toISOString().split('T')[0],
-          activities,
-          userProfile,
-          provider: 'auto',
-        }),
+
+      const result = await apiClient.postJson('/generate-log-unified', {
+        weekNumber,
+        startDate: startDate?.toISOString().split('T')[0],
+        endDate: endDate?.toISOString().split('T')[0],
+        activities,
+        userProfile,
+        provider: 'auto',
       });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        console.error('API Error Response:', result);
-        throw new Error(result.details || result.error || 'Failed to generate log');
-      }
 
       console.log('AI generation successful, saving to database...');
 
@@ -256,7 +245,26 @@ export default function CreateLog() {
       }
     } catch (error) {
       console.error('Error generating log:', error);
-      setError(error instanceof Error ? error.message : 'Failed to generate log');
+
+      let errorMessage = 'Failed to generate log';
+
+      if (error instanceof Error) {
+        if (error.message.includes('Rate limit')) {
+          errorMessage = 'Too many requests. Please wait a moment and try again.';
+        } else if (error.message.includes('Authentication')) {
+          errorMessage = 'Authentication required. Please log in again.';
+        } else if (error.message.includes('Server error')) {
+          errorMessage = 'Server is busy. Please try again in a moment.';
+        } else if (error.message.includes('Request too large')) {
+          errorMessage = 'Activities text too long. Please reduce the amount of text and try again.';
+        } else if (error.message.includes('AI service configuration')) {
+          errorMessage = 'AI service is temporarily unavailable. Please try again later.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
+      setError(errorMessage);
     } finally {
       setIsGenerating(false);
     }
