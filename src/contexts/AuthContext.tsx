@@ -12,6 +12,7 @@ import React, {
 } from "react";
 import { supabase } from "../lib/supabase";
 import { authLockManager, withAuthLock, authDebouncer } from "../lib/auth/auth-lock";
+import { authHelpers } from "../lib/auth-helpers";
 
 // Types
 interface UserProfile {
@@ -151,6 +152,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         case "SIGNED_IN":
           if (newSession) {
             setSession(newSession);
+            // Sync auth cookies
+            authHelpers.setAuthCookies(newSession);
             // Load profile in parallel, don't await
             loadProfile(newSession.user.id);
           }
@@ -159,17 +162,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         case "SIGNED_OUT":
           setSession(null);
           setProfile(null);
+          // Clear auth cookies
+          authHelpers.clearAuthCookies();
           break;
 
         case "TOKEN_REFRESHED":
           if (newSession) {
             setSession(newSession);
+            // Update auth cookies with refreshed token
+            authHelpers.setAuthCookies(newSession);
           }
           break;
 
         case "USER_UPDATED":
           if (newSession) {
             setSession(newSession);
+            // Update auth cookies
+            authHelpers.setAuthCookies(newSession);
             // Reload profile to get any updates
             loadProfile(newSession.user.id);
           }
@@ -216,11 +225,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else if (initialSession) {
           console.log("Initial session found for user:", initialSession.user.email);
           setSession(initialSession);
+          // Sync auth cookies with session
+          authHelpers.setAuthCookies(initialSession);
           // Load profile in parallel (don't await to prevent blocking)
           loadProfile(initialSession.user.id);
         } else {
           console.log("No initial session found");
           setSession(null);
+          // Clear any stale auth cookies
+          authHelpers.clearAuthCookies();
         }
 
         authLockManager.releaseLock(lockId);

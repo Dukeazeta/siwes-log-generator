@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { authHelpers } from './auth-helpers';
 
 export class ApiClient {
   private baseURL: string;
@@ -13,13 +14,30 @@ export class ApiClient {
     };
 
     try {
+      // First try to get session from Supabase client
       const { data: { session } } = await supabase.auth.getSession();
 
       if (session?.access_token) {
         headers['Authorization'] = `Bearer ${session.access_token}`;
+        console.log('API Client: Using token from Supabase session');
+      } else {
+        // Fallback to cookies
+        const token = authHelpers.getAuthToken();
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+          console.log('API Client: Using token from cookies');
+        } else {
+          console.warn('API Client: No auth token available');
+        }
       }
     } catch (error) {
       console.warn('Failed to get auth session:', error);
+      // Try cookies as fallback
+      const token = authHelpers.getAuthToken();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+        console.log('API Client: Using token from cookies (fallback)');
+      }
     }
 
     return headers;
