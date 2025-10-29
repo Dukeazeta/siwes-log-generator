@@ -64,20 +64,24 @@ export async function middleware(request: NextRequest) {
       }
 
       // Add user info to request headers for downstream use
-      const response = NextResponse.next();
-      response.headers.set('x-user-id', user.id);
-      response.headers.set('x-user-email', user.email || '');
+      const requestHeaders = new Headers(request.headers);
+      requestHeaders.set('x-user-id', user.id);
+      requestHeaders.set('x-user-email', user.email || '');
 
       console.log('Middleware: Set headers for user (cookie auth):', {
         userId: user.id,
         userEmail: user.email,
-        responseHeaders: {
+        requestHeaders: {
           'x-user-id': user.id,
           'x-user-email': user.email || ''
         }
       });
 
-      return response;
+      return NextResponse.next({
+        request: {
+          headers: requestHeaders,
+        },
+      });
     }
 
     // For Bearer token authentication
@@ -92,20 +96,24 @@ export async function middleware(request: NextRequest) {
     }
 
     // Add user info to request headers
-    const response = NextResponse.next();
-    response.headers.set('x-user-id', user.id);
-    response.headers.set('x-user-email', user.email || '');
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('x-user-id', user.id);
+    requestHeaders.set('x-user-email', user.email || '');
 
     console.log('Middleware: Set headers for user:', {
       userId: user.id,
       userEmail: user.email,
-      responseHeaders: {
+      requestHeaders: {
         'x-user-id': user.id,
         'x-user-email': user.email || ''
       }
     });
 
-    return response;
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
 
   } catch (error) {
     console.error('Middleware error:', error);
