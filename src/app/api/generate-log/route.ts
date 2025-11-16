@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { aiService, AIServiceError } from '@/lib/ai/service';
+
+// Fallback to original Groq implementation if AI SDK fails
 import Groq from 'groq-sdk';
 
 const groq = new Groq({
@@ -7,14 +10,7 @@ const groq = new Groq({
 
 export async function POST(request: NextRequest) {
   try {
-    // Check if API key is configured
-    if (!process.env.GROQ_API_KEY) {
-      return NextResponse.json(
-        { error: 'Groq API key not configured. Please add your Groq API key to .env.local' },
-        { status: 500 }
-      );
-    }
-
+    // Parse request body
     const { weekNumber, startDate, endDate, activities, userProfile } = await request.json();
 
     // Validate required fields
@@ -25,98 +21,156 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('Generating log with Groq for:', { weekNumber, startDate, endDate, userProfile: userProfile?.full_name });
+    console.log('Generating logbook entry:', { weekNumber, startDate, endDate, userProfile: userProfile?.full_name });
 
-    // Create the prompt for generating SIWES logbook entry
-    const prompt = `You are an AI assistant helping a SIWES (Students Industrial Work Experience Scheme) student create a professional logbook entry.
-
-Student Information:
-- Name: ${userProfile?.full_name || 'Student'}
-- Course: ${userProfile?.course || 'Not specified'}
-- Institution: ${userProfile?.institution || 'Not specified'}
-- Company: ${userProfile?.company_name || 'Not specified'}
-- Department: ${userProfile?.department || 'Not specified'}
-- Industry: ${userProfile?.industry_type || 'Not specified'}
-
-Week Details:
-- Week Number: ${weekNumber}
-- Date Range: ${startDate} to ${endDate}
-- Activities Summary: ${activities}
-
-Please generate a professional SIWES logbook entry with the following structure:
-
-1. **Week Summary** (2-3 sentences describing the overall focus of the week)
-2. **Daily Breakdown** (5 working days with specific activities for each day)
-3. **Skills Developed** (List of technical and soft skills gained)
-4. **Challenges Faced** (Any difficulties encountered and how they were addressed)
-5. **Learning Outcomes** (Key takeaways and knowledge gained)
-
-Requirements:
-- Use professional, formal language appropriate for academic assessment
-- Make activities specific and detailed, showing progression throughout the week
-- Include relevant technical terms and industry-specific terminology related to the student's field of study (${userProfile?.course || 'the specified course'})
-- Tailor the content to match the student's academic discipline and the industry/department they're working in
-- Ensure each day has meaningful, distinct activities that are realistic for their field
-- Focus on learning, contribution, and professional development appropriate to their course of study
-- Keep the tone educational and reflective
-- Avoid assuming the student is in a technology-related field unless explicitly specified
-
-Format the response as a structured JSON object with the following keys:
-- weekSummary: string
-- dailyActivities: array of objects with {day: string, date: string, activities: string}
-- skillsDeveloped: array of strings
-- challengesFaced: string
-- learningOutcomes: string
-
-Make sure the content is realistic, educational, demonstrates genuine learning and contribution in a professional environment, and is appropriately tailored to the student's academic background and industry placement.`;
-
-    // Generate the logbook entry using Groq
-    console.log('Calling Groq API...');
-    const completion = await groq.chat.completions.create({
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-      model: 'llama-3.1-8b-instant',
-      temperature: 0.5,
-      max_tokens: 1200,
-      response_format: { type: 'json_object' },
-    });
-
-    console.log('Groq API response received');
-    const generatedContent = completion.choices[0]?.message?.content;
-
-    if (!generatedContent) {
-      throw new Error('No content generated from Groq API');
-    }
-
-    console.log('Parsing generated content...');
-    // Parse the JSON response
     let logbookEntry;
-    try {
-      logbookEntry = JSON.parse(generatedContent);
-    } catch (parseError) {
-      console.error('JSON parse error:', parseError);
-      console.error('Generated content:', generatedContent);
-      throw new Error('Failed to parse generated content as JSON');
+    let provider = 'unknown';
+    let model = 'unknown';
+
+    // Try AI SDK first if available
+    if (aiService.isAvailable()) {
+      console.log('Using AI SDK for log generation...');
+      try {
+        const result = await aiService.generateLogbookEntry({
+          weekNumber,
+          startDate,
+          endDate,
+          activities,
+          userProfile,
+        });
+
+        logbookEntry = result.object;
+        provider = result.provider;
+        model = result.model;
+
+        console.log(`✅ Successfully generated logbook entry using ${provider} (${model})`);
+      } catch (aiError) {
+        console.warn('❌ AI SDK failed, falling back to original implementation:', aiError);
+
+        if (aiError instanceof AIServiceError) {
+          console.error('AI Service Error:', aiError.message, 'Provider:', aiError.provider);
+        }
+
+        // Fallback to original Groq implementation
+        logbookEntry = await generateWithOriginalGroq(weekNumber, startDate, endDate, activities, userProfile);
+        provider = 'groq-fallback';
+        model = 'llama-3.1-8b-instant';
+      }
+    } else {
+      console.log('AI SDK not available, using original Groq implementation...');
+      // AI SDK not configured, use original implementation
+      logbookEntry = await generateWithOriginalGroq(weekNumber, startDate, endDate, activities, userProfile);
+      provider = 'groq-original';
+      model = 'llama-3.1-8b-instant';
     }
 
     return NextResponse.json({
       success: true,
       data: logbookEntry,
+      metadata: {
+        provider,
+        model,
+        timestamp: new Date().toISOString(),
+      },
     });
 
   } catch (error) {
     console.error('Error generating logbook entry:', error);
-    
+
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to generate logbook entry',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
     );
   }
+}
+
+// Original Groq implementation as fallback
+async function generateWithOriginalGroq(
+  weekNumber: number,
+  startDate: string,
+  endDate: string,
+  activities: string,
+  userProfile?: {
+    full_name?: string;
+    course?: string;
+    institution?: string;
+    company_name?: string;
+    department?: string;
+    industry_type?: string;
+  }
+) {
+  // Check if API key is configured
+  if (!process.env.GROQ_API_KEY) {
+    throw new Error('Groq API key not configured');
+  }
+
+  // Create the prompt for generating SIWES logbook entry
+  const prompt = `You are ${userProfile?.full_name || 'a SIWES student'}, creating a personal logbook entry for week ${weekNumber} (${startDate} to ${endDate}).
+
+Student Profile:
+- I am studying ${userProfile?.course || 'my course'}
+- I'm doing my SIWES at ${userProfile?.company_name || 'my company'} in the ${userProfile?.department || 'department'}
+- This week I focused on: ${activities}
+
+CRITICAL REQUIREMENTS:
+1. **Start EVERY daily activity with "I"** - this is mandatory
+2. **Make it personal and concise** - 1-2 sentences per activity maximum
+3. **Use first-person throughout** - "I learned", "I discovered", "I struggled with"
+4. **Be specific and authentic** - real actions, not generic statements
+5. **Keep it conversational** - like a student talking about their week
+
+Examples:
+❌ Wrong: "On Monday, I was assigned the responsibility of assisting..."
+✅ Right: "I helped configure the network switches and documented the setup."
+
+❌ Wrong: "During Tuesday, I participated in the implementation of..."
+✅ Right: "I implemented the user authentication module and tested it."
+
+Generate a SIWES logbook entry with:
+1. **Week Summary** (1-2 concise sentences)
+2. **Daily Breakdown** (5 days, each starting with "I" and being 1-2 sentences max)
+3. **Skills Developed** (3-4 specific skills)
+4. **Challenges Faced** (1-2 sentences about real challenges)
+5. **Learning Outcomes** (2-3 sentences about key learnings)
+
+Return as JSON with keys: weekSummary, dailyActivities (array of {day, date, activities}), skillsDeveloped, challengesFaced, learningOutcomes.
+
+Make this sound authentic and personal!`;
+
+  console.log('Calling original Groq API...');
+  const completion = await groq.chat.completions.create({
+    messages: [
+      {
+        role: 'user',
+        content: prompt,
+      },
+    ],
+    model: 'llama-3.1-8b-instant',
+    temperature: 0.3, // Lower temperature for more consistent personal tone
+    max_tokens: 800, // Reduced tokens for shorter, more concise responses
+    response_format: { type: 'json_object' },
+  });
+
+  console.log('Groq API response received');
+  const generatedContent = completion.choices[0]?.message?.content;
+
+  if (!generatedContent) {
+    throw new Error('No content generated from Groq API');
+  }
+
+  console.log('Parsing generated content...');
+  // Parse the JSON response
+  let logbookEntry;
+  try {
+    logbookEntry = JSON.parse(generatedContent);
+  } catch (parseError) {
+    console.error('JSON parse error:', parseError);
+    console.error('Generated content:', generatedContent);
+    throw new Error('Failed to parse generated content as JSON');
+  }
+
+  return logbookEntry;
 }
