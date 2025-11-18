@@ -43,7 +43,7 @@ export const modelConfig = {
     chat: 'claude-3-5-haiku-latest',
   },
   google: {
-    chat: 'gemini-2.5-flash',
+    chat: 'gemini-2.0-flash-exp',
   },
   groq: {
     chat: 'llama-3.1-8b-instant',
@@ -52,10 +52,10 @@ export const modelConfig = {
 
 // Provider priority for fallback
 export const providerPriority = [
+  { provider: 'google', model: modelConfig.google.chat }, // Gemini 2.5 Flash as primary
   { provider: 'openai', model: modelConfig.openai.chat },
-  { provider: 'groq', model: modelConfig.groq.chat },
-  { provider: 'google', model: modelConfig.google.chat },
   { provider: 'anthropic', model: modelConfig.anthropic.chat },
+  { provider: 'groq', model: modelConfig.groq.chat },
 ];
 
 // Get available providers
