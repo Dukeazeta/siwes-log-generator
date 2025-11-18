@@ -43,7 +43,7 @@ export const modelConfig = {
     chat: 'claude-3-5-haiku-latest',
   },
   google: {
-    chat: 'gemini-2.0-flash-exp',
+    chat: 'gemini-2.5-flash',
   },
   groq: {
     chat: 'llama-3.1-8b-instant',
