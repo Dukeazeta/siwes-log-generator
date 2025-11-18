@@ -2,7 +2,7 @@
  * Unified AI Service using Vercel AI SDK
  *
  * This service provides a unified interface for AI operations
- * including text generation, OCR processing, and structured output.
+ * using Google Gemini for text generation, OCR processing, and structured output.
  */
 
 import { generateText, generateObject } from 'ai';
@@ -13,7 +13,6 @@ import { aiConfig, getAvailableProviders, aiSettings } from './config';
 export class AIServiceError extends Error {
   constructor(
     message: string,
-    public provider?: string,
     public originalError?: Error
   ) {
     super(message);
@@ -21,153 +20,92 @@ export class AIServiceError extends Error {
   }
 }
 
-// AI Provider interface
-interface AIProvider {
-  provider: string;
-  model: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  instance: any;
-}
-
-// Get model instance for a provider
-function getModelInstance(providerName: string, modelName: string) {
-  const provider = aiConfig[providerName as keyof typeof aiConfig];
-  if (!provider) {
-    throw new AIServiceError(`Provider ${providerName} not configured`, providerName);
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const instance = provider as any;
-
-  switch (providerName) {
-    case 'openai':
-      return instance(modelName);
-    case 'anthropic':
-      return instance(modelName);
-    case 'google':
-      return instance(modelName);
-    case 'groq':
-      return instance(modelName);
-    default:
-      throw new AIServiceError(`Unknown provider: ${providerName}`, providerName);
-  }
-}
-
 // AI Service class
 export class AIService {
-  private providers: AIProvider[];
+  private isConfigured: boolean;
 
   constructor() {
-    this.providers = getAvailableProviders().map(config => ({
-      provider: config.provider,
-      model: config.model,
-      instance: aiConfig[config.provider as keyof typeof aiConfig]!,
-    }));
+    this.isConfigured = aiConfig.google !== null;
   }
 
   /**
-   * Generate text with fallback support
+   * Generate text using Google Gemini
    */
   async generateText(
     prompt: string,
     options: {
       temperature?: number;
-      maxTokens?: number;
       system?: string;
-      preferredProvider?: string;
     } = {}
   ): Promise<{ text: string; provider: string; model: string }> {
-    const { temperature = aiSettings.temperature, maxTokens = aiSettings.maxTokens, system, preferredProvider } = options;
+    const { temperature = aiSettings.temperature, system } = options;
 
-    let lastError: Error | null = null;
-
-    // Try preferred provider first if specified
-    const providersToTry = preferredProvider
-      ? [preferredProvider, ...this.providers.map(p => p.provider).filter(p => p !== preferredProvider)]
-      : this.providers.map(p => p.provider);
-
-    for (const providerName of providersToTry) {
-      try {
-        const model = getModelInstance(providerName, this.getModelForProvider(providerName));
-
-        const result = await generateText({
-          model,
-          prompt,
-          system,
-          temperature,
-        });
-
-        console.log(`✅ Generated text using ${providerName}`);
-        return {
-          text: result.text,
-          provider: providerName,
-          model: this.getModelForProvider(providerName),
-        };
-      } catch (error) {
-        console.warn(`❌ Failed to generate text with ${providerName}:`, error);
-        lastError = error instanceof Error ? error : new Error(String(error));
-        continue;
-      }
+    if (!this.isConfigured || !aiConfig.google) {
+      throw new AIServiceError('Google Gemini AI provider not configured');
     }
 
-    throw new AIServiceError(
-      'All AI providers failed',
-      providersToTry[0],
-      lastError || new Error('Unknown error')
-    );
+    try {
+      const result = await generateText({
+        model: aiConfig.google('gemini-2.5-flash'),
+        prompt,
+        system,
+        temperature,
+      });
+
+      console.log(`✅ Generated text using Google Gemini`);
+      return {
+        text: result.text,
+        provider: 'google',
+        model: 'gemini-2.5-flash',
+      };
+    } catch (error) {
+      console.error(`❌ Failed to generate text with Google Gemini:`, error);
+      throw new AIServiceError(
+        'Google Gemini AI provider failed',
+        error instanceof Error ? error : new Error(String(error))
+      );
+    }
   }
 
   /**
-   * Generate structured object with Zod schema
+   * Generate structured object with Zod schema using Google Gemini
    */
   async generateObject<T>(
     prompt: string,
     schema: z.ZodSchema<T>,
     options: {
       temperature?: number;
-      maxTokens?: number;
       system?: string;
-      preferredProvider?: string;
     } = {}
   ): Promise<{ object: T; provider: string; model: string }> {
-    const { temperature = aiSettings.temperature, maxTokens = aiSettings.maxTokens, system, preferredProvider } = options;
+    const { temperature = aiSettings.temperature, system } = options;
 
-    let lastError: Error | null = null;
-
-    const providersToTry = preferredProvider
-      ? [preferredProvider, ...this.providers.map(p => p.provider).filter(p => p !== preferredProvider)]
-      : this.providers.map(p => p.provider);
-
-    for (const providerName of providersToTry) {
-      try {
-        const model = getModelInstance(providerName, this.getModelForProvider(providerName));
-
-        const result = await generateObject({
-          model,
-          prompt,
-          system,
-          temperature,
-          schema,
-        });
-
-        console.log(`✅ Generated object using ${providerName}`);
-        return {
-          object: result.object,
-          provider: providerName,
-          model: this.getModelForProvider(providerName),
-        };
-      } catch (error) {
-        console.warn(`❌ Failed to generate object with ${providerName}:`, error);
-        lastError = error instanceof Error ? error : new Error(String(error));
-        continue;
-      }
+    if (!this.isConfigured || !aiConfig.google) {
+      throw new AIServiceError('Google Gemini AI provider not configured');
     }
 
-    throw new AIServiceError(
-      'All AI providers failed for object generation',
-      providersToTry[0],
-      lastError || new Error('Unknown error')
-    );
+    try {
+      const result = await generateObject({
+        model: aiConfig.google('gemini-2.5-flash'),
+        prompt,
+        system,
+        temperature,
+        schema,
+      });
+
+      console.log(`✅ Generated object using Google Gemini`);
+      return {
+        object: result.object,
+        provider: 'google',
+        model: 'gemini-2.5-flash',
+      };
+    } catch (error) {
+      console.error(`❌ Failed to generate object with Google Gemini:`, error);
+      throw new AIServiceError(
+        'Google Gemini AI provider failed for object generation',
+        error instanceof Error ? error : new Error(String(error))
+      );
+    }
   }
 
   /**
@@ -309,30 +247,10 @@ STEP 5 - EXTRACT MONDAY-FRIDAY ACTIVITIES:
   }
 
   /**
-   * Get model for provider
-   */
-  private getModelForProvider(provider: string): string {
-    switch (provider) {
-      case 'openai': return 'gpt-4o-mini';
-      case 'anthropic': return 'claude-3-5-haiku-latest';
-      case 'google': return 'gemini-2.5-flash';
-      case 'groq': return 'llama-3.1-8b-instant';
-      default: throw new Error(`Unknown provider: ${provider}`);
-    }
-  }
-
-  /**
-   * Get available providers
-   */
-  getAvailableProviders(): string[] {
-    return this.providers.map(p => p.provider);
-  }
-
-  /**
    * Check if AI service is available
    */
   isAvailable(): boolean {
-    return this.providers.length > 0;
+    return this.isConfigured;
   }
 }
 

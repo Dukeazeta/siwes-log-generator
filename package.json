@@ -9,10 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^2.0.44",
     "@ai-sdk/google": "^2.0.33",
-    "@ai-sdk/groq": "^2.0.29",
-    "@ai-sdk/openai": "^2.0.67",
     "@google/generative-ai": "^0.24.1",
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tooltip": "^1.2.8",
