@@ -31,7 +31,7 @@ interface AIProvider {
 
 // Get model instance for a provider
 function getModelInstance(providerName: string, modelName: string) {
-  const provider = aiConfig[providerName];
+  const provider = aiConfig[providerName as keyof typeof aiConfig];
   if (!provider) {
     throw new AIServiceError(`Provider ${providerName} not configured`, providerName);
   }
@@ -61,7 +61,7 @@ export class AIService {
     this.providers = getAvailableProviders().map(config => ({
       provider: config.provider,
       model: config.model,
-      instance: aiConfig[config.provider]!,
+      instance: aiConfig[config.provider as keyof typeof aiConfig]!,
     }));
   }
 
@@ -95,7 +95,6 @@ export class AIService {
           prompt,
           system,
           temperature,
-          maxTokens,
         });
 
         console.log(`✅ Generated text using ${providerName}`);
@@ -148,7 +147,6 @@ export class AIService {
           prompt,
           system,
           temperature,
-          maxTokens,
           schema,
         });
 
@@ -246,7 +244,6 @@ Make this sound like a real student's experience - authentic, concise, and meani
       {
         system: systemPrompt,
         temperature: 0.3, // Lower temperature for more consistent personal tone
-        maxTokens: 800, // Reduced tokens for shorter, more concise responses
       }
     );
   }
@@ -307,7 +304,6 @@ STEP 5 - EXTRACT MONDAY-FRIDAY ACTIVITIES:
       {
         system: systemPrompt,
         temperature: aiSettings.ocr.temperature,
-        maxTokens: aiSettings.ocr.maxTokens,
       }
     );
   }

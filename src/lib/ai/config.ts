@@ -8,7 +8,7 @@
 import { createOpenAI } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { groq } from '@ai-sdk/groq';
+import { createGroq } from '@ai-sdk/groq';
 
 // Provider configurations
 export const aiConfig = {
@@ -28,7 +28,9 @@ export const aiConfig = {
   }) : null,
 
   // Groq Configuration (already in use)
-  groq: process.env.GROQ_API_KEY ? groq() : null,
+  groq: process.env.GROQ_API_KEY ? createGroq({
+    apiKey: process.env.GROQ_API_KEY,
+  }) : null,
 };
 
 // Default models for each provider
@@ -58,7 +60,7 @@ export const providerPriority = [
 
 // Get available providers
 export function getAvailableProviders() {
-  return providerPriority.filter(config => aiConfig[config.provider] !== null);
+  return providerPriority.filter(config => aiConfig[config.provider as keyof typeof aiConfig] !== null);
 }
 
 // Get primary provider
