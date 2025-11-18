@@ -150,38 +150,46 @@ STEP 5 - EXTRACT MONDAY-FRIDAY ACTIVITIES:
 - Find day markers: Monday, Tuesday, Wednesday, Thursday, Friday
 - Extract the text after each day marker
 - Keep the original text but fix OCR errors
+- **CRITICAL: Ensure activities start with "I" and are concise**
+- If activity doesn't start with "I", rewrite it to start with "I" while keeping the original meaning
+- Remove unnecessary words to make it straight to the point
 
 RAW OCR TEXT TO PROCESS:
 ${ocrInput}
 
 STEP 6 - OUTPUT FORMAT:
-Return ONLY a JSON object with the student's original activities, just with OCR errors fixed:
+Return ONLY a JSON object with activities starting with "I", OCR errors fixed, and made concise:
 {
-  "monday": "Student's original text with OCR errors fixed",
-  "tuesday": "Student's original text with OCR errors fixed",
-  "wednesday": "Student's original text with OCR errors fixed",
-  "thursday": "Student's original text with OCR errors fixed",
-  "friday": "Student's original text with OCR errors fixed"
+  "monday": "Activity starting with 'I', concise and to the point",
+  "tuesday": "Activity starting with 'I', concise and to the point",
+  "wednesday": "Activity starting with 'I', concise and to the point",
+  "thursday": "Activity starting with 'I', concise and to the point",
+  "friday": "Activity starting with 'I', concise and to the point"
 }
 
-Example of CORRECT approach (IT field):
-Original OCR: "Helped with priner confguration. Updated the priner system drvers"
-Corrected: "Helped with printer configuration. Updated the printer system drivers"
-(Only fixed spelling errors, kept original wording)
+Examples of CORRECT approach (IT field):
+❌ Original OCR: "Helped with priner confguration. Updated the priner system drvers"
+✅ Corrected: "I helped with printer configuration and updated the system drivers"
+
+❌ Original OCR: "Tuesday was spent learning database management"
+✅ Corrected: "I learned database management and practiced SQL queries"
+
+❌ Original OCR: "Wednesday activities included attending meetings"
+✅ Corrected: "I attended the project meeting and contributed to planning"
+
+CRITICAL: Every activity MUST start with "I" and be straight to the point!
 
 Example of CORRECT approach (Engineering field):
-Original OCR: "Asisted in tesing the elctrical curcuit. Measued voltage and resitance"
-Corrected: "Assisted in testing the electrical circuit. Measured voltage and resistance"
-(Only fixed spelling errors, kept original wording)
+❌ Original OCR: "Asisted in tesing the elctrical curcuit. Measued voltage and resitance"
+✅ Corrected: "I assisted in testing the electrical circuit and measured voltage and resistance"
 
 Example of CORRECT approach (Pharmacy field):
-Original OCR: "Dispensd medicatons to patints. Verifed prescripion dosges"
-Corrected: "Dispensed medications to patients. Verified prescription dosages"
-(Only fixed spelling errors, kept original wording)
+❌ Original OCR: "Dispensd medicatons to patints. Verifed prescripion dosges"
+✅ Corrected: "I dispensed medications to patients and verified prescription dosages"
 
-Example of WRONG approach:
-Original OCR: "Helped with equipment setup"
-Wrong: "Provided comprehensive technical assistance in the systematic configuration and deployment of advanced laboratory equipment"
+Example of WRONG approach (what NOT to do):
+❌ Original OCR: "Helped with equipment setup"
+❌ Wrong: "Provided comprehensive technical assistance in the systematic configuration"
 (This rewrites the student's text - DON'T do this!)
 
 CRITICAL: Return ONLY the JSON object. Preserve the student's original words - just fix OCR scanning errors and fill obvious gaps.`;

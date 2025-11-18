@@ -315,7 +315,7 @@ STEP 5 - EXTRACT MONDAY-FRIDAY ACTIVITIES:
     switch (provider) {
       case 'openai': return 'gpt-4o-mini';
       case 'anthropic': return 'claude-3-5-haiku-latest';
-      case 'google': return 'gemini-1.5-flash';
+      case 'google': return 'gemini-2.5-flash';
       case 'groq': return 'llama-3.1-8b-instant';
       default: throw new Error(`Unknown provider: ${provider}`);
     }
